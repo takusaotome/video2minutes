@@ -16,6 +16,31 @@
 - FFmpeg
 - OpenAI APIキー
 
+## 使用するAIモデル
+
+### 文字起こし（Whisper API）
+- モデル: `whisper-1`
+- 特徴:
+  - 高精度な音声認識
+  - 日本語を含む多言語対応
+  - ノイズに強い
+  - 話者の区別なし
+
+### 議事録生成（Chat API）
+- デフォルトモデル: `o3`（GPT-4.1）
+- フォールバックモデル:
+  1. `gpt-4.1`（優先）
+  2. `gpt-4.1-mini`（バックアップ）
+- 特徴:
+  - 戦略系コンサルタントの視点で議事録を作成
+  - アクションアイテムの自動抽出
+  - 重要度の判定
+  - 期限の推論
+  - 決定事項の整理
+  - 論点の構造化
+
+> **注意**: モデルの選択は`--model`オプションで変更可能です。
+
 ## インストール
 
 1. リポジトリをクローン:
@@ -31,8 +56,20 @@ pip install -r requirements.txt
 
 3. OpenAI APIキーを設定:
 ```bash
+# .envファイルを作成
 echo "OPENAI_API_KEY=your-api-key" > .env
 ```
+
+### OpenAI APIキーの取得方法
+
+1. [OpenAI Platform](https://platform.openai.com/)にアクセス
+2. アカウントを作成またはログイン
+3. 右上のプロフィールアイコンをクリック
+4. 「View API keys」を選択
+5. 「Create new secret key」をクリック
+6. APIキーをコピーし、`.env`ファイルに貼り付け
+
+> **注意**: APIキーは秘密情報です。GitHubなどに公開しないよう注意してください。
 
 ## 使用方法
 
