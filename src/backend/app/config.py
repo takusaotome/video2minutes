@@ -1,0 +1,54 @@
+from pydantic_settings import BaseSettings
+from typing import Optional
+
+
+class Settings(BaseSettings):
+    """アプリケーション設定"""
+    
+    # API Keys
+    openai_api_key: str
+    
+    # Server設定
+    host: str = "0.0.0.0"
+    port: int = 8000
+    debug: bool = False
+    
+    # CORS設定
+    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"]
+    
+    # ファイル設定
+    max_file_size: int = 5 * 1024 * 1024 * 1024  # 5GB
+    allowed_video_extensions: list[str] = [".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm"]
+    upload_dir: str = "uploads"
+    temp_dir: str = "temp"
+    
+    # 処理設定
+    max_concurrent_tasks: int = 3  # 同時実行タスク数（Whisper API制限考慮）
+    task_timeout: int = 7200  # 2時間（大きなファイル対応）
+    
+    # 音声処理設定
+    audio_max_file_size_mb: int = 20  # Whisper API制限の安全マージン
+    audio_bitrate_max: int = 96  # 最大ビットレート (kbps)
+    audio_chunk_duration_max: int = 900  # 最大チャンク時間 (秒) - 15分
+    upload_chunk_size: int = 16384  # アップロード時のチャンクサイズ (16KB)
+    
+    # Whisper設定
+    whisper_model: str = "whisper-1"
+    whisper_language: str = "ja"
+    
+    # GPT設定
+    gpt_model: str = "o3"
+    gpt_max_tokens: int = 4000
+    
+    # ロギング設定
+    log_level: str = "INFO"
+    log_dir: str = "logs"
+    log_format: str = "standard"  # standard, detailed, json
+    
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
+# グローバル設定インスタンス
+settings = Settings()

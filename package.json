@@ -1,0 +1,25 @@
+{
+  "name": "video2minutes-e2e-tests",
+  "version": "1.0.0",
+  "description": "E2E tests for video2minutes application using Playwright",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report",
+    "test:install": "playwright install",
+    "test:basic": "playwright test --grep=\"basic\"",
+    "test:error": "playwright test --grep=\"error\"",
+    "test:parallel": "playwright test --grep=\"parallel\"",
+    "test:responsive": "playwright test --grep=\"responsive\""
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "fs-extra": "^11.1.1",
+    "path": "^0.12.7"
+  }
+}

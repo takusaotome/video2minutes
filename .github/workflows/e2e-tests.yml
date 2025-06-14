@@ -1,0 +1,267 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  e2e-tests:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r src/backend/requirements.txt
+
+    - name: Install Node.js dependencies
+      run: npm install
+
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps ${{ matrix.browser }}
+
+    - name: Create test fixtures
+      run: |
+        mkdir -p tests/e2e/fixtures
+        # Create mock video files for testing
+        dd if=/dev/zero of=tests/e2e/fixtures/test-video-small.mp4 bs=1024 count=1024
+        dd if=/dev/zero of=tests/e2e/fixtures/test-video-medium.mp4 bs=1024 count=10240
+        cp tests/e2e/fixtures/test-video-small.mp4 "tests/e2e/fixtures/test-japanese-名前.mp4"
+        echo "This is not a video file" > tests/e2e/fixtures/test-invalid-file.txt
+
+    - name: Start backend server
+      run: |
+        cd src/backend
+        python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+        echo $! > backend.pid
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+    - name: Start frontend server
+      run: |
+        cd src/frontend
+        npm install
+        npm run build
+        npm run preview -- --port 5173 --host 0.0.0.0 &
+        echo $! > frontend.pid
+
+    - name: Wait for servers to be ready
+      run: |
+        # Wait for backend
+        timeout 60s bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
+        # Wait for frontend
+        timeout 60s bash -c 'until curl -f http://localhost:5173; do sleep 2; done'
+
+    - name: Run E2E tests
+      run: npx playwright test --project=${{ matrix.browser }}
+      env:
+        CI: true
+        BASE_URL: http://localhost:5173
+        API_BASE_URL: http://localhost:8000
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.browser }}
+        path: |
+          test-results/
+          playwright-report/
+        retention-days: 7
+
+    - name: Upload test report to GitHub Pages
+      if: always() && matrix.browser == 'chromium'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: playwright-report/
+
+    - name: Stop servers
+      if: always()
+      run: |
+        if [ -f src/backend/backend.pid ]; then
+          kill $(cat src/backend/backend.pid) || true
+        fi
+        if [ -f src/frontend/frontend.pid ]; then
+          kill $(cat src/frontend/frontend.pid) || true
+        fi
+
+  # Basic smoke tests for quick feedback
+  smoke-tests:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Install Playwright
+      run: npx playwright install chromium
+
+    - name: Create minimal test fixtures
+      run: |
+        mkdir -p tests/e2e/fixtures
+        dd if=/dev/zero of=tests/e2e/fixtures/test-video-small.mp4 bs=1024 count=512
+
+    - name: Run smoke tests
+      run: npx playwright test --grep="@basic" --project=chromium
+      env:
+        CI: true
+        
+    - name: Upload smoke test results
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: smoke-test-results
+        path: test-results/
+        retention-days: 3
+
+  # Performance benchmark tests
+  performance-tests:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[perf]')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install -r src/backend/requirements.txt
+        npm install
+
+    - name: Install Playwright
+      run: npx playwright install chromium
+
+    - name: Create performance test fixtures
+      run: |
+        mkdir -p tests/e2e/fixtures
+        # Create larger files for performance testing
+        dd if=/dev/zero of=tests/e2e/fixtures/test-video-large.mp4 bs=1024 count=51200  # 50MB
+
+    - name: Run performance tests
+      run: npx playwright test --grep="@performance" --project=chromium
+      env:
+        CI: true
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-test-results
+        path: test-results/
+        retention-days: 14
+
+  # Security tests
+  security-tests:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'schedule'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Install Playwright
+      run: npx playwright install chromium
+
+    - name: Create security test fixtures
+      run: |
+        mkdir -p tests/e2e/fixtures
+        # Create potentially malicious files for security testing
+        echo '#!/bin/bash\necho "malicious script"' > tests/e2e/fixtures/malicious.sh
+        echo '<script>alert("xss")</script>' > tests/e2e/fixtures/xss.txt
+
+    - name: Run security tests
+      run: npx playwright test --grep="@security" --project=chromium
+      env:
+        CI: true
+
+    - name: Upload security test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-test-results
+        path: test-results/
+        retention-days: 30
+
+# Deploy test reports to GitHub Pages
+deploy-reports:
+  needs: e2e-tests
+  if: always() && github.ref == 'refs/heads/main'
+  
+  permissions:
+    pages: write
+    id-token: write
+    
+  environment:
+    name: github-pages
+    url: ${{ steps.deployment.outputs.page_url }}
+    
+  runs-on: ubuntu-latest
+  
+  steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
