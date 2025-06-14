@@ -221,15 +221,16 @@ export default {
 .dashboard {
   display: flex;
   flex-direction: column;
-  gap: var(--space-10);
+  gap: var(--space-6);
   max-width: 1400px;
   margin: 0 auto;
+  padding: 0 var(--space-4);
   animation: fadeIn 0.6s ease-out;
 }
 
 .welcome-section {
   text-align: center;
-  padding: var(--space-10);
+  padding: var(--space-8) var(--space-6);
   background: linear-gradient(
     135deg,
     var(--primary-700) 0%,
@@ -237,7 +238,7 @@ export default {
   );
   color: white;
   border-radius: var(--radius-2xl);
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
   box-shadow: var(--shadow-xl);
   position: relative;
   overflow: hidden;
@@ -331,7 +332,7 @@ export default {
 }
 
 .quick-stats {
-  margin-top: var(--space-6);
+  margin-top: var(--space-4);
   animation: slideUp 0.8s ease-out 0.2s both;
 }
 
@@ -347,12 +348,13 @@ export default {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: var(--space-5);
+  gap: 20px;
+  margin: 0;
 }
 
 .stat-card {
   text-align: center;
-  padding: var(--space-6);
+  padding: 24px 16px;
   background: white;
   border-radius: var(--radius-xl);
   border: 2px solid var(--gray-200);
@@ -442,7 +444,7 @@ export default {
 }
 
 .help-section {
-  margin-top: var(--space-10);
+  margin-top: var(--space-6);
   animation: slideUp 0.8s ease-out 0.4s both;
 }
 
@@ -464,14 +466,15 @@ export default {
 .help-steps {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: 20px;
+  margin: 0;
 }
 
 .help-step {
   display: flex;
-  gap: var(--space-5);
+  gap: 20px;
   align-items: flex-start;
-  padding: var(--space-5);
+  padding: 20px;
   border-radius: var(--radius-lg);
   background: var(--gray-50);
   border: 1px solid var(--gray-100);
@@ -522,7 +525,7 @@ export default {
 }
 
 .help-notes {
-  padding: var(--space-6);
+  padding: 20px;
   background: linear-gradient(
     135deg,
     var(--primary-50) 0%,
@@ -531,6 +534,7 @@ export default {
   border-radius: var(--radius-lg);
   border-left: 4px solid var(--primary-500);
   border: 1px solid var(--primary-200);
+  margin-top: 20px;
 }
 
 .help-notes h4 {
@@ -557,6 +561,16 @@ export default {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .dashboard {
+    padding: 0 var(--space-3);
+    gap: var(--space-4);
+  }
+
+  .welcome-section {
+    padding: var(--space-6) var(--space-4);
+    margin-bottom: var(--space-3);
+  }
+
   .welcome-content h2 {
     font-size: 2rem;
   }
@@ -590,12 +604,13 @@ export default {
 
 @media (max-width: 480px) {
   .dashboard {
-    gap: 1.5rem;
+    gap: var(--space-3);
+    padding: 0 var(--space-2);
   }
 
   .welcome-section {
-    padding: 1.5rem;
-    margin-bottom: 0.5rem;
+    padding: var(--space-4);
+    margin-bottom: var(--space-2);
   }
 
   .welcome-content h2 {
@@ -618,5 +633,87 @@ export default {
   .stat-number {
     font-size: 2rem;
   }
+}
+
+/* 統一的なカード余白設定 */
+.dashboard :deep(.p-card) {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--gray-200);
+  background: white;
+  transition: all var(--transition-normal);
+}
+
+.dashboard :deep(.p-card-title) {
+  padding: 20px 24px 0 24px;
+  margin: 0 0 16px 0;
+  color: var(--gray-900);
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.dashboard :deep(.p-card-content) {
+  padding: 0 24px 24px 24px;
+  color: var(--gray-700);
+}
+
+/* 処理統計カードの調整 */
+.quick-stats :deep(.p-card-content) {
+  padding: 0 24px 24px 24px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 20px;
+  margin: 0;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 24px 16px;
+  background: white;
+  border-radius: var(--radius-xl);
+  border: 2px solid var(--gray-200);
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 使い方セクションの調整 */
+.help-section :deep(.p-card-content) {
+  padding: 0 24px 24px 24px;
+}
+
+.help-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin: 0;
+}
+
+.help-step {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  transition: all var(--transition-normal);
+}
+
+.help-notes {
+  padding: 20px;
+  background: linear-gradient(
+    135deg,
+    var(--primary-50) 0%,
+    var(--primary-100) 100%
+  );
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--primary-500);
+  border: 1px solid var(--primary-200);
+  margin-top: 20px;
 }
 </style>

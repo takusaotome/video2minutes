@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 import aiofiles
 import openai
@@ -50,7 +49,8 @@ class TranscriptionService(LoggerMixin):
                 audio_data = await audio_file.read()
 
                 self.logger.info(
-                    f"Whisper API呼び出し開始 - モデル: {settings.whisper_model}, 言語: {settings.whisper_language}"
+                    f"Whisper API呼び出し開始 - モデル: {settings.whisper_model}, "
+                    f"言語: {settings.whisper_language}"
                 )
 
                 # ファイル拡張子に基づいてMIMEタイプを決定

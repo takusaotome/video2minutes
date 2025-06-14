@@ -37,19 +37,21 @@ class FileHandler:
 
         # ファイル拡張子チェック
         file_ext = Path(file.filename).suffix.lower()
-        allowed_extensions = settings.allowed_video_extensions + settings.allowed_audio_extensions
-        
+        allowed_extensions = (
+            settings.allowed_video_extensions + settings.allowed_audio_extensions
+        )
+
         if file_ext not in allowed_extensions:
             logger.warning(
                 f"サポートされていないファイル形式: {file_ext} - {file.filename}"
             )
-            video_exts = ', '.join(settings.allowed_video_extensions)
-            audio_exts = ', '.join(settings.allowed_audio_extensions)
+            video_exts = ", ".join(settings.allowed_video_extensions)
+            audio_exts = ", ".join(settings.allowed_audio_extensions)
             raise HTTPException(
                 status_code=400,
                 detail=f"サポートされていないファイル形式です。\n対応動画形式: {video_exts}\n対応音声形式: {audio_exts}",
             )
-        
+
         # ファイルサイズチェック（ここではContent-Lengthヘッダーをチェック）
         if hasattr(file, "size") and file.size and file.size > settings.max_file_size:
             file_size_gb = file.size / (1024 * 1024 * 1024)
@@ -61,7 +63,7 @@ class FileHandler:
                 status_code=413,
                 detail=f"ファイルサイズが上限（{max_size_gb:.1f}GB）を超えています。現在のファイルサイズ: {file_size_gb:.2f}GB",
             )
-        
+
         # ファイルタイプを判定して返す
         if file_ext in settings.allowed_video_extensions:
             return "video"
@@ -95,14 +97,17 @@ class FileHandler:
                         await f.close()
                         os.remove(file_path)
                         file_size_gb = file_size / (1024 * 1024 * 1024)
-                        max_size_gb = settings.max_file_size / \
-                            (1024 * 1024 * 1024)
+                        max_size_gb = settings.max_file_size / (1024 * 1024 * 1024)
                         FileHandler.logger.warning(
-                            f"アップロード中にファイルサイズ超過: {file.filename} ({file_size_gb:.2f}GB > {max_size_gb:.1f}GB)"
+                            f"アップロード中にファイルサイズ超過: {file.filename} "
+                            f"({file_size_gb:.2f}GB > {max_size_gb:.1f}GB)"
                         )
                         raise HTTPException(
                             status_code=413,
-                            detail=f"ファイルサイズが上限（{max_size_gb:.1f}GB）を超えています。アップロードされたサイズ: {file_size_gb:.2f}GB",
+                            detail=(
+                                f"ファイルサイズが上限（{max_size_gb:.1f}GB）を超えています。"
+                                f"アップロードされたサイズ: {file_size_gb:.2f}GB"
+                            ),
                         )
 
             return file_path, file_size
@@ -117,7 +122,9 @@ class FileHandler:
     def cleanup_files(task_id: str) -> None:
         """タスクに関連するファイルを削除"""
         # アップロードファイル（動画・音声両方）
-        all_extensions = settings.allowed_video_extensions + settings.allowed_audio_extensions
+        all_extensions = (
+            settings.allowed_video_extensions + settings.allowed_audio_extensions
+        )
         for ext in all_extensions:
             upload_path = os.path.join(settings.upload_dir, f"{task_id}{ext}")
             if os.path.exists(upload_path):
@@ -135,7 +142,9 @@ class FileHandler:
     @staticmethod
     def get_file_path(task_id: str) -> Optional[str]:
         """タスクIDからファイルパスを取得"""
-        all_extensions = settings.allowed_video_extensions + settings.allowed_audio_extensions
+        all_extensions = (
+            settings.allowed_video_extensions + settings.allowed_audio_extensions
+        )
         for ext in all_extensions:
             file_path = os.path.join(settings.upload_dir, f"{task_id}{ext}")
             if os.path.exists(file_path):
@@ -148,7 +157,7 @@ class FileHandler:
         file_path = FileHandler.get_file_path(task_id)
         if not file_path:
             return None
-        
+
         file_ext = Path(file_path).suffix.lower()
         if file_ext in settings.allowed_video_extensions:
             return "video"

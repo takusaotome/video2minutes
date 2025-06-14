@@ -472,22 +472,22 @@ export default {
 
 .task-stats {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: var(--gray-600-light);
-  border-radius: 8px;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 0;
+  flex-wrap: wrap;
 }
 
 .stat-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-}
-
-.stat-count {
-  font-weight: 600;
-  color: var(--gray-550);
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .loading-state {
@@ -838,5 +838,27 @@ export default {
     flex-direction: column;
     gap: 0.25rem;
   }
+}
+
+/* TaskListカードの統一余白設定 */
+.task-list :deep(.p-card) {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--gray-200);
+  background: white;
+  transition: all var(--transition-normal);
+}
+
+.task-list :deep(.p-card-title) {
+  padding: 20px 24px 0 24px;
+  margin: 0 0 16px 0;
+  color: var(--gray-900);
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.task-list :deep(.p-card-content) {
+  padding: 0 24px 24px 24px;
+  color: var(--gray-700);
 }
 </style>

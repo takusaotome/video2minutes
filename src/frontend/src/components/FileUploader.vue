@@ -603,7 +603,7 @@ export default {
 
 <style scoped>
 .file-uploader {
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   position: relative;
   transition: all 0.3s ease;
   border-radius: 16px;
@@ -634,20 +634,23 @@ export default {
 
 /* Header Section */
 .upload-header {
-  text-align: center;
-  padding: 2.5rem 2rem 1.5rem;
+  padding: 16px 20px 12px 20px;
+  margin: -20px -20px 16px -20px;
   background: linear-gradient(
     135deg,
     var(--primary-700) 0%,
     var(--secondary-700) 100%
   );
   color: white;
-  margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+  border-bottom: none;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  text-align: center;
   position: relative;
   transition: all 0.3s ease;
+  overflow: hidden;
 }
 
-/* Dark overlay for better contrast */
+/* Dark overlay for better text contrast */
 .upload-header::after {
   content: '';
   position: absolute;
@@ -655,8 +658,20 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.1);
   pointer-events: none;
+}
+
+.upload-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="white" opacity="0.1"><polygon points="0,100 1000,0 1000,100"/></svg>')
+    no-repeat center bottom;
+  background-size: cover;
 }
 
 .title-section {
@@ -671,10 +686,11 @@ export default {
 
 .title-icon {
   font-size: 2rem;
-  opacity: 0.9;
+  opacity: 1;
   color: white;
   position: relative;
   z-index: 2;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .upload-title {
@@ -683,7 +699,7 @@ export default {
   margin: 0;
   line-height: 1.2;
   color: white;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   position: relative;
   z-index: 2;
 }
@@ -694,14 +710,14 @@ export default {
   margin: 0;
   font-weight: 500;
   color: white;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   position: relative;
   z-index: 2;
 }
 
 /* Upload Area */
 .upload-area {
-  padding: 1rem;
+  padding: 0.75rem;
   position: relative;
   border-radius: var(--radius-2xl);
   transition: all 0.3s ease;
@@ -727,20 +743,17 @@ export default {
 }
 
 .upload-dropzone {
-  border: 3px dashed var(--gray-300);
-  border-radius: var(--radius-2xl);
-  background: linear-gradient(135deg, white 0%, var(--gray-50) 100%);
-  padding: var(--space-8) var(--space-6);
+  padding: 32px 20px;
+  margin: 0 -20px;
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-lg);
+  background: var(--gray-50);
+  transition: all var(--transition-normal);
   text-align: center;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
   min-height: 350px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-sm);
 }
 
 .upload-dropzone::after {
@@ -895,7 +908,7 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
   position: relative;
   z-index: 2;
   width: 100%;
@@ -904,7 +917,7 @@ export default {
 
 .upload-icon-container {
   position: relative;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .icon-wrapper {
@@ -973,7 +986,7 @@ export default {
 
 .upload-text-container {
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .upload-text {
@@ -1134,8 +1147,12 @@ export default {
 }
 
 .upload-note {
-  width: 100%;
-  margin-top: 0.5rem;
+  margin: 20px -24px 0 -24px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--warning-50) 0%, var(--warning-100) 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--warning-200);
+  border-left: 4px solid var(--warning-500);
 }
 
 .note-content {
@@ -1633,5 +1650,61 @@ export default {
   .drag-icon {
     font-size: 3rem;
   }
+}
+
+/* FileUploaderカードの統一余白設定 */
+.file-uploader :deep(.p-card) {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--gray-200);
+  background: white;
+  transition: all var(--transition-normal);
+}
+
+.file-uploader :deep(.p-card-title) {
+  padding: 20px 24px 0 24px;
+  margin: 0 0 16px 0;
+  color: var(--gray-900);
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.file-uploader :deep(.p-card-content) {
+  padding: 0 24px 24px 24px;
+  color: var(--gray-700);
+}
+
+/* ドロップゾーンの調整 */
+.upload-dropzone {
+  padding: 32px 20px;
+  margin: 0 -20px;
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-lg);
+  background: var(--gray-50);
+  transition: all var(--transition-normal);
+  text-align: center;
+  min-height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ファイルリストの調整 */
+.file-list {
+  margin: 20px -24px 0 -24px;
+  padding: 20px 24px;
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+}
+
+/* 注意事項の調整 */
+.upload-note {
+  margin: 20px -24px 0 -24px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--warning-50) 0%, var(--warning-100) 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--warning-200);
+  border-left: 4px solid var(--warning-500);
 }
 </style>

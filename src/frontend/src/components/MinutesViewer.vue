@@ -214,7 +214,7 @@
             <template #content>
               <MarkdownRenderer
                 :content="minutesWithUpdatedInfo"
-                :show-toc="true"
+                :show-toc="false"
                 @word-count="updateWordCount"
               />
             </template>
@@ -1129,6 +1129,21 @@ ${'-'.repeat(50)}
   animation: fadeIn 0.6s ease-out;
 }
 
+/* Global Card styling for consistency */
+.minutes-viewer :deep(.p-card) {
+  box-sizing: border-box;
+}
+
+.minutes-viewer :deep(.p-card-body) {
+  padding: 0;
+}
+
+.minutes-viewer :deep(.p-card-title) {
+  padding: 20px 24px;
+  margin: 0;
+  border-bottom: 1px solid var(--gray-200);
+}
+
 .loading-state,
 .error-state {
   display: flex;
@@ -1163,12 +1178,13 @@ ${'-'.repeat(50)}
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: var(--space-8);
-  margin-bottom: var(--space-8);
-  padding: var(--space-8);
+  gap: 32px;
+  margin: 0 -24px 32px -24px;
+  padding: 32px;
   background: linear-gradient(135deg, white 0%, var(--gray-50) 100%);
-  border-radius: var(--radius-xl);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   border: 2px solid var(--gray-200);
+  border-top: none;
   box-shadow: var(--shadow-lg);
   position: relative;
   overflow: hidden;
@@ -1251,16 +1267,23 @@ ${'-'.repeat(50)}
 
 .content-layout {
   display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: var(--space-8);
+  grid-template-columns: 35% 65%;
+  gap: 24px;
   position: relative;
+  padding: 0 24px;
+  align-items: start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .transcript-sidebar {
   position: sticky;
-  top: var(--space-8);
+  top: 32px;
   height: fit-content;
-  max-height: calc(100vh - 6rem);
+  max-height: calc(100vh - 200px);
+  width: 100%;
 }
 
 .mobile-overlay {
@@ -1281,6 +1304,24 @@ ${'-'.repeat(50)}
   margin-top: var(--space-8);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
+}
+
+.transcript-card {
+  width: 100%;
+  height: fit-content;
+  box-sizing: border-box;
+}
+
+.transcript-card :deep(.p-card) {
+  width: 100%;
+  background: #f8f9fa;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--gray-200);
+}
+
+.transcript-card :deep(.p-card-content) {
+  padding: 0;
 }
 
 .transcript-header {
@@ -1309,25 +1350,103 @@ ${'-'.repeat(50)}
 }
 
 .transcript-content {
-  padding: var(--space-4);
+  padding: 20px;
 }
 
 .transcript-text {
   font-family: var(--font-family-mono);
-  font-size: 0.95rem;
-  line-height: 1.7;
+  font-size: 16px;
+  line-height: 1.8;
   color: var(--gray-700);
   margin: 0;
   white-space: pre-wrap;
   word-wrap: break-word;
   background: var(--gray-50);
-  padding: var(--space-4);
+  padding: 20px;
   border-radius: var(--radius-md);
   border: 1px solid var(--gray-200);
 }
 
 .minutes-main {
   min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 会議詳細カードと議事録カードの統一スタイル */
+.meeting-details-card,
+.minutes-card {
+  width: 100%;
+  margin-bottom: 0;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.meeting-details-card :deep(.p-card),
+.minutes-card :deep(.p-card) {
+  width: 100%;
+  max-width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.meeting-details-card :deep(.p-card-content),
+.minutes-card :deep(.p-card-content) {
+  padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* 会議詳細カード固有のスタイル */
+.meeting-details-card :deep(.p-card) {
+  background: #f0f7ff;
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+/* 議事録カード固有のスタイル */
+.minutes-card :deep(.p-card) {
+  background: white;
+  border: 1px solid var(--gray-200);
+}
+
+.minutes-card :deep(.markdown-renderer) {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* 議事録内のテーブルとコンテンツの幅制限 */
+.minutes-card :deep(.markdown-renderer table) {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.minutes-card :deep(.markdown-renderer td),
+.minutes-card :deep(.markdown-renderer th) {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 0;
+}
+
+.minutes-card :deep(.markdown-renderer pre) {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.minutes-card :deep(.markdown-renderer code) {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .minutes-card-header {
@@ -1411,10 +1530,6 @@ ${'-'.repeat(50)}
 }
 
 /* Meeting Details Styles */
-.meeting-details-card {
-  margin-bottom: var(--space-6);
-}
-
 .meeting-details-header {
   display: flex;
   justify-content: space-between;
@@ -1516,15 +1631,31 @@ ${'-'.repeat(50)}
   min-width: 200px;
 }
 
-/* Mobile Responsive */
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .content-layout {
+    grid-template-columns: 40% 60%;
+    gap: 20px;
+    padding: 0 16px;
+  }
+  
+  .minutes-main {
+    gap: 20px;
+  }
+}
+
 @media (max-width: 1024px) {
   .content-layout {
-    grid-template-columns: 300px 1fr;
-    gap: 1.5rem;
+    grid-template-columns: 45% 55%;
+    gap: 16px;
   }
 
   .transcript-scroll {
     height: 350px;
+  }
+  
+  .minutes-main {
+    gap: 16px;
   }
 }
 
@@ -1533,6 +1664,8 @@ ${'-'.repeat(50)}
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
+    padding: 20px;
+    margin-bottom: 20px;
   }
 
   .header-actions {
@@ -1541,11 +1674,13 @@ ${'-'.repeat(50)}
 
   .content-layout {
     display: block;
+    padding: 0 16px;
   }
 
   .transcript-sidebar {
     position: static;
     max-height: none;
+    margin-bottom: 20px;
   }
 
   .minutes-title {
@@ -1560,6 +1695,16 @@ ${'-'.repeat(50)}
 
   .edit-actions {
     justify-content: center;
+  }
+  
+  .minutes-main {
+    gap: 16px;
+  }
+  
+  .meeting-details-card,
+  .minutes-card {
+    margin-bottom: 0;
+    width: 100%;
   }
 }
 

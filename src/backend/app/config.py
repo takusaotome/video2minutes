@@ -1,5 +1,6 @@
 from typing import Optional
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -15,7 +16,9 @@ class Settings(BaseSettings):
     basic_auth_password: Optional[str] = None
 
     # Server設定
-    host: str = "0.0.0.0"
+    host: str = Field(
+        default="127.0.0.1", description="本番環境では特定のIPアドレスを指定推奨"
+    )
     port: int = 8000
     debug: bool = False
 
@@ -38,7 +41,7 @@ class Settings(BaseSettings):
         ".flv",
         ".webm",
     ]
-    
+
     # 対応音声形式
     allowed_audio_extensions: list[str] = [
         ".mp3",

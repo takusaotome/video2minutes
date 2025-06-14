@@ -39,7 +39,10 @@ def setup_logging(
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
             "detailed": {
-                "format": "%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s",
+                "format": (
+                    "%(asctime)s [%(levelname)s] %(name)s "
+                    "(%(filename)s:%(lineno)d): %(message)s"
+                ),
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
             "json": {"()": "app.utils.logger.JSONFormatter"},

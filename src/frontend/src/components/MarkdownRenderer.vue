@@ -151,8 +151,8 @@ export default {
 
 <style scoped>
 .markdown-renderer {
-  display: flex;
-  gap: 2rem;
+  display: block;
+  width: 100%;
   max-width: 100%;
 }
 
@@ -239,36 +239,45 @@ export default {
 }
 
 .markdown-content-wrapper {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .markdown-card {
   border: 1px solid var(--gray-200);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Responsive */
 @media (max-width: 1024px) {
   .markdown-renderer {
-    flex-direction: column;
-    gap: 1rem;
+    display: block;
+    width: 100%;
   }
 
   .markdown-toc-wrapper {
-    flex: none;
-    position: static;
-    max-height: 300px;
+    display: none;
+  }
+  
+  .markdown-content-wrapper {
+    width: 100%;
   }
 }
 
 @media (max-width: 768px) {
   .markdown-renderer {
-    gap: 0.5rem;
+    display: block;
+    width: 100%;
   }
 
   .markdown-toc-wrapper {
-    max-height: 200px;
+    display: none;
+  }
+  
+  .markdown-content-wrapper {
+    width: 100%;
   }
 }
 </style>
@@ -281,7 +290,10 @@ export default {
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.7;
   color: var(--gray-700);
-  max-width: none;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .markdown-content.with-toc {

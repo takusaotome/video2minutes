@@ -1,25 +1,20 @@
-import asyncio
 import os
 import time
-from typing import Dict
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.endpoints import minutes
 from app.config import settings
-from app.models import MinutesTask
 from app.services.task_queue import initialize_task_queue, shutdown_task_queue
-from app.utils.logger import get_logger, setup_logging
+from app.store import tasks_store
+from app.utils.logger import setup_logging
 
 # ロギング初期化
 logger = setup_logging(
     log_level=settings.log_level, log_dir=settings.log_dir, app_name="video2minutes"
 )
-
-# グローバルタスクストア（共有ストアから参照）
-from app.store import tasks_store
 
 # Basic認証は無効
 
@@ -68,13 +63,14 @@ def create_app() -> FastAPI:
 
             # レスポンス情報をログ
             logger.info(
-                f"リクエスト完了: {request.method} {request.url} - {response.status_code} ({process_time:.3f}s)",
+                f"リクエスト完了: {request.method} {request.url} - "
+                f"{response.status_code} ({process_time:.3f}s)",
                 extra={
                     "method": request.method,
                     "url": str(request.url),
                     "status_code": response.status_code,
                     "process_time": process_time,
-                    "client_ip": request.client.host if request.client else None,
+                    "client_ip": (request.client.host if request.client else None),
                 },
             )
 
@@ -83,7 +79,8 @@ def create_app() -> FastAPI:
         except Exception as exc:
             process_time = time.time() - start_time
             logger.error(
-                f"リクエストエラー: {request.method} {request.url} - {type(exc).__name__}: {str(exc)} ({process_time:.3f}s)",
+                f"リクエストエラー: {request.method} {request.url} - "
+                f"{type(exc).__name__}: {str(exc)} ({process_time:.3f}s)",
                 extra={
                     "method": request.method,
                     "url": str(request.url),
@@ -96,14 +93,13 @@ def create_app() -> FastAPI:
             raise
 
     # ルーターを追加
-    app.include_router(
-        minutes.router, prefix="/api/v1/minutes", tags=["minutes"])
+    app.include_router(minutes.router, prefix="/api/v1/minutes", tags=["minutes"])
 
     # 必要なディレクトリを作成
     os.makedirs(settings.upload_dir, exist_ok=True)
     os.makedirs(settings.temp_dir, exist_ok=True)
 
-    logger.info(f"アプリケーション初期化完了")
+    logger.info("アプリケーション初期化完了")
     logger.info(f"アップロードディレクトリ: {settings.upload_dir}")
     logger.info(f"一時ディレクトリ: {settings.temp_dir}")
     logger.info(f"デバッグモード: {settings.debug}")

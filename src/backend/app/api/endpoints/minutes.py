@@ -1,4 +1,3 @@
-import asyncio
 import json
 from datetime import datetime
 from typing import Dict, List
@@ -14,7 +13,6 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 
 from app.models import (
-    ErrorResponse,
     MinutesTask,
     ProcessingStepName,
     ProcessingStepStatus,
@@ -28,20 +26,18 @@ from app.services.minutes_generator import MinutesGeneratorService
 from app.services.transcription import TranscriptionService
 from app.services.video_processor import VideoProcessor
 from app.utils.file_handler import FileHandler
+from app.store import tasks_store
 from app.utils.logger import get_logger
 
 router = APIRouter()
 logger = get_logger(__name__)
-
-# グローバルタスクストア（共有ストアから参照）
-from app.store import tasks_store
 
 # WebSocket接続管理
 websocket_connections: Dict[str, List[WebSocket]] = {}
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_media(file: UploadFile = File(...)):
+async def upload_media(file: UploadFile = File(...)) -> UploadResponse:
     """動画・音声ファイルをアップロードして処理を開始"""
 
     logger.info(
@@ -51,7 +47,9 @@ async def upload_media(file: UploadFile = File(...)):
     try:
         # ファイルバリデーション（動画・音声両方対応）
         file_type = FileHandler.validate_media_file(file)
-        logger.info(f"ファイルバリデーション成功: {file.filename} (タイプ: {file_type})")
+        logger.info(
+            f"ファイルバリデーション成功: {file.filename} (タイプ: {file_type})"
+        )
 
         # タスクIDを生成
         task_id = FileHandler.generate_task_id()
@@ -88,7 +86,9 @@ async def upload_media(file: UploadFile = File(...)):
         else:  # audio
             queue_id = await queue.add_task(task_id, process_audio_task, task_id)
 
-        logger.info(f"タスクをキューに追加: {task_id} (キューID: {queue_id}, タイプ: {file_type})")
+        logger.info(
+            f"タスクをキューに追加: {task_id} (キューID: {queue_id}, タイプ: {file_type})"
+        )
 
         return UploadResponse(task_id=task_id, status=TaskStatus.QUEUED)
 
@@ -105,7 +105,7 @@ async def upload_media(file: UploadFile = File(...)):
 
 
 @router.get("/tasks", response_model=TaskListResponse)
-async def get_all_tasks():
+async def get_all_tasks() -> TaskListResponse:
     """全タスクの一覧を取得"""
     logger.info(f"タスク一覧取得: {len(tasks_store)}件のタスク")
     tasks = list(tasks_store.values())
@@ -124,7 +124,7 @@ async def get_queue_status():
 
 
 @router.get("/{task_id}/status", response_model=TaskStatusResponse)
-async def get_task_status(task_id: str):
+async def get_task_status(task_id: str) -> TaskStatusResponse:
     """特定タスクのステータスを取得"""
     logger.debug(f"タスクステータス取得: {task_id}")
 
@@ -146,7 +146,7 @@ async def get_task_status(task_id: str):
 
 
 @router.get("/{task_id}/result", response_model=TaskResultResponse)
-async def get_task_result(task_id: str):
+async def get_task_result(task_id: str) -> TaskResultResponse:
     """完了したタスクの結果を取得"""
     if task_id not in tasks_store:
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
@@ -169,45 +169,43 @@ async def get_task_result(task_id: str):
 
 
 @router.delete("/{task_id}")
-async def delete_task(task_id: str):
+async def delete_task(task_id: str) -> JSONResponse:
     """タスクを削除"""
     logger.info(f"タスク削除要求: {task_id}")
-    
+
     if task_id not in tasks_store:
         logger.warning(f"削除対象のタスクが見つかりません: {task_id}")
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
 
     task = tasks_store[task_id]
-    
+
     # 処理中のタスクは削除できない
     if task.status == TaskStatus.PROCESSING:
         logger.warning(f"処理中のタスクは削除できません: {task_id}")
         raise HTTPException(status_code=400, detail="処理中のタスクは削除できません")
-    
+
     try:
         # ファイルクリーンアップ
         FileHandler.cleanup_files(task_id)
         logger.info(f"ファイルクリーンアップ完了: {task_id}")
-        
+
         # タスクストアから削除
         del tasks_store[task_id]
         logger.info(f"タスク削除完了: {task_id}")
-        
+
         # WebSocket接続がある場合は削除
         if task_id in websocket_connections:
             del websocket_connections[task_id]
             logger.info(f"WebSocket接続削除完了: {task_id}")
-        
+
         return JSONResponse(
-            status_code=200,
-            content={"message": f"タスク {task_id} を削除しました"}
+            status_code=200, content={"message": f"タスク {task_id} を削除しました"}
         )
-        
+
     except Exception as e:
         logger.error(f"タスク削除エラー: {task_id} - {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=500, 
-            detail=f"タスクの削除中にエラーが発生しました: {str(e)}"
+            status_code=500, detail=f"タスクの削除中にエラーが発生しました: {str(e)}"
         )
 
 
@@ -233,7 +231,7 @@ async def websocket_endpoint(websocket: WebSocket, task_id: str):
                 del websocket_connections[task_id]
 
 
-async def process_video_task(task_id: str):
+async def process_video_task(task_id: str) -> None:
     """動画処理のメインタスク"""
     if task_id not in tasks_store:
         return
@@ -315,7 +313,7 @@ async def process_video_task(task_id: str):
         FileHandler.cleanup_files(task_id)
 
 
-async def process_audio_task(task_id: str):
+async def process_audio_task(task_id: str) -> None:
     """音声処理のメインタスク"""
     if task_id not in tasks_store:
         return
@@ -418,7 +416,7 @@ async def broadcast_progress_update(task_id: str, task: MinutesTask):
     for websocket in websocket_connections[task_id]:
         try:
             await websocket.send_text(json.dumps(message))
-        except:
+        except Exception:
             disconnected.append(websocket)
 
     # 切断されたWebSocketを削除
