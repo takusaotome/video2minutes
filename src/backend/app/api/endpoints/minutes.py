@@ -324,7 +324,7 @@ async def broadcast_progress_update(task_id: str, task: MinutesTask):
             "status": task.status,
             "current_step": task.current_step,
             "overall_progress": task.overall_progress,
-            "steps": [step.dict() for step in task.steps],
+            "steps": [step.model_dump() for step in task.steps],
         },
     }
 
@@ -356,7 +356,7 @@ async def broadcast_task_completed(task_id: str, task: MinutesTask):
             "status": task.status,
             "video_filename": task.video_filename,
             "overall_progress": task.overall_progress,
-            "steps": [step.dict() for step in task.steps],
+            "steps": [step.model_dump() for step in task.steps],
             "message": f"{task.video_filename}の議事録生成が完了しました",
         },
     }

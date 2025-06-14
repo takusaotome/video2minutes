@@ -206,3 +206,13 @@ def cleanup_test_dirs():
     for dir_name in test_dirs:
         if os.path.exists(dir_name):
             shutil.rmtree(dir_name, ignore_errors=True)
+
+
+@pytest.fixture(autouse=True)
+def cleanup_tasks_store():
+    """テスト後のタスクストアクリーンアップ"""
+    yield
+    
+    # タスクストアをクリア
+    from app.store import tasks_store
+    tasks_store.clear()

@@ -185,16 +185,37 @@ export function parseMarkdown(markdown, options = {}) {
 /**
  * Extract table of contents from markdown
  * @param {string} markdown - The markdown text
+ * @param {Object} options - Options for TOC generation
  * @returns {Array} - Array of heading objects
  */
-export function extractTableOfContents(markdown) {
+export function extractTableOfContents(markdown, options = {}) {
   if (!markdown) return []
+
+  const {
+    excludeTexts = ['会議情報', 'Meeting Information', '会議概要'],
+    minLevel = 1,
+    maxLevel = 3
+  } = options
 
   const headings = []
   const tokens = marked.lexer(markdown)
 
   tokens.forEach(token => {
     if (token.type === 'heading') {
+      // Skip if level is outside the desired range
+      if (token.depth < minLevel || token.depth > maxLevel) {
+        return
+      }
+      
+      // Skip if text matches excluded patterns
+      const shouldExclude = excludeTexts.some(excludeText => 
+        token.text.toLowerCase().includes(excludeText.toLowerCase())
+      )
+      
+      if (shouldExclude) {
+        return
+      }
+
       const id = token.text.toLowerCase().replace(/[^\w]+/g, '-')
       headings.push({
         level: token.depth,
