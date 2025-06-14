@@ -9,6 +9,13 @@ import MockAdapter from 'axios-mock-adapter'
  * Vue Test Utils のマウントオプション生成
  */
 export function createMountOptions(options = {}) {
+  const mockToast = {
+    add: vi.fn(),
+    remove: vi.fn(),
+    removeGroup: vi.fn(),
+    removeAllGroups: vi.fn()
+  }
+
   return {
     global: {
       plugins: [
@@ -17,6 +24,16 @@ export function createMountOptions(options = {}) {
           initialState: options.initialState || {}
         })
       ],
+      provide: {
+        PrimeVueToast: mockToast,
+        $primevue: {
+          config: {
+            ripple: false,
+            inputStyle: 'outlined'
+          }
+        },
+        ...options.provide
+      },
       mocks: {
         $router: {
           push: vi.fn(),
@@ -31,17 +48,13 @@ export function createMountOptions(options = {}) {
           query: {},
           ...options.route
         },
-        $toast: {
-          add: vi.fn(),
-          remove: vi.fn(),
-          removeGroup: vi.fn(),
-          removeAllGroups: vi.fn()
-        },
+        $toast: mockToast,
         ...options.mocks
       },
       stubs: {
         'router-link': true,
         'router-view': true,
+        Teleport: true,
         ...options.stubs
       }
     },
@@ -54,14 +67,14 @@ export function createMountOptions(options = {}) {
  */
 export function createAxiosMock() {
   const mock = new MockAdapter(axios)
-  
+
   // デフォルトのレスポンス設定
   mock.onGet('/api/v1/minutes/tasks').reply(200, [])
   mock.onPost('/api/v1/minutes/upload').reply(200, {
     task_id: 'test-task-id',
     status: 'queued'
   })
-  
+
   return mock
 }
 
@@ -84,7 +97,7 @@ export function createMockFile(options = {}) {
  */
 export function createFileUploadEvent(files) {
   const fileArray = Array.isArray(files) ? files : [files]
-  
+
   return {
     target: {
       files: fileArray
@@ -102,7 +115,7 @@ export function createFileUploadEvent(files) {
  */
 export function createWebSocketMock() {
   const eventListeners = {}
-  
+
   const mockWebSocket = {
     readyState: 1, // OPEN
     send: vi.fn(),
@@ -114,40 +127,40 @@ export function createWebSocketMock() {
       eventListeners[event].push(handler)
     }),
     removeEventListener: vi.fn(),
-    
+
     // テスト用メソッド
     triggerEvent: (event, data) => {
       if (eventListeners[event]) {
         eventListeners[event].forEach(handler => handler(data))
       }
     },
-    
-    triggerMessage: (data) => {
+
+    triggerMessage: data => {
       const event = { data: JSON.stringify(data) }
       if (eventListeners.message) {
         eventListeners.message.forEach(handler => handler(event))
       }
     },
-    
+
     triggerOpen: () => {
       if (eventListeners.open) {
         eventListeners.open.forEach(handler => handler())
       }
     },
-    
+
     triggerClose: () => {
       if (eventListeners.close) {
         eventListeners.close.forEach(handler => handler())
       }
     },
-    
-    triggerError: (error) => {
+
+    triggerError: error => {
       if (eventListeners.error) {
         eventListeners.error.forEach(handler => handler(error))
       }
     }
   }
-  
+
   return mockWebSocket
 }
 
@@ -190,7 +203,7 @@ export function sleep(ms) {
  */
 export async function waitForElement(wrapper, selector, timeout = 1000) {
   const start = Date.now()
-  
+
   while (Date.now() - start < timeout) {
     await nextTick()
     const element = wrapper.find(selector)
@@ -199,7 +212,7 @@ export async function waitForElement(wrapper, selector, timeout = 1000) {
     }
     await sleep(10)
   }
-  
+
   throw new Error(`Element ${selector} not found within ${timeout}ms`)
 }
 
@@ -226,7 +239,7 @@ export const testData = {
     error_message: null,
     ...overrides
   }),
-  
+
   // 完了したタスクデータ
   createCompletedTask: (overrides = {}) => ({
     task_id: 'completed-task-456',
@@ -246,7 +259,7 @@ export const testData = {
     error_message: null,
     ...overrides
   }),
-  
+
   // エラータスクデータ
   createErrorTask: (overrides = {}) => ({
     task_id: 'error-task-789',
@@ -272,23 +285,28 @@ export const testData = {
  * カスタムマッチャー
  */
 export const customMatchers = {
-  toBeInDocument: (received) => {
+  toBeInDocument: received => {
     const pass = received && document.body.contains(received)
     return {
       pass,
-      message: () => pass
-        ? `Expected element not to be in document`
-        : `Expected element to be in document`
+      message: () =>
+        pass
+          ? `Expected element not to be in document`
+          : `Expected element to be in document`
     }
   },
-  
+
   toHaveTextContent: (received, expected) => {
-    const pass = received && received.textContent && received.textContent.includes(expected)
+    const pass =
+      received &&
+      received.textContent &&
+      received.textContent.includes(expected)
     return {
       pass,
-      message: () => pass
-        ? `Expected element not to have text content "${expected}"`
-        : `Expected element to have text content "${expected}"`
+      message: () =>
+        pass
+          ? `Expected element not to have text content "${expected}"`
+          : `Expected element to have text content "${expected}"`
     }
   }
 }

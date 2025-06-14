@@ -1,7 +1,10 @@
 <template>
   <div class="markdown-renderer">
     <!-- Table of Contents (if enabled) -->
-    <div v-if="showToc && tableOfContents.length > 0" class="markdown-toc-wrapper">
+    <div
+      v-if="showToc && tableOfContents.length > 0"
+      class="markdown-toc-wrapper"
+    >
       <Card class="toc-card">
         <template #title>
           <div class="toc-header">
@@ -12,13 +15,13 @@
         <template #content>
           <nav class="markdown-toc">
             <ul class="toc-list">
-              <li 
-                v-for="heading in tableOfContents" 
+              <li
+                v-for="heading in tableOfContents"
                 :key="heading.id"
                 :class="`toc-item toc-level-${heading.level}`"
               >
-                <a 
-                  :href="`#${heading.id}`" 
+                <a
+                  :href="`#${heading.id}`"
                   class="toc-link"
                   @click.prevent="scrollToHeading(heading.id)"
                 >
@@ -35,7 +38,7 @@
     <div class="markdown-content-wrapper">
       <Card class="markdown-card">
         <template #content>
-          <div 
+          <div
             class="markdown-content"
             :class="{ 'with-toc': showToc && tableOfContents.length > 0 }"
             v-html="renderedContent"
@@ -49,7 +52,11 @@
 <script>
 import { ref, computed, onMounted, watch } from 'vue'
 import Card from 'primevue/card'
-import { parseMarkdown, extractTableOfContents, getMarkdownWordCount } from '@/utils/markdown'
+import {
+  parseMarkdown,
+  extractTableOfContents,
+  getMarkdownWordCount
+} from '@/utils/markdown'
 
 export default {
   name: 'MarkdownRenderer',
@@ -97,23 +104,23 @@ export default {
         // Emit word count
         const wordCount = getMarkdownWordCount(props.content)
         emit('word-count', wordCount)
-
       } catch (error) {
         console.error('Failed to process markdown content:', error)
-        renderedContent.value = '<p class="markdown-error">コンテンツの処理に失敗しました</p>'
+        renderedContent.value =
+          '<p class="markdown-error">コンテンツの処理に失敗しました</p>'
         tableOfContents.value = []
         emit('word-count', 0)
       }
     }
 
-    const scrollToHeading = (headingId) => {
+    const scrollToHeading = headingId => {
       const element = document.getElementById(headingId)
       if (element) {
-        element.scrollIntoView({ 
+        element.scrollIntoView({
           behavior: 'smooth',
           block: 'start'
         })
-        
+
         // Add highlight effect
         element.classList.add('heading-highlight')
         setTimeout(() => {
@@ -243,7 +250,7 @@ export default {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .markdown-toc-wrapper {
     flex: none;
     position: static;
@@ -255,7 +262,7 @@ export default {
   .markdown-renderer {
     gap: 0.5rem;
   }
-  
+
   .markdown-toc-wrapper {
     max-height: 200px;
   }
@@ -266,7 +273,8 @@ export default {
 <style>
 /* Markdown Content Styles */
 .markdown-content {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.7;
   color: #374151;
   max-width: none;
@@ -559,40 +567,40 @@ export default {
   .markdown-h1 {
     font-size: 1.875rem;
   }
-  
+
   .markdown-h2 {
     font-size: 1.5rem;
   }
-  
+
   .markdown-h3 {
     font-size: 1.25rem;
   }
-  
+
   .markdown-list {
     padding-left: 1.5rem;
   }
-  
+
   .markdown-blockquote {
     padding: 0.75rem 1rem;
     margin: 1rem 0;
   }
-  
+
   .code-header {
     padding: 0.5rem 0.75rem;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .code-content {
     padding: 0.75rem;
     font-size: 0.8rem;
   }
-  
+
   .markdown-table-wrapper {
     font-size: 0.8rem;
   }
-  
+
   .markdown-table th,
   .markdown-table td {
     padding: 0.5rem 0.75rem;

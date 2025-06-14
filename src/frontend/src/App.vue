@@ -1,23 +1,23 @@
 <template>
   <div id="app">
     <header class="app-header">
-      <h1 class="app-title">
+      <h1 class="app-title" @click="goToHome">
         <i class="pi pi-video"></i>
         Video2Minutes
       </h1>
       <p class="app-subtitle">動画から議事録を自動生成</p>
     </header>
-    
+
     <main class="app-main">
       <RouterView />
     </main>
-    
+
     <Toast />
   </div>
 </template>
 
 <script>
-import { RouterView } from 'vue-router'
+import { RouterView, useRouter } from 'vue-router'
 import Toast from 'primevue/toast'
 
 export default {
@@ -25,6 +25,19 @@ export default {
   components: {
     RouterView,
     Toast
+  },
+  setup() {
+    const router = useRouter()
+
+    const goToHome = () => {
+      if (router.currentRoute.value.name !== 'dashboard') {
+        router.push({ name: 'dashboard' })
+      }
+    }
+
+    return {
+      goToHome
+    }
   }
 }
 </script>
@@ -38,7 +51,11 @@ export default {
 }
 
 .app-header {
-  background: linear-gradient(135deg, var(--primary-700) 0%, var(--secondary-700) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-700) 0%,
+    var(--secondary-700) 100%
+  );
   color: white;
   padding: var(--space-12) 0;
   text-align: center;
@@ -65,7 +82,8 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="white" opacity="0.1"><polygon points="0,100 1000,0 1000,100"/></svg>') no-repeat center bottom;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="white" opacity="0.1"><polygon points="0,100 1000,0 1000,100"/></svg>')
+    no-repeat center bottom;
   background-size: cover;
 }
 
@@ -81,6 +99,15 @@ export default {
   z-index: 1;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.app-title:hover {
+  transform: scale(1.05);
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  filter: brightness(1.1);
 }
 
 .app-title i {
@@ -119,21 +146,21 @@ export default {
   .app-header {
     padding: var(--space-10) var(--space-4);
   }
-  
+
   .app-title {
     font-size: 2.25rem;
     flex-direction: column;
     gap: var(--space-3);
   }
-  
+
   .app-title i {
     font-size: 2.75rem;
   }
-  
+
   .app-subtitle {
     font-size: 1.1rem;
   }
-  
+
   .app-main {
     padding: var(--space-6) var(--space-4);
   }
@@ -143,32 +170,23 @@ export default {
   .app-header {
     padding: var(--space-8) var(--space-3);
   }
-  
+
   .app-title {
     font-size: 1.875rem;
   }
-  
+
   .app-title i {
     font-size: 2.25rem;
   }
-  
+
   .app-subtitle {
     font-size: 1rem;
   }
-  
+
   .app-main {
     padding: var(--space-4) var(--space-3);
   }
 }
 
-/* Toast positioning */
-:deep(.p-toast) {
-  z-index: 9999;
-}
-
-:deep(.p-toast .p-toast-message) {
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xl);
-  backdrop-filter: blur(10px);
-}
+/* Toast positioning - handled in global.css */
 </style>

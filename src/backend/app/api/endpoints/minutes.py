@@ -1,20 +1,34 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse
-from typing import List, Dict
-from datetime import datetime
 import asyncio
 import json
+from datetime import datetime
+from typing import Dict, List
+
+from fastapi import (
+    APIRouter,
+    File,
+    HTTPException,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from fastapi.responses import JSONResponse
 
 from app.models import (
-    MinutesTask, UploadResponse, TaskListResponse, TaskStatusResponse, 
-    TaskResultResponse, ErrorResponse, TaskStatus, ProcessingStepName, ProcessingStepStatus
+    ErrorResponse,
+    MinutesTask,
+    ProcessingStepName,
+    ProcessingStepStatus,
+    TaskListResponse,
+    TaskResultResponse,
+    TaskStatus,
+    TaskStatusResponse,
+    UploadResponse,
 )
+from app.services.minutes_generator import MinutesGeneratorService
+from app.services.transcription import TranscriptionService
+from app.services.video_processor import VideoProcessor
 from app.utils.file_handler import FileHandler
 from app.utils.logger import get_logger
-from app.services.video_processor import VideoProcessor
-from app.services.transcription import TranscriptionService
-from app.services.minutes_generator import MinutesGeneratorService
-
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -27,60 +41,64 @@ websocket_connections: Dict[str, List[WebSocket]] = {}
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_video(
-    file: UploadFile = File(...)
-):
+async def upload_video(file: UploadFile = File(...)):
     """動画ファイルをアップロードして処理を開始"""
-    
-    logger.info(f"ファイルアップロード開始: {file.filename} (サイズ: {file.size} bytes)")
-    
+
+    logger.info(
+        f"ファイルアップロード開始: {file.filename} (サイズ: {file.size} bytes)"
+    )
+
     try:
         # ファイルバリデーション
         FileHandler.validate_video_file(file)
         logger.info(f"ファイルバリデーション成功: {file.filename}")
-        
+
         # タスクIDを生成
         task_id = FileHandler.generate_task_id()
         logger.info(f"タスクID生成: {task_id}")
-        
+
         # ファイルを保存
         file_path, file_size = await FileHandler.save_uploaded_file(file, task_id)
         logger.info(f"ファイル保存完了: {file_path} ({file_size} bytes)")
-        
+
         # タスクを作成
         task = MinutesTask(
             task_id=task_id,
             video_filename=file.filename,
             video_size=file_size,
-            upload_timestamp=datetime.now()
+            upload_timestamp=datetime.now(),
         )
-        
+
         # アップロード完了をマーク
-        task.update_step_status(ProcessingStepName.UPLOAD, ProcessingStepStatus.COMPLETED, 100)
-        
+        task.update_step_status(
+            ProcessingStepName.UPLOAD, ProcessingStepStatus.COMPLETED, 100
+        )
+
         # タスクストアに保存
         tasks_store[task_id] = task
-        
+
         logger.info(f"タスク作成完了: {task_id} - {file.filename}")
-        
+
         # タスクキューに追加
         from app.services.task_queue import get_task_queue
+
         queue = get_task_queue()
         queue_id = await queue.add_task(task_id, process_video_task, task_id)
-        
+
         logger.info(f"タスクをキューに追加: {task_id} (キューID: {queue_id})")
-        
-        return UploadResponse(
-            task_id=task_id,
-            status=TaskStatus.QUEUED
-        )
-        
+
+        return UploadResponse(task_id=task_id, status=TaskStatus.QUEUED)
+
     except HTTPException as e:
         logger.warning(f"ファイルアップロードHTTPエラー: {file.filename} - {e.detail}")
         raise
     except Exception as e:
-        logger.error(f"ファイルアップロードエラー: {file.filename} - {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"アップロード中にエラーが発生しました: {str(e)}")
+        logger.error(
+            f"ファイルアップロードエラー: {file.filename} - {str(e)}", exc_info=True
+        )
+        raise HTTPException(
+            status_code=500, detail=f"アップロード中にエラーが発生しました: {str(e)}"
+        )
 
 
 @router.get("/tasks", response_model=TaskListResponse)
@@ -97,6 +115,7 @@ async def get_all_tasks():
 async def get_queue_status():
     """タスクキューの状態を取得"""
     from app.services.task_queue import get_task_queue
+
     queue = get_task_queue()
     return queue.get_queue_status()
 
@@ -105,11 +124,11 @@ async def get_queue_status():
 async def get_task_status(task_id: str):
     """特定タスクのステータスを取得"""
     logger.debug(f"タスクステータス取得: {task_id}")
-    
+
     if task_id not in tasks_store:
         logger.warning(f"タスクが見つかりません: {task_id}")
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
-    
+
     task = tasks_store[task_id]
     return TaskStatusResponse(
         task_id=task.task_id,
@@ -119,7 +138,7 @@ async def get_task_status(task_id: str):
         steps=task.steps,
         video_filename=task.video_filename,
         upload_timestamp=task.upload_timestamp,
-        error_message=task.error_message
+        error_message=task.error_message,
     )
 
 
@@ -128,21 +147,21 @@ async def get_task_result(task_id: str):
     """完了したタスクの結果を取得"""
     if task_id not in tasks_store:
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
-    
+
     task = tasks_store[task_id]
-    
+
     if task.status != TaskStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="タスクがまだ完了していません")
-    
+
     if not task.transcription or not task.minutes:
         raise HTTPException(status_code=500, detail="処理結果が見つかりません")
-    
+
     return TaskResultResponse(
         task_id=task.task_id,
         video_filename=task.video_filename,
         transcription=task.transcription,
         minutes=task.minutes,
-        upload_timestamp=task.upload_timestamp
+        upload_timestamp=task.upload_timestamp,
     )
 
 
@@ -150,12 +169,12 @@ async def get_task_result(task_id: str):
 async def websocket_endpoint(websocket: WebSocket, task_id: str):
     """WebSocket接続でリアルタイム進捗を配信"""
     await websocket.accept()
-    
+
     # 接続を管理リストに追加
     if task_id not in websocket_connections:
         websocket_connections[task_id] = []
     websocket_connections[task_id].append(websocket)
-    
+
     try:
         while True:
             # 接続を維持（クライアントからのメッセージを受信）
@@ -172,63 +191,79 @@ async def process_video_task(task_id: str):
     """動画処理のメインタスク"""
     if task_id not in tasks_store:
         return
-    
+
     task = tasks_store[task_id]
-    
+
     try:
         # ステータスを処理中に変更
         task.status = TaskStatus.PROCESSING
         await broadcast_progress_update(task_id, task)
-        
+
         # 1. 音声抽出
-        task.update_step_status(ProcessingStepName.AUDIO_EXTRACTION, ProcessingStepStatus.PROCESSING)
+        task.update_step_status(
+            ProcessingStepName.AUDIO_EXTRACTION, ProcessingStepStatus.PROCESSING
+        )
         await broadcast_progress_update(task_id, task)
-        
+
         video_processor = VideoProcessor()
         audio_path = await video_processor.extract_audio(task_id)
-        
-        task.update_step_status(ProcessingStepName.AUDIO_EXTRACTION, ProcessingStepStatus.COMPLETED, 100)
+
+        task.update_step_status(
+            ProcessingStepName.AUDIO_EXTRACTION, ProcessingStepStatus.COMPLETED, 100
+        )
         await broadcast_progress_update(task_id, task)
-        
+
         # 2. 文字起こし
-        task.update_step_status(ProcessingStepName.TRANSCRIPTION, ProcessingStepStatus.PROCESSING)
+        task.update_step_status(
+            ProcessingStepName.TRANSCRIPTION, ProcessingStepStatus.PROCESSING
+        )
         await broadcast_progress_update(task_id, task)
-        
+
         transcription_service = TranscriptionService()
         transcription = await transcription_service.transcribe_audio(audio_path)
         task.transcription = transcription
-        
-        task.update_step_status(ProcessingStepName.TRANSCRIPTION, ProcessingStepStatus.COMPLETED, 100)
+
+        task.update_step_status(
+            ProcessingStepName.TRANSCRIPTION, ProcessingStepStatus.COMPLETED, 100
+        )
         await broadcast_progress_update(task_id, task)
-        
+
         # 3. 議事録生成
-        task.update_step_status(ProcessingStepName.MINUTES_GENERATION, ProcessingStepStatus.PROCESSING)
+        task.update_step_status(
+            ProcessingStepName.MINUTES_GENERATION, ProcessingStepStatus.PROCESSING
+        )
         await broadcast_progress_update(task_id, task)
-        
+
         minutes_service = MinutesGeneratorService()
         minutes = await minutes_service.generate_minutes(transcription)
         task.minutes = minutes
-        
-        task.update_step_status(ProcessingStepName.MINUTES_GENERATION, ProcessingStepStatus.COMPLETED, 100)
-        
+
+        task.update_step_status(
+            ProcessingStepName.MINUTES_GENERATION, ProcessingStepStatus.COMPLETED, 100
+        )
+
         # 最終的な進捗更新を送信
         await broadcast_progress_update(task_id, task)
-        
+
         # 完了通知
         await broadcast_task_completed(task_id, task)
-        
+
     except Exception as e:
         # エラー処理
         error_message = f"処理中にエラーが発生しました: {str(e)}"
         task.status = TaskStatus.FAILED
         task.error_message = error_message
-        
+
         # 現在のステップをエラーに設定
         if task.current_step:
-            task.update_step_status(task.current_step, ProcessingStepStatus.FAILED, error_message=error_message)
-        
+            task.update_step_status(
+                task.current_step,
+                ProcessingStepStatus.FAILED,
+                error_message=error_message,
+            )
+
         await broadcast_task_failed(task_id, task, error_message)
-    
+
     finally:
         # ファイルクリーンアップ
         FileHandler.cleanup_files(task_id)
@@ -238,7 +273,7 @@ async def broadcast_progress_update(task_id: str, task: MinutesTask):
     """進捗更新をWebSocketクライアントに配信"""
     if task_id not in websocket_connections:
         return
-    
+
     message = {
         "type": "progress_update",
         "task_id": task_id,
@@ -246,10 +281,10 @@ async def broadcast_progress_update(task_id: str, task: MinutesTask):
             "status": task.status,
             "current_step": task.current_step,
             "overall_progress": task.overall_progress,
-            "steps": [step.dict() for step in task.steps]
-        }
+            "steps": [step.dict() for step in task.steps],
+        },
     }
-    
+
     # 接続中の全クライアントに配信
     disconnected = []
     for websocket in websocket_connections[task_id]:
@@ -257,7 +292,7 @@ async def broadcast_progress_update(task_id: str, task: MinutesTask):
             await websocket.send_text(json.dumps(message))
         except:
             disconnected.append(websocket)
-    
+
     # 切断されたWebSocketを削除
     for ws in disconnected:
         websocket_connections[task_id].remove(ws)
@@ -268,9 +303,9 @@ async def broadcast_task_completed(task_id: str, task: MinutesTask):
     if task_id not in websocket_connections:
         logger.warning(f"WebSocket接続が見つかりません: {task_id}")
         return
-    
+
     logger.info(f"タスク完了をWebSocketで配信: {task_id}")
-    
+
     message = {
         "type": "task_completed",
         "task_id": task_id,
@@ -279,10 +314,10 @@ async def broadcast_task_completed(task_id: str, task: MinutesTask):
             "video_filename": task.video_filename,
             "overall_progress": task.overall_progress,
             "steps": [step.dict() for step in task.steps],
-            "message": f"{task.video_filename}の議事録生成が完了しました"
-        }
+            "message": f"{task.video_filename}の議事録生成が完了しました",
+        },
     }
-    
+
     disconnected = []
     for websocket in websocket_connections[task_id]:
         try:
@@ -291,29 +326,31 @@ async def broadcast_task_completed(task_id: str, task: MinutesTask):
         except Exception as e:
             logger.error(f"WebSocketメッセージ送信失敗: {task_id} - {str(e)}")
             disconnected.append(websocket)
-    
+
     # 切断されたWebSocketを削除
     for ws in disconnected:
         websocket_connections[task_id].remove(ws)
-    
-    logger.info(f"WebSocket配信完了: {task_id} (接続数: {len(websocket_connections[task_id])})")
+
+    logger.info(
+        f"WebSocket配信完了: {task_id} (接続数: {len(websocket_connections[task_id])})"
+    )
 
 
 async def broadcast_task_failed(task_id: str, task: MinutesTask, error_message: str):
     """タスク失敗をWebSocketクライアントに配信"""
     if task_id not in websocket_connections:
         return
-    
+
     message = {
         "type": "task_failed",
         "task_id": task_id,
         "data": {
             "video_filename": task.video_filename,
             "error_message": error_message,
-            "message": f"{task.video_filename}の処理中にエラーが発生しました"
-        }
+            "message": f"{task.video_filename}の処理中にエラーが発生しました",
+        },
     }
-    
+
     disconnected = []
     for websocket in websocket_connections[task_id]:
         try:
@@ -322,9 +359,11 @@ async def broadcast_task_failed(task_id: str, task: MinutesTask, error_message: 
         except Exception as e:
             logger.error(f"WebSocketメッセージ送信失敗: {task_id} - {str(e)}")
             disconnected.append(websocket)
-    
+
     # 切断されたWebSocketを削除
     for ws in disconnected:
         websocket_connections[task_id].remove(ws)
-    
-    logger.info(f"WebSocket配信完了: {task_id} (接続数: {len(websocket_connections[task_id])})")
+
+    logger.info(
+        f"WebSocket配信完了: {task_id} (接続数: {len(websocket_connections[task_id])})"
+    )

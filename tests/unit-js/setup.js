@@ -1,39 +1,81 @@
 // Vitest セットアップファイル
 import { vi } from 'vitest'
 import { config } from '@vue/test-utils'
+import { createPinia } from 'pinia'
+import { createApp } from 'vue'
+import PrimeVue from 'primevue/config'
+import ToastService, { PrimeVueToastSymbol } from 'primevue/toastservice'
+import Tooltip from 'primevue/tooltip'
+import Card from 'primevue/card'
+import Button from 'primevue/button'
+import FileUpload from 'primevue/fileupload'
+import ProgressBar from 'primevue/progressbar'
+import Badge from 'primevue/badge'
+
+// PrimeVue Toast サービスのモック
+const mockToast = {
+  add: vi.fn(),
+  removeGroup: vi.fn(),
+  removeAllGroups: vi.fn(),
+  clear: vi.fn()
+}
+
+// PrimeVue useToast のモック
+vi.mock('primevue/usetoast', async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    useToast: () => mockToast
+  }
+})
+
+// Pinia ストアの設定
+const pinia = createPinia()
 
 // グローバルプロパティのモック
 config.global.mocks = {
-  $t: (key) => key, // i18n モック
+  $t: key => key, // i18n モック
+  $toast: mockToast
 }
 
-// PrimeVue コンポーネントのスタブ
+// グローバルプラグイン設定
+config.global.plugins = [pinia]
+
+// PrimeVue プロバイド設定
+config.global.provide = {
+  [PrimeVueToastSymbol]: mockToast,
+  PrimeVueToast: mockToast,
+  $primevue: {
+    config: {
+      ripple: false,
+      inputStyle: 'outlined',
+      locale: {
+        accept: 'はい',
+        reject: 'いいえ'
+      }
+    }
+  }
+}
+
+// PrimeVue コンポーネントの実際のコンポーネント設定
+config.global.components = {
+  Card,
+  Button,
+  FileUpload,
+  ProgressBar,
+  Badge
+}
+
+// PrimeVue コンポーネントのスタブ（必要に応じて）
 config.global.stubs = {
   'router-link': true,
   'router-view': true,
-  // PrimeVue コンポーネント
-  'p-button': true,
-  'p-card': true,
-  'p-toast': true,
-  'p-dialog': true,
-  'p-progress-bar': true,
-  'p-data-table': true,
-  'p-column': true,
-  'p-file-upload': true,
-  'p-badge': true,
-  'p-timeline': true,
-  'p-menu': true,
-  'p-menu-bar': true,
-  'p-sidebar': true,
-  'p-panel': true,
-  'p-dropdown': true,
-  'p-input-text': true,
-  'p-textarea': true,
-  'p-checkbox': true,
-  'p-radio-button': true,
-  'p-calendar': true,
-  'p-chips': true,
-  'p-tooltip': true
+  Teleport: true
+}
+
+// PrimeVue ディレクティブ
+config.global.directives = {
+  tooltip: Tooltip
 }
 
 // Web APIs のモック
@@ -47,22 +89,22 @@ Object.defineProperty(window, 'matchMedia', {
     removeListener: vi.fn(), // deprecated
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+    dispatchEvent: vi.fn()
+  }))
 })
 
 // ResizeObserver のモック
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
-  disconnect: vi.fn(),
+  disconnect: vi.fn()
 }))
 
 // IntersectionObserver のモック
 global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
-  disconnect: vi.fn(),
+  disconnect: vi.fn()
 }))
 
 // File API のモック

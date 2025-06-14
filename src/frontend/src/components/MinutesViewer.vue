@@ -36,7 +36,7 @@
             <span class="date">{{ formatDate(minutes.created_at) }}</span>
           </div>
         </div>
-        
+
         <div class="header-actions">
           <Button
             label="コピー"
@@ -67,8 +67,8 @@
         />
 
         <!-- Transcript Sidebar -->
-        <div 
-          v-show="!isMobile || showTranscript" 
+        <div
+          v-show="!isMobile || showTranscript"
           class="transcript-sidebar"
           :class="{ 'mobile-overlay': isMobile && showTranscript }"
         >
@@ -85,7 +85,7 @@
                 />
               </div>
             </template>
-            
+
             <template #content>
               <ScrollPanel class="transcript-scroll">
                 <div class="transcript-content">
@@ -108,9 +108,9 @@
                 </div>
               </div>
             </template>
-            
+
             <template #content>
-              <MarkdownRenderer 
+              <MarkdownRenderer
                 :content="minutes.minutes"
                 :show-toc="true"
                 @word-count="updateWordCount"
@@ -160,7 +160,7 @@ export default {
   emits: ['back'],
   setup(props, { emit }) {
     const toast = useToast()
-    
+
     const minutes = ref(null)
     const loading = ref(false)
     const error = ref(null)
@@ -191,7 +191,7 @@ export default {
     const loadMinutes = async () => {
       loading.value = true
       error.value = null
-      
+
       try {
         // Use the API service
         const response = await minutesApi.getTaskResult(props.taskId)
@@ -204,7 +204,7 @@ export default {
       }
     }
 
-    const formatDate = (timestamp) => {
+    const formatDate = timestamp => {
       if (!timestamp) return ''
       const date = new Date(timestamp)
       return date.toLocaleString('ja-JP', {
@@ -216,10 +216,9 @@ export default {
       })
     }
 
-
     const copyToClipboard = async () => {
       if (!minutes.value) return
-      
+
       try {
         await navigator.clipboard.writeText(minutes.value.minutes)
         toast.add({
@@ -240,13 +239,13 @@ export default {
 
     const downloadMarkdown = () => {
       if (!minutes.value) return
-      
+
       const content = `# 議事録\n\n**ファイル名:** ${minutes.value.video_filename}\n**作成日時:** ${formatDate(minutes.value.created_at)}\n\n---\n\n${minutes.value.minutes}`
       const blob = new Blob([content], { type: 'text/markdown' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `議事録_${minutes.value.video_filename.replace(/\.[^/.]+$/, "")}.md`
+      a.download = `議事録_${minutes.value.video_filename.replace(/\.[^/.]+$/, '')}.md`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -255,13 +254,13 @@ export default {
 
     const downloadText = () => {
       if (!minutes.value) return
-      
+
       const content = `議事録\n\nファイル名: ${minutes.value.video_filename}\n作成日時: ${formatDate(minutes.value.created_at)}\n\n${'-'.repeat(50)}\n\n${minutes.value.minutes}`
       const blob = new Blob([content], { type: 'text/plain' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `議事録_${minutes.value.video_filename.replace(/\.[^/.]+$/, "")}.txt`
+      a.download = `議事録_${minutes.value.video_filename.replace(/\.[^/.]+$/, '')}.txt`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -281,7 +280,7 @@ export default {
       showTranscript.value = !showTranscript.value
     }
 
-    const updateWordCount = (count) => {
+    const updateWordCount = count => {
       wordCount.value = count
     }
 
@@ -330,7 +329,8 @@ export default {
   animation: fadeIn 0.6s ease-out;
 }
 
-.loading-state, .error-state {
+.loading-state,
+.error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -381,7 +381,11 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.05) 0%, transparent 60%);
+  background: radial-gradient(
+    circle at 20% 30%,
+    rgba(99, 102, 241, 0.05) 0%,
+    transparent 60%
+  );
   pointer-events: none;
 }
 
@@ -612,7 +616,7 @@ export default {
     grid-template-columns: 300px 1fr;
     gap: 1.5rem;
   }
-  
+
   .transcript-scroll {
     height: 350px;
   }
@@ -624,20 +628,20 @@ export default {
     align-items: stretch;
     gap: 1rem;
   }
-  
+
   .header-actions {
     justify-content: center;
   }
-  
+
   .content-layout {
     display: block;
   }
-  
+
   .transcript-sidebar {
     position: static;
     max-height: none;
   }
-  
+
   .minutes-title {
     font-size: 1.5rem;
   }
@@ -647,11 +651,11 @@ export default {
   .header-actions {
     flex-direction: column;
   }
-  
+
   .download-button {
     min-width: auto;
   }
-  
+
   :deep(.minutes-text) {
     font-size: 0.95rem;
   }

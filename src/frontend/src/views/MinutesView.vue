@@ -8,7 +8,7 @@
         class="p-button-text back-button"
         @click="goBack"
       />
-      
+
       <div class="breadcrumb">
         <span class="breadcrumb-item">ダッシュボード</span>
         <i class="pi pi-angle-right breadcrumb-separator"></i>
@@ -27,14 +27,18 @@
                 <div class="file-details">
                   <h3 class="file-name">{{ task.video_filename }}</h3>
                   <div class="file-meta">
-                    <span class="file-size">{{ formatFileSize(task.video_size) }}</span>
+                    <span class="file-size">{{
+                      formatFileSize(task.video_size)
+                    }}</span>
                     <span class="separator">•</span>
-                    <span class="process-date">{{ formatDate(task.upload_timestamp) }}</span>
+                    <span class="process-date">{{
+                      formatDate(task.upload_timestamp)
+                    }}</span>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             <div class="task-status">
               <Badge
                 :value="getStatusLabel(task.status)"
@@ -84,33 +88,42 @@
     </div>
 
     <!-- Task Not Completed -->
-    <div v-else-if="task && task.status !== 'completed'" class="not-ready-state">
+    <div
+      v-else-if="task && task.status !== 'completed'"
+      class="not-ready-state"
+    >
       <Card>
         <template #content>
           <div class="not-ready-content">
             <div class="not-ready-icon">
-              <i v-if="task.status === 'processing'" class="pi pi-cog spinning"></i>
-              <i v-else-if="task.status === 'failed'" class="pi pi-exclamation-triangle"></i>
+              <i
+                v-if="task.status === 'processing'"
+                class="pi pi-cog spinning"
+              ></i>
+              <i
+                v-else-if="task.status === 'failed'"
+                class="pi pi-exclamation-triangle"
+              ></i>
               <i v-else class="pi pi-clock"></i>
             </div>
-            
+
             <div class="not-ready-message">
               <h3 v-if="task.status === 'processing'">議事録を生成中です</h3>
-              <h3 v-else-if="task.status === 'failed'">処理でエラーが発生しました</h3>
+              <h3 v-else-if="task.status === 'failed'">
+                処理でエラーが発生しました
+              </h3>
               <h3 v-else>議事録の生成を待機中です</h3>
-              
+
               <p v-if="task.status === 'processing'">
-                現在{{ getStepLabel(task.current_step) }}を実行中です。<br>
+                現在{{ getStepLabel(task.current_step) }}を実行中です。<br />
                 処理完了まで今しばらくお待ちください。
               </p>
               <p v-else-if="task.status === 'failed'">
                 {{ task.error_message || '処理中にエラーが発生しました。' }}
               </p>
-              <p v-else>
-                処理の開始を待機しています。
-              </p>
+              <p v-else>処理の開始を待機しています。</p>
             </div>
-            
+
             <div class="not-ready-actions">
               <Button
                 v-if="task.status === 'processing'"
@@ -200,33 +213,32 @@ export default {
     const loadTask = async () => {
       loadingTask.value = true
       taskError.value = null
-      
+
       try {
         // First check if task exists in store
         let taskData = tasksStore.getTaskById(props.taskId)
-        
+
         if (!taskData) {
           // If not in store, fetch from API
           await tasksStore.fetchTasks()
           taskData = tasksStore.getTaskById(props.taskId)
         }
-        
+
         if (!taskData) {
           // If still not found, fetch specific task status
           taskData = await tasksStore.fetchTaskStatus(props.taskId)
         }
-        
+
         if (!taskData) {
           throw new Error('指定されたタスクが見つかりません')
         }
-        
+
         task.value = taskData
-        
+
         // If task is processing, start real-time updates
         if (taskData.status === 'processing') {
           tasksStore.connectToTask(props.taskId)
         }
-        
       } catch (error) {
         taskError.value = error.message
         console.error('Failed to load task:', error)
@@ -245,21 +257,20 @@ export default {
 
     const retryTask = async () => {
       if (!task.value) return
-      
+
       retrying.value = true
       try {
         await tasksStore.retryTask(props.taskId)
-        
+
         toast.add({
           severity: 'success',
           summary: '再実行開始',
           detail: '処理を再開始しました',
           life: 3000
         })
-        
+
         // Reload task data
         await loadTask()
-        
       } catch (error) {
         toast.add({
           severity: 'error',
@@ -274,20 +285,19 @@ export default {
 
     const deleteTask = async () => {
       if (!task.value) return
-      
+
       try {
         await tasksStore.deleteTask(props.taskId)
-        
+
         toast.add({
           severity: 'success',
           summary: '削除完了',
           detail: 'タスクを削除しました',
           life: 3000
         })
-        
+
         // Navigate back to dashboard
         goBack()
-        
       } catch (error) {
         toast.add({
           severity: 'error',
@@ -298,37 +308,37 @@ export default {
       }
     }
 
-    const getStatusLabel = (status) => {
+    const getStatusLabel = status => {
       const labels = {
-        'pending': '待機中',
-        'processing': '処理中',
-        'completed': '完了',
-        'failed': 'エラー'
+        pending: '待機中',
+        processing: '処理中',
+        completed: '完了',
+        failed: 'エラー'
       }
       return labels[status] || status
     }
 
-    const getStatusSeverity = (status) => {
+    const getStatusSeverity = status => {
       const severities = {
-        'pending': 'info',
-        'processing': 'warning',
-        'completed': 'success',
-        'failed': 'danger'
+        pending: 'info',
+        processing: 'warning',
+        completed: 'success',
+        failed: 'danger'
       }
       return severities[status] || 'info'
     }
 
-    const getStepLabel = (step) => {
+    const getStepLabel = step => {
       const labels = {
-        'upload': 'アップロード',
-        'audio_extraction': '音声抽出',
-        'transcription': '文字起こし',
-        'minutes_generation': '議事録生成'
+        upload: 'アップロード',
+        audio_extraction: '音声抽出',
+        transcription: '文字起こし',
+        minutes_generation: '議事録生成'
       }
       return labels[step] || step
     }
 
-    const formatFileSize = (bytes) => {
+    const formatFileSize = bytes => {
       if (!bytes) return '0 Bytes'
       const k = 1024
       const sizes = ['Bytes', 'KB', 'MB', 'GB']
@@ -336,7 +346,7 @@ export default {
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
     }
 
-    const formatDate = (timestamp) => {
+    const formatDate = timestamp => {
       if (!timestamp) return ''
       const date = new Date(timestamp)
       return date.toLocaleString('ja-JP', {
@@ -351,7 +361,7 @@ export default {
     // Watch for task updates in the store
     watch(
       () => tasksStore.getTaskById(props.taskId),
-      (newTask) => {
+      newTask => {
         if (newTask) {
           task.value = newTask
         }
@@ -529,7 +539,8 @@ export default {
   font-weight: 500;
 }
 
-.loading-state, .error-state {
+.loading-state,
+.error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -589,8 +600,12 @@ export default {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .not-ready-message h3 {
@@ -622,39 +637,39 @@ export default {
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .task-info {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
   .task-status {
     align-items: flex-start;
     width: 100%;
   }
-  
+
   .file-name {
     font-size: 1.1rem;
   }
-  
+
   .file-meta {
     flex-wrap: wrap;
   }
-  
+
   .not-ready-content {
     padding: 2rem 1rem;
   }
-  
+
   .not-ready-message h3 {
     font-size: 1.25rem;
   }
-  
+
   .not-ready-actions {
     flex-direction: column;
     width: 100%;
   }
-  
+
   .error-actions {
     flex-direction: column;
     width: 100%;
@@ -665,17 +680,17 @@ export default {
   .minutes-view {
     gap: 1rem;
   }
-  
+
   .task-file {
     flex-direction: column;
     text-align: center;
     gap: 0.75rem;
   }
-  
+
   .file-icon {
     font-size: 2rem;
   }
-  
+
   .not-ready-icon {
     font-size: 3rem;
   }

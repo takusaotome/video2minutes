@@ -1,0 +1,1 @@
+./static-analysis.sh: line 92: python: command not found

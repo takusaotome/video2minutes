@@ -6,7 +6,7 @@ import hljs from 'highlight.js'
 const renderer = new marked.Renderer()
 
 // Custom heading renderer with anchors
-renderer.heading = function(text, level) {
+renderer.heading = function (text, level) {
   const id = text.toLowerCase().replace(/[^\w]+/g, '-')
   return `<h${level} id="${id}" class="markdown-heading markdown-h${level}">
     <span class="heading-content">${text}</span>
@@ -14,26 +14,26 @@ renderer.heading = function(text, level) {
 }
 
 // Custom list renderer
-renderer.list = function(body, ordered, start) {
+renderer.list = function (body, ordered, start) {
   const type = ordered ? 'ol' : 'ul'
-  const startatt = (ordered && start !== 1) ? ` start="${start}"` : ''
+  const startatt = ordered && start !== 1 ? ` start="${start}"` : ''
   return `<${type}${startatt} class="markdown-list markdown-${type}">
     ${body}
   </${type}>`
 }
 
 // Custom list item renderer
-renderer.listitem = function(text) {
+renderer.listitem = function (text) {
   return `<li class="markdown-list-item">${text}</li>`
 }
 
 // Custom paragraph renderer
-renderer.paragraph = function(text) {
+renderer.paragraph = function (text) {
   return `<p class="markdown-paragraph">${text}</p>`
 }
 
 // Custom blockquote renderer
-renderer.blockquote = function(quote) {
+renderer.blockquote = function (quote) {
   return `<blockquote class="markdown-blockquote">
     <div class="blockquote-indicator"></div>
     <div class="blockquote-content">${quote}</div>
@@ -41,7 +41,7 @@ renderer.blockquote = function(quote) {
 }
 
 // Custom table renderer
-renderer.table = function(header, body) {
+renderer.table = function (header, body) {
   return `<div class="markdown-table-wrapper">
     <table class="markdown-table">
       <thead class="markdown-table-header">${header}</thead>
@@ -51,10 +51,10 @@ renderer.table = function(header, body) {
 }
 
 // Custom code block renderer with syntax highlighting
-renderer.code = function(code, language) {
+renderer.code = function (code, language) {
   const validLanguage = hljs.getLanguage(language) ? language : 'plaintext'
   const highlighted = hljs.highlight(code, { language: validLanguage }).value
-  
+
   return `<div class="markdown-code-block">
     <div class="code-header">
       <span class="code-language">${validLanguage}</span>
@@ -68,22 +68,22 @@ renderer.code = function(code, language) {
 }
 
 // Custom inline code renderer
-renderer.codespan = function(code) {
+renderer.codespan = function (code) {
   return `<code class="markdown-inline-code">${code}</code>`
 }
 
 // Custom strong renderer
-renderer.strong = function(text) {
+renderer.strong = function (text) {
   return `<strong class="markdown-strong">${text}</strong>`
 }
 
 // Custom emphasis renderer
-renderer.em = function(text) {
+renderer.em = function (text) {
   return `<em class="markdown-emphasis">${text}</em>`
 }
 
 // Custom link renderer
-renderer.link = function(href, title, text) {
+renderer.link = function (href, title, text) {
   const titleAttr = title ? ` title="${title}"` : ''
   return `<a href="${href}"${titleAttr} class="markdown-link" target="_blank" rel="noopener noreferrer">
     ${text}
@@ -92,14 +92,14 @@ renderer.link = function(href, title, text) {
 }
 
 // Custom horizontal rule renderer
-renderer.hr = function() {
+renderer.hr = function () {
   return '<div class="markdown-divider"><hr></div>'
 }
 
 // Configure marked options
 marked.setOptions({
   renderer: renderer,
-  highlight: function(code, lang) {
+  highlight: function (code, lang) {
     const language = hljs.getLanguage(lang) ? lang : 'plaintext'
     return hljs.highlight(code, { language }).value
   },
@@ -126,28 +126,53 @@ export function parseMarkdown(markdown, options = {}) {
   try {
     // Parse markdown to HTML
     let html = marked.parse(markdown)
-    
+
     // Sanitize HTML to prevent XSS attacks
     html = DOMPurify.sanitize(html, {
       ALLOWED_TAGS: [
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'p', 'br', 'strong', 'em', 'u', 's',
-        'ul', 'ol', 'li',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'p',
+        'br',
+        'strong',
+        'em',
+        'u',
+        's',
+        'ul',
+        'ol',
+        'li',
         'blockquote',
-        'table', 'thead', 'tbody', 'tr', 'td', 'th',
-        'pre', 'code',
+        'table',
+        'thead',
+        'tbody',
+        'tr',
+        'td',
+        'th',
+        'pre',
+        'code',
         'a',
         'hr',
-        'div', 'span',
-        'i', 'button'
+        'div',
+        'span',
+        'i',
+        'button'
       ],
       ALLOWED_ATTR: [
-        'href', 'title', 'target', 'rel',
-        'class', 'id',
+        'href',
+        'title',
+        'target',
+        'rel',
+        'class',
+        'id',
         'start',
         'onclick'
       ],
-      ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
+      ALLOWED_URI_REGEXP:
+        /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
     })
 
     return html
@@ -189,7 +214,7 @@ export function extractTableOfContents(markdown) {
  */
 export function getMarkdownWordCount(markdown) {
   if (!markdown) return 0
-  
+
   // Remove markdown syntax and count characters for Japanese
   const plainText = markdown
     .replace(/```[\s\S]*?```/g, '') // Remove code blocks
@@ -198,7 +223,7 @@ export function getMarkdownWordCount(markdown) {
     .replace(/[#*_~`>-]/g, '') // Remove markdown symbols
     .replace(/\s+/g, ' ') // Normalize whitespace
     .trim()
-  
+
   return plainText.length
 }
 
@@ -206,23 +231,26 @@ export function getMarkdownWordCount(markdown) {
  * Copy code block content to clipboard
  * @param {HTMLElement} button - The copy button element
  */
-window.copyCodeToClipboard = function(button) {
+window.copyCodeToClipboard = function (button) {
   try {
     const codeBlock = button.closest('.markdown-code-block')
     const codeContent = codeBlock.querySelector('code').textContent
-    
-    navigator.clipboard.writeText(codeContent).then(() => {
-      const originalText = button.innerHTML
-      button.innerHTML = '<i class="pi pi-check"></i> コピー済み'
-      button.classList.add('copied')
-      
-      setTimeout(() => {
-        button.innerHTML = originalText
-        button.classList.remove('copied')
-      }, 2000)
-    }).catch(err => {
-      console.error('Could not copy code: ', err)
-    })
+
+    navigator.clipboard
+      .writeText(codeContent)
+      .then(() => {
+        const originalText = button.innerHTML
+        button.innerHTML = '<i class="pi pi-check"></i> コピー済み'
+        button.classList.add('copied')
+
+        setTimeout(() => {
+          button.innerHTML = originalText
+          button.classList.remove('copied')
+        }, 2000)
+      })
+      .catch(err => {
+        console.error('Could not copy code: ', err)
+      })
   } catch (error) {
     console.error('Failed to copy code:', error)
   }

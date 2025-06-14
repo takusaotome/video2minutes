@@ -6,6 +6,13 @@
           <i class="pi pi-list"></i>
           処理タスク一覧
           <Badge v-if="tasks.length > 0" :value="tasks.length" class="ml-2" />
+          <Button
+            icon="pi pi-refresh"
+            class="p-button-text p-button-sm refresh-btn"
+            v-tooltip="'タスク一覧を手動更新'"
+            @click="refreshTasks"
+            :loading="loading"
+          />
         </div>
       </template>
 
@@ -28,7 +35,11 @@
 
         <!-- Loading State -->
         <div v-if="loading" class="loading-state">
-          <ProgressSpinner strokeWidth="4" fill="transparent" animationDuration="1s" />
+          <ProgressSpinner
+            strokeWidth="4"
+            fill="transparent"
+            animationDuration="1s"
+          />
           <p>タスクを読み込み中...</p>
         </div>
 
@@ -51,56 +62,89 @@
           class="task-table"
           :rowHover="true"
         >
-          <Column field="video_filename" header="ファイル名" sortable class="filename-column">
+          <Column
+            field="video_filename"
+            header="ファイル名"
+            sortable
+            class="filename-column"
+          >
             <template #body="{ data }">
               <div class="filename-cell">
                 <i class="pi pi-file-video file-icon"></i>
                 <div class="filename-info">
                   <span class="filename">{{ data.video_filename }}</span>
-                  <span class="filesize">{{ formatFileSize(data.video_size) }}</span>
+                  <span class="filesize">{{
+                    formatFileSize(data.video_size)
+                  }}</span>
                 </div>
               </div>
             </template>
           </Column>
 
-          <Column field="status" header="ステータス" sortable class="status-column">
+          <Column
+            field="status"
+            header="ステータス"
+            sortable
+            class="status-column"
+          >
             <template #body="{ data }">
               <div class="status-cell">
                 <Badge
                   :value="getStatusLabel(data.status)"
                   :severity="getStatusSeverity(data.status)"
                 />
-                <div v-if="data.status === 'processing' && data.current_step" class="current-step">
+                <div
+                  v-if="data.status === 'processing' && data.current_step"
+                  class="current-step"
+                >
                   {{ getStepLabel(data.current_step) }}
                 </div>
               </div>
             </template>
           </Column>
 
-          <Column field="overall_progress" header="進捗" class="progress-column">
+          <Column
+            field="overall_progress"
+            header="進捗"
+            class="progress-column"
+          >
             <template #body="{ data }">
               <div class="progress-cell">
                 <div class="progress-header">
                   <span class="progress-label">進捗</span>
-                  <span class="progress-value">{{ data.overall_progress || 0 }}%</span>
+                  <span class="progress-value"
+                    >{{ data.overall_progress || 0 }}%</span
+                  >
                 </div>
                 <ProgressBar
                   :value="data.overall_progress || 0"
                   :showValue="false"
                   class="task-progress"
                 />
-                <small v-if="data.status === 'processing' && data.estimated_time" class="eta">
+                <small
+                  v-if="data.status === 'processing' && data.estimated_time"
+                  class="eta"
+                >
                   残り約{{ data.estimated_time }}分
                 </small>
               </div>
             </template>
           </Column>
 
-          <Column field="upload_timestamp" header="アップロード日時" sortable class="timestamp-column">
+          <Column
+            field="upload_timestamp"
+            header="アップロード日時"
+            sortable
+            class="timestamp-column"
+          >
             <template #body="{ data }">
               <div class="timestamp-cell">
-                <span class="date">{{ formatDate(data.upload_timestamp) }}</span>
-                <span class="time">{{ formatTime(data.upload_timestamp) }}</span>
+                <span class="date">{{
+                  formatDate(data.upload_timestamp)
+                }}</span>
+                <span class="time">{{
+                  formatTime(data.upload_timestamp)
+                }}</span>
               </div>
             </template>
           </Column>
@@ -223,16 +267,16 @@ export default {
     const loading = computed(() => tasksStore.loading)
     const taskStats = computed(() => tasksStore.taskStats)
 
-    const viewDetails = (task) => {
+    const viewDetails = task => {
       selectedTask.value = task
       showDetailModal.value = true
     }
 
-    const viewMinutes = (task) => {
+    const viewMinutes = task => {
       router.push({ name: 'minutes', params: { taskId: task.task_id } })
     }
 
-    const retryTask = async (task) => {
+    const retryTask = async task => {
       retryingTasks.value.add(task.task_id)
       try {
         await tasksStore.retryTask(task.task_id)
@@ -254,7 +298,7 @@ export default {
       }
     }
 
-    const deleteTask = (task) => {
+    const deleteTask = task => {
       confirm.require({
         message: `「${task.video_filename}」を削除しますか？\nこの操作は取り消せません。`,
         header: 'タスク削除の確認',
@@ -283,37 +327,56 @@ export default {
       })
     }
 
-    const getStatusLabel = (status) => {
+    const refreshTasks = async () => {
+      try {
+        await tasksStore.forceRefresh()
+        toast.add({
+          severity: 'info',
+          summary: '更新完了',
+          detail: 'タスク一覧を更新しました',
+          life: 2000
+        })
+      } catch (error) {
+        toast.add({
+          severity: 'error',
+          summary: '更新エラー',
+          detail: 'タスク一覧の更新に失敗しました',
+          life: 3000
+        })
+      }
+    }
+
+    const getStatusLabel = status => {
       const labels = {
-        'pending': '待機中',
-        'processing': '処理中',
-        'completed': '完了',
-        'failed': 'エラー'
+        pending: '待機中',
+        processing: '処理中',
+        completed: '完了',
+        failed: 'エラー'
       }
       return labels[status] || status
     }
 
-    const getStatusSeverity = (status) => {
+    const getStatusSeverity = status => {
       const severities = {
-        'pending': 'info',
-        'processing': 'warning',
-        'completed': 'success',
-        'failed': 'danger'
+        pending: 'info',
+        processing: 'warning',
+        completed: 'success',
+        failed: 'danger'
       }
       return severities[status] || 'info'
     }
 
-    const getStepLabel = (step) => {
+    const getStepLabel = step => {
       const labels = {
-        'upload': 'アップロード中',
-        'audio_extraction': '音声抽出中',
-        'transcription': '文字起こし中',
-        'minutes_generation': '議事録生成中'
+        upload: 'アップロード中',
+        audio_extraction: '音声抽出中',
+        transcription: '文字起こし中',
+        minutes_generation: '議事録生成中'
       }
       return labels[step] || step
     }
 
-    const formatFileSize = (bytes) => {
+    const formatFileSize = bytes => {
       if (!bytes) return '0 Bytes'
       const k = 1024
       const sizes = ['Bytes', 'KB', 'MB', 'GB']
@@ -321,7 +384,7 @@ export default {
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
     }
 
-    const formatDate = (timestamp) => {
+    const formatDate = timestamp => {
       if (!timestamp) return ''
       const date = new Date(timestamp)
       return date.toLocaleDateString('ja-JP', {
@@ -331,7 +394,7 @@ export default {
       })
     }
 
-    const formatTime = (timestamp) => {
+    const formatTime = timestamp => {
       if (!timestamp) return ''
       const date = new Date(timestamp)
       return date.toLocaleTimeString('ja-JP', {
@@ -342,13 +405,12 @@ export default {
 
     // Lifecycle
     onMounted(async () => {
+      // TaskList only fetches tasks, polling is handled by DashboardView
       await tasksStore.fetchTasks()
-      tasksStore.startPolling()
     })
 
     onUnmounted(() => {
-      tasksStore.stopPolling()
-      tasksStore.disconnectAllWebSockets()
+      // Don't stop polling here since DashboardView manages it
     })
 
     return {
@@ -362,6 +424,7 @@ export default {
       viewMinutes,
       retryTask,
       deleteTask,
+      refreshTasks,
       getStatusLabel,
       getStatusSeverity,
       getStepLabel,
@@ -380,6 +443,16 @@ export default {
   gap: 0.5rem;
   font-size: 1.25rem;
   color: #495057;
+}
+
+.refresh-btn {
+  margin-left: auto;
+  color: var(--primary-600) !important;
+}
+
+.refresh-btn:hover {
+  color: var(--primary-700) !important;
+  background: rgba(99, 102, 241, 0.1) !important;
 }
 
 .task-stats {
@@ -477,21 +550,9 @@ export default {
   margin-top: 0.25rem;
 }
 
-/* Badge styling improvements - 日本語対応 */
-:deep(.p-badge) {
-  /* 日本語テキストのはみ出し修正 */
-  line-height: 1.2 !important;
-  height: auto !important;
-  min-height: 1.5rem;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0.3rem 0.6rem !important;
-}
-
 /* 完了ステータスの色修正 */
 :deep(.p-badge.p-badge-success) {
-  background-color: #10b981 !important;
+  background-color: var(--success-500) !important;
   color: #ffffff !important;
 }
 
@@ -595,7 +656,12 @@ export default {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: left 0.5s ease;
 }
 
@@ -715,16 +781,16 @@ export default {
   .filename-column {
     min-width: 200px;
   }
-  
+
   .status-column,
   .progress-column {
     min-width: 120px;
   }
-  
+
   .timestamp-column {
     min-width: 100px;
   }
-  
+
   .actions-column {
     min-width: 120px;
   }
@@ -735,15 +801,15 @@ export default {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .stat-item {
     justify-content: space-between;
   }
-  
+
   :deep(.task-table) {
     font-size: 0.9rem;
   }
-  
+
   .action-buttons {
     flex-direction: column;
     gap: 0.25rem;

@@ -5,7 +5,7 @@
       <div class="welcome-content">
         <h2>動画から議事録を自動生成</h2>
         <p>
-          動画ファイルをアップロードするだけで、AIが自動的に文字起こしと議事録を生成します。<br>
+          動画ファイルをアップロードするだけで、AIが自動的に文字起こしと議事録を生成します。<br />
           会議録の作成時間を大幅に短縮できます。
         </p>
       </div>
@@ -44,7 +44,7 @@
             処理統計
           </div>
         </template>
-        
+
         <template #content>
           <div class="stats-grid">
             <div class="stat-card">
@@ -77,7 +77,7 @@
             使い方
           </div>
         </template>
-        
+
         <template #content>
           <div class="help-content">
             <div class="help-steps">
@@ -85,34 +85,40 @@
                 <div class="step-number">1</div>
                 <div class="step-content">
                   <h4>動画ファイルをアップロード</h4>
-                  <p>MP4、AVI、MOV、WMVなどの動画ファイルをドラッグ&ドロップするか、「ファイルを選択」ボタンでアップロードしてください。</p>
+                  <p>
+                    MP4、AVI、MOV、WMVなどの動画ファイルをドラッグ&ドロップするか、「ファイルを選択」ボタンでアップロードしてください。
+                  </p>
                 </div>
               </div>
-              
+
               <div class="help-step">
                 <div class="step-number">2</div>
                 <div class="step-content">
                   <h4>自動処理を待つ</h4>
-                  <p>アップロード後、システムが自動的に音声抽出→文字起こし→議事録生成を順次実行します。進捗はリアルタイムで表示されます。</p>
+                  <p>
+                    アップロード後、システムが自動的に音声抽出→文字起こし→議事録生成を順次実行します。進捗はリアルタイムで表示されます。
+                  </p>
                 </div>
               </div>
-              
+
               <div class="help-step">
                 <div class="step-number">3</div>
                 <div class="step-content">
                   <h4>議事録をダウンロード</h4>
-                  <p>処理完了後、議事録を表示・コピー・ダウンロードできます。Markdown、テキスト、PDF形式で保存可能です。</p>
+                  <p>
+                    処理完了後、議事録を表示・コピー・ダウンロードできます。Markdown、テキスト、PDF形式で保存可能です。
+                  </p>
                 </div>
               </div>
             </div>
-            
+
             <div class="help-notes">
               <h4>
                 <i class="pi pi-info-circle"></i>
                 ご注意
               </h4>
               <ul>
-                <li>対応ファイルサイズ: 最大500MB</li>
+                <li>対応ファイルサイズ: 最大5GB</li>
                 <li>処理時間: 10分程度の動画で約3-5分</li>
                 <li>日本語音声での利用を推奨</li>
                 <li>音質が良いほど文字起こし精度が向上します</li>
@@ -152,7 +158,7 @@ export default {
 
     const onUploadCompleted = ({ file, task }) => {
       console.log('Upload completed:', file.name, task)
-      
+
       // Show completion notification with link to view progress
       toast.add({
         severity: 'success',
@@ -164,7 +170,7 @@ export default {
 
     const onUploadError = ({ file, error }) => {
       console.error('Upload error:', file.name, error)
-      
+
       toast.add({
         severity: 'error',
         summary: 'アップロードエラー',
@@ -180,12 +186,17 @@ export default {
       }
     }
 
-    onMounted(() => {
+    onMounted(async () => {
       // Initial load
-      tasksStore.fetchTasks()
-      
-      // Set up auto-refresh
+      await tasksStore.fetchTasks()
+
+      // Start polling for real-time updates
+      tasksStore.startPolling(5000) // 5秒間隔でポーリング
+
+      // Set up auto-refresh on page visibility change
       document.addEventListener('visibilitychange', refreshTasks)
+
+      console.log('DashboardView mounted, polling started')
     })
 
     onUnmounted(() => {
@@ -217,7 +228,11 @@ export default {
 .welcome-section {
   text-align: center;
   padding: var(--space-10);
-  background: linear-gradient(135deg, var(--primary-700) 0%, var(--secondary-700) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-700) 0%,
+    var(--secondary-700) 100%
+  );
   color: white;
   border-radius: var(--radius-2xl);
   margin-bottom: var(--space-6);
@@ -233,7 +248,11 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  background: radial-gradient(
+    circle at 30% 20%,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 50%
+  );
   pointer-events: none;
 }
 
@@ -467,7 +486,11 @@ export default {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-500) 0%,
+    var(--primary-600) 100%
+  );
   color: white;
   display: flex;
   align-items: center;
@@ -498,7 +521,11 @@ export default {
 
 .help-notes {
   padding: var(--space-6);
-  background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-50) 0%,
+    var(--primary-100) 100%
+  );
   border-radius: var(--radius-lg);
   border-left: 4px solid var(--primary-500);
   border: 1px solid var(--primary-200);
@@ -531,29 +558,29 @@ export default {
   .welcome-content h2 {
     font-size: 2rem;
   }
-  
+
   .welcome-content p {
     font-size: 1rem;
   }
-  
+
   .features {
     gap: 1.5rem;
   }
-  
+
   .feature-item {
     min-width: 100px;
     padding: 0.75rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .help-step {
     flex-direction: column;
     gap: 0.75rem;
   }
-  
+
   .step-number {
     align-self: flex-start;
   }
@@ -563,29 +590,29 @@ export default {
   .dashboard {
     gap: 1.5rem;
   }
-  
+
   .welcome-section {
     padding: 1.5rem;
     margin-bottom: 0.5rem;
   }
-  
+
   .welcome-content h2 {
     font-size: 1.75rem;
   }
-  
+
   .features {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .stat-card {
     padding: 1rem;
   }
-  
+
   .stat-number {
     font-size: 2rem;
   }

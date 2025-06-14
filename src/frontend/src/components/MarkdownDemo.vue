@@ -7,17 +7,20 @@
           議事録マークダウン表示デモ
         </div>
       </template>
-      
+
       <template #content>
-        <MarkdownRenderer 
+        <MarkdownRenderer
           :content="sampleMarkdown"
           :show-toc="true"
           @word-count="onWordCount"
         />
-        
+
         <div class="demo-info">
           <p><strong>文字数:</strong> {{ wordCount }}文字</p>
-          <p><strong>機能:</strong> マークダウン形式の議事録を美しくフォーマット表示</p>
+          <p>
+            <strong>機能:</strong>
+            マークダウン形式の議事録を美しくフォーマット表示
+          </p>
         </div>
       </template>
     </Card>
@@ -37,7 +40,7 @@ export default {
   },
   setup() {
     const wordCount = ref(0)
-    
+
     const sampleMarkdown = `# 会議議事録
 
 **日時:** 2024年1月15日 14:00-15:30
@@ -121,7 +124,7 @@ export default {
 
 **この議事録の承認者:** 山田太郎`
 
-    const onWordCount = (count) => {
+    const onWordCount = count => {
       wordCount.value = count
     }
 

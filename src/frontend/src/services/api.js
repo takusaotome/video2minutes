@@ -38,8 +38,8 @@ export const minutesApi = {
   // Upload video file
   uploadVideo: async (file, onUploadProgress) => {
     const formData = new FormData()
-    formData.append('file', file)  // FastAPIの期待するパラメーター名に変更
-    
+    formData.append('file', file) // FastAPIの期待するパラメーター名に変更
+
     return api.post('/minutes/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
@@ -54,22 +54,22 @@ export const minutesApi = {
   },
 
   // Get task status
-  getTaskStatus: async (taskId) => {
+  getTaskStatus: async taskId => {
     return api.get(`/minutes/${taskId}/status`)
   },
 
   // Get task result
-  getTaskResult: async (taskId) => {
+  getTaskResult: async taskId => {
     return api.get(`/minutes/${taskId}/result`)
   },
 
   // Delete task
-  deleteTask: async (taskId) => {
+  deleteTask: async taskId => {
     return api.delete(`/minutes/${taskId}`)
   },
 
   // Retry failed task
-  retryTask: async (taskId) => {
+  retryTask: async taskId => {
     return api.post(`/minutes/${taskId}/retry`)
   }
 }

@@ -1,5 +1,12 @@
 <template>
-  <div class="file-uploader">
+  <div
+    class="file-uploader"
+    :class="{ 'drag-active': isDragOver }"
+    @dragenter="onDragEnter"
+    @dragover="onDragOver"
+    @dragleave="onDragLeave"
+    @drop="onDrop"
+  >
     <Card class="upload-card">
       <template #content>
         <div class="upload-container">
@@ -9,19 +16,11 @@
               <i class="pi pi-cloud-upload title-icon"></i>
               <h2 class="upload-title">動画ファイルをアップロード</h2>
             </div>
-            <p class="upload-description">
-              動画から自動的に議事録を生成します
-            </p>
+            <p class="upload-description">動画から自動的に議事録を生成します</p>
           </div>
 
           <!-- Upload Area -->
-          <div 
-            class="upload-area"
-            @dragenter="onDragEnter"
-            @dragover="onDragOver" 
-            @dragleave="onDragLeave"
-            @drop="onDrop"
-          >
+          <div class="upload-area">
             <FileUpload
               ref="fileUpload"
               mode="basic"
@@ -35,69 +34,76 @@
               :disabled="loading"
               chooseLabel="ファイルを選択"
               class="custom-file-upload"
-              :drag-highlight="false"
             >
               <template #empty>
-                <div 
-                  class="upload-dropzone"
-                  :class="{ 'dragover': isDragOver }"
-                >
+                <div class="upload-dropzone" :class="{ dragover: isDragOver }">
                   <!-- Animated Background Elements -->
                   <div class="dropzone-bg-elements">
                     <div class="floating-element element-1"></div>
                     <div class="floating-element element-2"></div>
                     <div class="floating-element element-3"></div>
                   </div>
-                  
+
                   <div class="dropzone-content">
                     <div class="upload-icon-container">
                       <div class="icon-wrapper">
-                        <i class="pi pi-cloud-upload upload-icon" :class="{ 'bounce': isDragOver }"></i>
+                        <i
+                          class="pi pi-cloud-upload upload-icon"
+                          :class="{ bounce: isDragOver }"
+                        ></i>
                         <div class="icon-glow"></div>
                       </div>
                     </div>
-                    
+
                     <div class="upload-text-container">
-                      <h3 class="upload-text" :class="{ 'highlight': isDragOver }">
-                        {{ isDragOver ? 'ファイルをドロップしてください' : 'ファイルをドラッグ&ドロップ' }}
+                      <h3
+                        class="upload-text"
+                        :class="{ highlight: isDragOver }"
+                      >
+                        {{
+                          isDragOver
+                            ? 'ファイルをここにドロップしてください！'
+                            : 'ここに動画ファイルをドラッグ&ドロップ'
+                        }}
                       </h3>
                       <p class="upload-subtext">
-                        または下のボタンからファイルを選択してください
-                      </p>
-                      <p v-if="isDragging" class="drag-status">
-                        ドラッグ中...
+                        {{
+                          isDragOver
+                            ? '動画ファイルを離してアップロード開始'
+                            : 'または下のボタンからファイルを選択してください'
+                        }}
                       </p>
                     </div>
-                    
+
                     <div class="upload-actions-container">
-                      <Button 
-                        label="ファイルを選択" 
+                      <Button
+                        label="ファイルを選択"
                         icon="pi pi-folder-open"
                         class="upload-button-primary"
                         :loading="loading"
                         @click="triggerFileSelect"
                       />
-                      
+
                       <div class="divider">
                         <span>または</span>
                       </div>
-                      
+
                       <div class="quick-actions">
-                        <Button 
-                          label="カメラロール" 
+                        <Button
+                          label="カメラロール"
                           icon="pi pi-image"
                           class="quick-action-btn"
                           @click="openFileDialog('video/*')"
                         />
-                        <Button 
-                          label="最近のファイル" 
+                        <Button
+                          label="最近のファイル"
                           icon="pi pi-clock"
                           class="quick-action-btn"
                           @click="showRecentFiles"
                         />
                       </div>
                     </div>
-                    
+
                     <div class="upload-note">
                       <div class="note-content">
                         <i class="pi pi-info-circle"></i>
@@ -105,85 +111,114 @@
                           <div class="supported-formats">
                             対応形式: MP4, AVI, MOV, MKV, WMV, FLV, WebM
                           </div>
-                          <div class="file-limit">
-                            最大ファイルサイズ: 5GB
-                          </div>
+                          <div class="file-limit">最大ファイルサイズ: 5GB</div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  
-                  <!-- Upload Progress Overlay -->
+
+                  <!-- Drag & Drop Overlay -->
                   <div v-if="isDragOver" class="drag-overlay">
                     <div class="drag-overlay-content">
-                      <i class="pi pi-download drag-icon"></i>
-                      <p>ファイルをドロップ</p>
+                      <i class="pi pi-arrow-down drag-icon"></i>
+                      <p>ファイルをここにドロップ</p>
+                      <div class="drop-hint">
+                        <i class="pi pi-arrow-down drop-arrow"></i>
+                        <span>離してアップロード開始</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </template>
             </FileUpload>
 
-          <!-- Selected Files Display -->
-          <div v-if="selectedFiles.length > 0" class="selected-files-section">
-            <div class="selected-files-header">
-              <h4><i class="pi pi-check-circle"></i> 選択されたファイル</h4>
-            </div>
-            <div class="selected-files-list">
-              <div v-for="file in selectedFiles" :key="file.name" class="file-item">
-                <div class="file-info">
-                  <div class="file-icon">
-                    <i class="pi pi-file-video"></i>
-                  </div>
-                  <div class="file-details">
-                    <span class="file-name">{{ file.name }}</span>
-                    <span class="file-size">{{ formatFileSize(file.size) }}</span>
-                  </div>
-                </div>
-                <Button
-                  icon="pi pi-times"
-                  class="p-button-text p-button-danger p-button-sm file-remove-btn"
-                  @click="removeFile(file)"
-                  :disabled="loading"
-                  v-tooltip="'削除'"
-                />
+            <!-- Selected Files Display -->
+            <div v-if="selectedFiles.length > 0" class="selected-files-section">
+              <div class="selected-files-header">
+                <h4><i class="pi pi-check-circle"></i> 選択されたファイル</h4>
               </div>
-            </div>
-          </div>
-
-          <!-- Upload Progress -->
-          <div v-if="uploadProgress.length > 0" class="upload-progress-section">
-            <div class="progress-header">
-              <h4><i class="pi pi-spin pi-spinner"></i> アップロード進行状況</h4>
-            </div>
-            <div class="progress-list">
-              <div v-for="progress in uploadProgress" :key="progress.name" class="progress-item">
-                <div class="progress-info">
-                  <div class="progress-file-info">
-                    <span class="progress-name">{{ progress.name }}</span>
-                    <span class="progress-percent">{{ progress.percent }}%</span>
+              <div class="selected-files-list">
+                <div
+                  v-for="file in selectedFiles"
+                  :key="file.name"
+                  class="file-item"
+                >
+                  <div class="file-info">
+                    <div class="file-icon">
+                      <i class="pi pi-file-video"></i>
+                    </div>
+                    <div class="file-details">
+                      <span class="file-name">{{ file.name }}</span>
+                      <span class="file-size">{{
+                        formatFileSize(file.size)
+                      }}</span>
+                    </div>
                   </div>
-                  <ProgressBar :value="progress.percent" class="progress-bar" />
-                  <div v-if="progress.status" class="progress-status">
-                    <Badge :value="getStatusLabel(progress.status)" :severity="getStatusSeverity(progress.status)" />
-                  </div>
+                  <Button
+                    icon="pi pi-trash"
+                    class="p-button-outlined p-button-danger p-button-sm file-remove-btn"
+                    @click="removeFile(file)"
+                    :disabled="loading"
+                    v-tooltip="'ファイルを削除'"
+                  />
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Upload Button -->
-          <div v-if="selectedFiles.length > 0 && uploadProgress.length === 0" class="upload-actions">
-            <Button
-              label="アップロード開始"
-              icon="pi pi-upload"
-              @click="startUpload"
-              :loading="loading"
-              :disabled="selectedFiles.length === 0"
-              class="upload-start-button"
-              size="large"
-            />
-          </div>
+            <!-- Upload Progress -->
+            <div
+              v-if="uploadProgress.length > 0"
+              class="upload-progress-section"
+            >
+              <div class="progress-header">
+                <h4>
+                  <i class="pi pi-spin pi-spinner"></i> アップロード進行状況
+                </h4>
+              </div>
+              <div class="progress-list">
+                <div
+                  v-for="progress in uploadProgress"
+                  :key="progress.name"
+                  class="progress-item"
+                >
+                  <div class="progress-info">
+                    <div class="progress-file-info">
+                      <span class="progress-name">{{ progress.name }}</span>
+                      <span class="progress-percent"
+                        >{{ progress.percent }}%</span
+                      >
+                    </div>
+                    <ProgressBar
+                      :value="progress.percent"
+                      :showValue="false"
+                      class="progress-bar"
+                    />
+                    <div v-if="progress.status" class="progress-status">
+                      <Badge
+                        :value="getStatusLabel(progress.status)"
+                        :severity="getStatusSeverity(progress.status)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Upload Button -->
+            <div
+              v-if="selectedFiles.length > 0 && uploadProgress.length === 0"
+              class="upload-actions"
+            >
+              <Button
+                label="アップロード開始"
+                icon="pi pi-upload"
+                @click="startUpload"
+                :loading="loading"
+                :disabled="selectedFiles.length === 0"
+                class="upload-start-button"
+                size="large"
+              />
+            </div>
           </div>
         </div>
       </template>
@@ -214,7 +249,7 @@ export default {
   setup(_, { emit }) {
     const toast = useToast()
     const tasksStore = useTasksStore()
-    
+
     const fileUpload = ref(null)
     const selectedFiles = ref([])
     const uploadProgress = ref([])
@@ -223,7 +258,7 @@ export default {
     const isDragging = ref(false)
     const dragCounter = ref(0)
 
-    const onSelect = (event) => {
+    const onSelect = event => {
       console.log('Files selected:', event.files)
       selectedFiles.value = [...event.files]
       uploadProgress.value = []
@@ -234,14 +269,16 @@ export default {
       uploadProgress.value = []
     }
 
-    const removeFile = (fileToRemove) => {
-      selectedFiles.value = selectedFiles.value.filter(file => file !== fileToRemove)
+    const removeFile = fileToRemove => {
+      selectedFiles.value = selectedFiles.value.filter(
+        file => file !== fileToRemove
+      )
       if (selectedFiles.value.length === 0) {
         uploadProgress.value = []
       }
     }
 
-    const onUpload = async (event) => {
+    const onUpload = async event => {
       // This is called by PrimeVue's internal upload mechanism
       // We handle uploads manually in startUpload instead
     }
@@ -258,7 +295,7 @@ export default {
       }
 
       loading.value = true
-      
+
       // Initialize progress tracking
       uploadProgress.value = selectedFiles.value.map(file => ({
         name: file.name,
@@ -275,7 +312,7 @@ export default {
           try {
             emit('upload-started', { file })
 
-            const task = await tasksStore.uploadFile(file, (percent) => {
+            const task = await tasksStore.uploadFile(file, percent => {
               progressItem.percent = percent
             })
 
@@ -290,10 +327,9 @@ export default {
             })
 
             emit('upload-completed', { file, task })
-
           } catch (error) {
             progressItem.status = 'error'
-            
+
             toast.add({
               severity: 'error',
               summary: 'アップロードエラー',
@@ -311,13 +347,12 @@ export default {
           uploadProgress.value = []
           fileUpload.value?.clear()
         }, 2000)
-
       } finally {
         loading.value = false
       }
     }
 
-    const formatFileSize = (bytes) => {
+    const formatFileSize = bytes => {
       if (bytes === 0) return '0 Bytes'
       const k = 1024
       const sizes = ['Bytes', 'KB', 'MB', 'GB']
@@ -325,31 +360,45 @@ export default {
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
     }
 
-    const getStatusSeverity = (status) => {
+    const getStatusSeverity = status => {
       switch (status) {
-        case 'completed': return 'success'
-        case 'error': return 'danger'
-        case 'uploading': return 'info'
-        default: return 'info'
+        case 'completed':
+          return 'success'
+        case 'error':
+          return 'danger'
+        case 'uploading':
+          return 'info'
+        default:
+          return 'info'
       }
     }
 
-    const getStatusLabel = (status) => {
+    const getStatusLabel = status => {
       switch (status) {
-        case 'completed': return '完了'
-        case 'error': return 'エラー'
-        case 'uploading': return 'アップロード中'
-        default: return status
+        case 'completed':
+          return '完了'
+        case 'error':
+          return 'エラー'
+        case 'uploading':
+          return 'アップロード中'
+        default:
+          return status
       }
     }
 
     const triggerFileSelect = () => {
       try {
-        if (fileUpload.value && fileUpload.value.$refs && fileUpload.value.$refs.fileInput) {
+        if (
+          fileUpload.value &&
+          fileUpload.value.$refs &&
+          fileUpload.value.$refs.fileInput
+        ) {
           fileUpload.value.$refs.fileInput.click()
         } else {
           // Fallback: try to find the file input element
-          const fileInput = document.querySelector('.custom-file-upload input[type="file"]')
+          const fileInput = document.querySelector(
+            '.custom-file-upload input[type="file"]'
+          )
           if (fileInput) {
             fileInput.click()
           }
@@ -360,52 +409,59 @@ export default {
     }
 
     // Drag & Drop handlers
-    const onDragEnter = (e) => {
+    const onDragEnter = e => {
       e.preventDefault()
       e.stopPropagation()
-      
+
+      console.log('Drag enter event:', e.dataTransfer?.types)
+
       // Check if files are being dragged
       if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
         dragCounter.value++
+        console.log('Drag counter:', dragCounter.value)
         if (dragCounter.value === 1) {
           isDragOver.value = true
           isDragging.value = true
-          console.log('Drag enter detected')
+          console.log('Drag over state set to true')
         }
       }
     }
 
-    const onDragOver = (e) => {
+    const onDragOver = e => {
       e.preventDefault()
       e.stopPropagation()
-      
+
       if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
         e.dataTransfer.dropEffect = 'copy'
         isDragOver.value = true
       }
     }
 
-    const onDragLeave = (e) => {
+    const onDragLeave = e => {
       e.preventDefault()
       e.stopPropagation()
-      
+
+      console.log('Drag leave event', e.relatedTarget)
+
       // Only reduce counter if leaving the main drop area
       if (!e.currentTarget.contains(e.relatedTarget)) {
         dragCounter.value--
-        if (dragCounter.value === 0) {
+        console.log('Drag counter after leave:', dragCounter.value)
+        if (dragCounter.value <= 0) {
+          dragCounter.value = 0
           isDragOver.value = false
           isDragging.value = false
-          console.log('Drag leave detected')
+          console.log('Drag over state set to false')
         }
       }
     }
 
-    const onDrop = (e) => {
+    const onDrop = e => {
       e.preventDefault()
       e.stopPropagation()
-      
+
       console.log('Drop event triggered', e.dataTransfer.files)
-      
+
       // Reset drag state
       isDragOver.value = false
       isDragging.value = false
@@ -413,20 +469,28 @@ export default {
 
       const files = Array.from(e.dataTransfer.files)
       console.log('Dropped files:', files)
-      
+
       if (files.length > 0) {
         // Validate file types
         const validFiles = files.filter(file => {
           const fileType = file.type
           const fileName = file.name.toLowerCase()
-          
+
           // Check if it's a video file
           if (fileType.startsWith('video/')) {
             return true
           }
-          
+
           // Check by file extension if MIME type is not reliable
-          const supportedExtensions = ['.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm']
+          const supportedExtensions = [
+            '.mp4',
+            '.avi',
+            '.mov',
+            '.mkv',
+            '.wmv',
+            '.flv',
+            '.webm'
+          ]
           return supportedExtensions.some(ext => fileName.endsWith(ext))
         })
 
@@ -449,12 +513,29 @@ export default {
           })
         }
 
-        // Add files to selected files and trigger PrimeVue's onSelect
+        // Add files to selected files
         selectedFiles.value = [...selectedFiles.value, ...validFiles]
         uploadProgress.value = []
-        
-        // Trigger the onSelect event manually to sync with PrimeVue
-        if (validFiles.length > 0) {
+
+        // Update the PrimeVue FileUpload component directly
+        if (fileUpload.value && validFiles.length > 0) {
+          // Convert File objects to the format expected by PrimeVue
+          const formattedFiles = validFiles.map(file => ({
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            lastModified: file.lastModified,
+            objectURL: file // Store the actual file
+          }))
+
+          // Set files on the PrimeVue component
+          if (fileUpload.value.files) {
+            fileUpload.value.files.push(...formattedFiles)
+          } else {
+            fileUpload.value.files = formattedFiles
+          }
+
+          // Trigger the onSelect event manually
           onSelect({ files: validFiles })
         }
 
@@ -467,7 +548,7 @@ export default {
       }
     }
 
-    const openFileDialog = (accept) => {
+    const openFileDialog = accept => {
       triggerFileSelect()
     }
 
@@ -510,11 +591,26 @@ export default {
 <style scoped>
 .file-uploader {
   margin-bottom: 2rem;
+  position: relative;
+  transition: all 0.3s ease;
+  border-radius: 16px;
+}
+
+.file-uploader.drag-active {
+  box-shadow: 0 0 40px rgba(16, 185, 129, 0.3);
+  transform: scale(1.02);
+}
+
+.file-uploader.drag-active .upload-card {
+  border: 3px solid var(--success-400);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
 }
 
 .upload-card {
   border: none;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   border-radius: 16px;
   overflow: hidden;
 }
@@ -527,10 +623,15 @@ export default {
 .upload-header {
   text-align: center;
   padding: 2.5rem 2rem 1.5rem;
-  background: linear-gradient(135deg, var(--primary-700) 0%, var(--secondary-700) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-700) 0%,
+    var(--secondary-700) 100%
+  );
   color: white;
   margin: -1.5rem -1.5rem 1.5rem -1.5rem;
   position: relative;
+  transition: all 0.3s ease;
 }
 
 /* Dark overlay for better contrast */
@@ -551,11 +652,16 @@ export default {
   justify-content: center;
   gap: 0.75rem;
   margin-bottom: 0.75rem;
+  position: relative;
+  z-index: 2;
 }
 
 .title-icon {
   font-size: 2rem;
   opacity: 0.9;
+  color: white;
+  position: relative;
+  z-index: 2;
 }
 
 .upload-title {
@@ -566,7 +672,7 @@ export default {
   color: white;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .upload-description {
@@ -577,13 +683,15 @@ export default {
   color: white;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 /* Upload Area */
 .upload-area {
-  padding: 0 1rem;
+  padding: 1rem;
   position: relative;
+  border-radius: var(--radius-2xl);
+  transition: all 0.3s ease;
 }
 
 :deep(.custom-file-upload) {
@@ -602,10 +710,6 @@ export default {
 
 /* Disable PrimeVue's built-in drag and drop */
 :deep(.custom-file-upload .p-fileupload-content) {
-  pointer-events: none;
-}
-
-:deep(.custom-file-upload .p-fileupload-content .p-fileupload-empty) {
   pointer-events: auto;
 }
 
@@ -613,13 +717,13 @@ export default {
   border: 3px dashed var(--gray-300);
   border-radius: var(--radius-2xl);
   background: linear-gradient(135deg, white 0%, var(--gray-50) 100%);
-  padding: var(--space-16) var(--space-8);
+  padding: var(--space-8) var(--space-6);
   text-align: center;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  min-height: 450px;
+  min-height: 350px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -647,7 +751,11 @@ export default {
 
 .upload-dropzone:hover {
   border-color: var(--primary-400);
-  background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-50) 0%,
+    var(--primary-100) 100%
+  );
   transform: translateY(-4px);
   box-shadow: 0 20px 40px -12px rgba(99, 102, 241, 0.25);
 }
@@ -658,7 +766,11 @@ export default {
 
 .upload-dropzone.dragover {
   border-color: var(--success-500);
-  background: linear-gradient(135deg, var(--success-50) 0%, var(--success-100) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--success-50) 0%,
+    var(--success-100) 100%
+  );
   transform: translateY(-6px) scale(1.02);
   box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.35);
   border-style: solid;
@@ -678,8 +790,13 @@ export default {
 }
 
 @keyframes dragPulse {
-  0%, 100% { box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.35); }
-  50% { box-shadow: 0 30px 60px -12px rgba(16, 185, 129, 0.45); }
+  0%,
+  100% {
+    box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.35);
+  }
+  50% {
+    box-shadow: 0 30px 60px -12px rgba(16, 185, 129, 0.45);
+  }
 }
 
 .upload-dropzone::before {
@@ -689,7 +806,12 @@ export default {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
   transition: left 0.8s ease-in-out;
 }
 
@@ -711,7 +833,11 @@ export default {
 .floating-element {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(45deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  background: linear-gradient(
+    45deg,
+    rgba(102, 126, 234, 0.1),
+    rgba(118, 75, 162, 0.1)
+  );
   animation: float 6s ease-in-out infinite;
 }
 
@@ -740,9 +866,16 @@ export default {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-20px) rotate(120deg); }
-  66% { transform: translateY(10px) rotate(240deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-20px) rotate(120deg);
+  }
+  66% {
+    transform: translateY(10px) rotate(240deg);
+  }
 }
 
 .dropzone-content {
@@ -785,7 +918,11 @@ export default {
   transform: translate(-50%, -50%);
   width: 120px;
   height: 120px;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(102, 126, 234, 0.2) 0%,
+    transparent 70%
+  );
   border-radius: 50%;
   opacity: 0;
   transition: opacity 0.4s ease;
@@ -806,9 +943,19 @@ export default {
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-20px); }
-  60% { transform: translateY(-10px); }
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-20px);
+  }
+  60% {
+    transform: translateY(-10px);
+  }
 }
 
 .upload-text-container {
@@ -817,7 +964,7 @@ export default {
 }
 
 .upload-text {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: #374151;
   margin: 0 0 0.75rem 0;
@@ -827,15 +974,74 @@ export default {
 
 .upload-text.highlight {
   color: #10b981;
-  transform: scale(1.05);
+  transform: scale(1.08);
+  text-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .upload-subtext {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #6b7280;
-  margin: 0;
+  margin: 0 0 1rem 0;
   line-height: 1.5;
-  font-weight: 400;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.drag-hint {
+  margin-top: 1rem;
+  animation: pulseGlow 1.5s ease-in-out infinite;
+}
+
+.drag-hint-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.1) 0%,
+    rgba(16, 185, 129, 0.2) 100%
+  );
+  padding: 1rem 2rem;
+  border-radius: 20px;
+  border: 2px dashed var(--success-400);
+  color: var(--success-700);
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+}
+
+.drag-arrow {
+  font-size: 2rem;
+  animation: bounce 1s ease-in-out infinite;
+  color: var(--success-500);
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes bounce {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
 }
 
 /* Upload Actions Container */
@@ -1011,24 +1217,54 @@ export default {
 }
 
 @keyframes dragBounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0) scale(1); }
-  40% { transform: translateY(-15px) scale(1.1); }
-  60% { transform: translateY(-8px) scale(1.05); }
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-15px) scale(1.1);
+  }
+  60% {
+    transform: translateY(-8px) scale(1.05);
+  }
 }
 
 .drag-overlay p {
   font-size: 1.5rem;
-  margin: 0;
+  margin: 0 0 1rem 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   letter-spacing: 0.025em;
 }
 
+.drop-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 1rem 2rem;
+  border-radius: 15px;
+  border: 2px dashed var(--success-400);
+  color: var(--success-700);
+  font-weight: 600;
+  animation: pulseGlow 1.5s ease-in-out infinite;
+}
+
+.drop-arrow {
+  font-size: 1.5rem;
+  animation: bounce 1s ease-in-out infinite;
+  color: var(--success-500);
+}
+
 @keyframes fadeIn {
-  from { 
+  from {
     opacity: 0;
     transform: scale(0.95);
   }
-  to { 
+  to {
     opacity: 1;
     transform: scale(1);
   }
@@ -1116,6 +1352,31 @@ export default {
 .file-remove-btn {
   flex-shrink: 0;
   border-radius: 8px;
+  min-width: 44px;
+  height: 44px;
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 2px solid var(--error-300) !important;
+  color: var(--error-600) !important;
+  transition: all 0.3s ease;
+}
+
+.file-remove-btn:hover:not(:disabled) {
+  background: var(--error-500) !important;
+  border-color: var(--error-500) !important;
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.file-remove-btn:active {
+  transform: translateY(0);
+}
+
+.file-remove-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Upload Progress Section */
@@ -1211,81 +1472,87 @@ export default {
     padding: 2rem 1rem 1rem;
     margin: -1.5rem -1.5rem 1rem -1.5rem;
   }
-  
+
+  .upload-area {
+    padding: 0.75rem;
+  }
+
   .upload-title {
     font-size: 1.5rem;
   }
-  
+
   .upload-description {
     font-size: 0.9rem;
   }
-  
+
   .upload-dropzone {
-    padding: 2rem 1rem;
-    min-height: 350px;
+    padding: 1.5rem 1rem;
+    min-height: 300px;
   }
-  
+
   .upload-icon {
     font-size: 3rem;
   }
-  
+
   .upload-text {
     font-size: 1.1rem;
   }
-  
+
   .upload-subtext {
     font-size: 0.9rem;
   }
-  
+
   .dropzone-content {
     gap: 1.5rem;
   }
-  
+
   .quick-actions {
     flex-direction: column;
     gap: 0.75rem;
     width: 100%;
   }
-  
+
   .quick-action-btn {
     width: 100%;
     justify-content: center;
   }
-  
+
   .upload-button-primary {
     padding: 0.75rem 1.5rem;
     font-size: 0.9rem;
   }
-  
+
   .file-item {
     padding: 0.75rem 1rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
   }
-  
+
   .file-info {
-    width: 100%;
+    flex: 1;
   }
-  
+
+  .file-remove-btn {
+    min-width: 36px;
+    height: 36px;
+  }
+
   .file-icon {
     width: 40px;
     height: 40px;
     font-size: 1.25rem;
   }
-  
+
   .progress-file-info {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.25rem;
   }
-  
+
   .upload-start-button {
     width: 100%;
     padding: 1rem;
     font-size: 1rem;
   }
-  
+
   .selected-files-section,
   .upload-progress-section,
   .upload-actions {
@@ -1298,58 +1565,58 @@ export default {
   .upload-header {
     padding: 1.5rem 0.75rem 0.75rem;
   }
-  
+
   .title-section {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .upload-title {
     font-size: 1.25rem;
   }
-  
+
   .upload-dropzone {
     padding: 1.5rem 0.75rem;
     min-height: 300px;
   }
-  
+
   .dropzone-content {
     gap: 1rem;
   }
-  
+
   .upload-icon {
     font-size: 2.5rem;
   }
-  
+
   .upload-text {
     font-size: 1rem;
   }
-  
+
   .upload-subtext {
     font-size: 0.85rem;
   }
-  
+
   .upload-button-primary {
     padding: 0.75rem 1.25rem;
     font-size: 0.9rem;
     width: 100%;
   }
-  
+
   .note-content {
     padding: 0.75rem 1rem;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .note-text {
     font-size: 0.8rem;
   }
-  
+
   .drag-overlay p {
     font-size: 1rem;
   }
-  
+
   .drag-icon {
     font-size: 3rem;
   }

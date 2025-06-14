@@ -1,0 +1,18 @@
+Checking formatting...
+[warn] src/App.vue
+[warn] src/components/FileUploader.vue
+[warn] src/components/MarkdownDemo.vue
+[warn] src/components/MarkdownRenderer.vue
+[warn] src/components/MinutesViewer.vue
+[warn] src/components/TaskDetailModal.vue
+[warn] src/components/TaskList.vue
+[warn] src/main.js
+[warn] src/router/index.js
+[warn] src/services/api.js
+[warn] src/services/websocket.js
+[warn] src/stores/tasks.js
+[warn] src/styles/global.css
+[warn] src/utils/markdown.js
+[warn] src/views/DashboardView.vue
+[warn] src/views/MinutesView.vue
+[warn] Code style issues found in 16 files. Run Prettier with --write to fix.

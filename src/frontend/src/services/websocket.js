@@ -17,7 +17,7 @@ class WebSocketManager {
       callbacks.onOpen?.(taskId)
     }
 
-    ws.onmessage = (event) => {
+    ws.onmessage = event => {
       try {
         const data = JSON.parse(event.data)
         console.log(`WebSocket message for task ${taskId}:`, data)
@@ -33,7 +33,7 @@ class WebSocketManager {
       callbacks.onClose?.(taskId)
     }
 
-    ws.onerror = (error) => {
+    ws.onerror = error => {
       console.error(`WebSocket error for task ${taskId}:`, error)
       callbacks.onError?.(error)
     }

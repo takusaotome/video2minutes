@@ -1,17 +1,19 @@
-import pytest
 import asyncio
 import os
-import tempfile
 import shutil
-from unittest.mock import Mock, AsyncMock
+import tempfile
 from datetime import datetime
 from typing import Generator
+from unittest.mock import AsyncMock, Mock
+
+import pytest
 
 # テスト用環境変数を設定
-os.environ.setdefault('OPENAI_API_KEY', 'test-openai-key')
-os.environ.setdefault('ANTHROPIC_API_KEY', 'test-anthropic-key')
+os.environ.setdefault("OPENAI_API_KEY", "test-openai-key")
+os.environ.setdefault("ANTHROPIC_API_KEY", "test-anthropic-key")
 
 from fastapi.testclient import TestClient
+
 from app.main import create_app
 from app.models import MinutesTask, ProcessingStepName
 
@@ -28,17 +30,18 @@ def event_loop():
 def mock_settings():
     """モック設定"""
     with pytest.MonkeyPatch.context() as m:
-        m.setenv('OPENAI_API_KEY', 'test-openai-key')
-        m.setenv('ANTHROPIC_API_KEY', 'test-anthropic-key')
-        
+        m.setenv("OPENAI_API_KEY", "test-openai-key")
+        m.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
+
         # テスト用設定値
         from app.config import settings
-        m.setattr(settings, 'max_file_size', 100 * 1024 * 1024)  # 100MB
-        m.setattr(settings, 'upload_dir', 'test_uploads')
-        m.setattr(settings, 'temp_dir', 'test_temp')
-        m.setattr(settings, 'max_concurrent_tasks', 2)
-        m.setattr(settings, 'debug', True)
-        
+
+        m.setattr(settings, "max_file_size", 100 * 1024 * 1024)  # 100MB
+        m.setattr(settings, "upload_dir", "test_uploads")
+        m.setattr(settings, "temp_dir", "test_temp")
+        m.setattr(settings, "max_concurrent_tasks", 2)
+        m.setattr(settings, "debug", True)
+
         yield settings
 
 
@@ -90,7 +93,7 @@ def sample_task():
         task_id="test-task-123",
         video_filename="test_video.mp4",
         video_size=1024 * 1024,
-        upload_timestamp=datetime.now()
+        upload_timestamp=datetime.now(),
     )
 
 
@@ -121,7 +124,9 @@ def mock_transcription_service():
 def mock_minutes_generator():
     """モック議事録ジェネレーター"""
     mock = Mock()
-    mock.generate_minutes = AsyncMock(return_value="# テスト議事録\n\n## 概要\n\nテスト内容")
+    mock.generate_minutes = AsyncMock(
+        return_value="# テスト議事録\n\n## 概要\n\nテスト内容"
+    )
     return mock
 
 
@@ -129,17 +134,17 @@ def mock_minutes_generator():
 def mock_openai_client():
     """モックOpenAIクライアント"""
     mock = Mock()
-    
+
     # 音声書き起こしのモック
     mock.audio = Mock()
     mock.audio.transcriptions = Mock()
     mock.audio.transcriptions.create = AsyncMock()
-    
+
     # チャット完了のモック
     mock.chat = Mock()
     mock.chat.completions = Mock()
     mock.chat.completions.create = AsyncMock()
-    
+
     return mock
 
 
@@ -177,6 +182,7 @@ def sample_minutes():
 @pytest.fixture
 def aiofiles_mock():
     """aiofilesのモックヘルパー"""
+
     def create_mock(content: bytes):
         """aiofiles.openのモックを作成"""
         mock_aiofiles_open = AsyncMock()
@@ -186,7 +192,7 @@ def aiofiles_mock():
         mock_file_context.read = AsyncMock(return_value=content)
         mock_aiofiles_open.return_value = mock_file_context
         return mock_aiofiles_open
-    
+
     return create_mock
 
 
@@ -194,9 +200,9 @@ def aiofiles_mock():
 def cleanup_test_dirs():
     """テスト後のクリーンアップ"""
     yield
-    
+
     # テスト用ディレクトリをクリーンアップ
-    test_dirs = ['test_uploads', 'test_temp', 'uploads', 'temp']
+    test_dirs = ["test_uploads", "test_temp", "uploads", "temp"]
     for dir_name in test_dirs:
         if os.path.exists(dir_name):
             shutil.rmtree(dir_name, ignore_errors=True)

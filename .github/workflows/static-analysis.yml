@@ -1,0 +1,270 @@
+name: Static Code Analysis
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # 毎日午前3時（UTC）に実行
+    - cron: '0 3 * * *'
+
+jobs:
+  python-analysis:
+    name: Python Static Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r src/backend/requirements.txt
+        pip install flake8 black isort mypy bandit pylint autopep8 safety
+
+    - name: Create reports directory
+      run: mkdir -p reports/static-analysis
+
+    - name: Run Black (Code Formatting)
+      run: |
+        python -m black --check --diff src/backend/ tests/ > reports/static-analysis/black.txt 2>&1 || true
+        echo "BLACK_EXIT_CODE=$?" >> $GITHUB_ENV
+
+    - name: Run isort (Import Sorting)
+      run: |
+        python -m isort --check-only --diff src/backend/ tests/ > reports/static-analysis/isort.txt 2>&1 || true
+        echo "ISORT_EXIT_CODE=$?" >> $GITHUB_ENV
+
+    - name: Run Flake8 (PEP8 Compliance)
+      run: |
+        python -m flake8 src/backend/ tests/ --output-file=reports/static-analysis/flake8.txt --tee || true
+        echo "FLAKE8_EXIT_CODE=$?" >> $GITHUB_ENV
+
+    - name: Run MyPy (Type Checking)
+      run: |
+        python -m mypy src/backend/ > reports/static-analysis/mypy.txt 2>&1 || true
+        echo "MYPY_EXIT_CODE=$?" >> $GITHUB_ENV
+
+    - name: Run Pylint (Code Quality)
+      run: |
+        python -m pylint src/backend/ --output-format=text > reports/static-analysis/pylint.txt 2>&1 || true
+        echo "PYLINT_EXIT_CODE=$?" >> $GITHUB_ENV
+
+    - name: Run Bandit (Security Analysis)
+      run: |
+        python -m bandit -r src/backend/ -f txt -o reports/static-analysis/bandit.txt || true
+        echo "BANDIT_EXIT_CODE=$?" >> $GITHUB_ENV
+
+    - name: Run Safety (Vulnerability Check)
+      run: |
+        python -m safety check --output text > reports/static-analysis/safety.txt 2>&1 || true
+        echo "SAFETY_EXIT_CODE=$?" >> $GITHUB_ENV
+
+    - name: Upload Python Analysis Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: python-static-analysis
+        path: reports/static-analysis/
+        retention-days: 30
+
+    - name: Comment PR with Python Results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let comment = '## 🐍 Python Static Analysis Results\n\n';
+          
+          const tools = [
+            { name: 'Black', file: 'black.txt', env: 'BLACK_EXIT_CODE' },
+            { name: 'isort', file: 'isort.txt', env: 'ISORT_EXIT_CODE' },
+            { name: 'Flake8', file: 'flake8.txt', env: 'FLAKE8_EXIT_CODE' },
+            { name: 'MyPy', file: 'mypy.txt', env: 'MYPY_EXIT_CODE' },
+            { name: 'Pylint', file: 'pylint.txt', env: 'PYLINT_EXIT_CODE' },
+            { name: 'Bandit', file: 'bandit.txt', env: 'BANDIT_EXIT_CODE' },
+            { name: 'Safety', file: 'safety.txt', env: 'SAFETY_EXIT_CODE' }
+          ];
+          
+          for (const tool of tools) {
+            const exitCode = process.env[tool.env] || '0';
+            const status = exitCode === '0' ? '✅ PASS' : '❌ FAIL';
+            comment += `- **${tool.name}**: ${status}\n`;
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  javascript-analysis:
+    name: JavaScript/Vue.js Static Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        npm install
+        cd src/frontend && npm install
+        cd ../../tests/unit-js && npm install
+
+    - name: Create reports directory
+      run: mkdir -p reports/static-analysis
+
+    - name: Run ESLint (Frontend)
+      run: |
+        cd src/frontend
+        npx eslint src/ --ext .js,.vue,.ts --format=json --output-file=../../reports/static-analysis/eslint-frontend.json || true
+        echo "ESLINT_FRONTEND_EXIT_CODE=$?" >> $GITHUB_ENV
+
+    - name: Run Prettier (Frontend)
+      run: |
+        cd src/frontend
+        npx prettier --check src/ > ../../reports/static-analysis/prettier-frontend.txt 2>&1 || true
+        echo "PRETTIER_FRONTEND_EXIT_CODE=$?" >> $GITHUB_ENV
+
+    - name: Run ESLint (Tests)
+      run: |
+        cd tests/unit-js
+        npx eslint . --ext .js,.vue,.ts --format=json --output-file=../../reports/static-analysis/eslint-tests.json || true
+        echo "ESLINT_TESTS_EXIT_CODE=$?" >> $GITHUB_ENV
+
+    - name: Run Prettier (Tests)
+      run: |
+        cd tests/unit-js
+        npx prettier --check . > ../../reports/static-analysis/prettier-tests.txt 2>&1 || true
+        echo "PRETTIER_TESTS_EXIT_CODE=$?" >> $GITHUB_ENV
+
+    - name: Run npm audit (Security)
+      run: |
+        cd src/frontend
+        npm audit --audit-level=moderate --json > ../../reports/static-analysis/npm-audit.json 2>&1 || true
+        echo "NPM_AUDIT_EXIT_CODE=$?" >> $GITHUB_ENV
+
+    - name: Upload JavaScript Analysis Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: javascript-static-analysis
+        path: reports/static-analysis/
+        retention-days: 30
+
+    - name: Comment PR with JavaScript Results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          let comment = '## 🟨 JavaScript/Vue.js Static Analysis Results\n\n';
+          
+          const tools = [
+            { name: 'ESLint (Frontend)', env: 'ESLINT_FRONTEND_EXIT_CODE' },
+            { name: 'Prettier (Frontend)', env: 'PRETTIER_FRONTEND_EXIT_CODE' },
+            { name: 'ESLint (Tests)', env: 'ESLINT_TESTS_EXIT_CODE' },
+            { name: 'Prettier (Tests)', env: 'PRETTIER_TESTS_EXIT_CODE' },
+            { name: 'npm audit', env: 'NPM_AUDIT_EXIT_CODE' }
+          ];
+          
+          for (const tool of tools) {
+            const exitCode = process.env[tool.env] || '0';
+            const status = exitCode === '0' ? '✅ PASS' : '❌ FAIL';
+            comment += `- **${tool.name}**: ${status}\n`;
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  security-analysis:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/init@v3
+      with:
+        languages: python, javascript
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  summary:
+    name: Analysis Summary
+    runs-on: ubuntu-latest
+    needs: [python-analysis, javascript-analysis, security-analysis]
+    if: always()
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: analysis-results
+
+    - name: Generate Summary Report
+      run: |
+        echo "# 📊 Static Analysis Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Analysis Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Tool Category | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|---------------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Python Analysis | ${{ needs.python-analysis.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| JavaScript Analysis | ${{ needs.javascript-analysis.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Security Analysis | ${{ needs.security-analysis.result == 'success' && '✅ PASS' || '❌ FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 📁 Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- Python Static Analysis Reports" >> $GITHUB_STEP_SUMMARY
+        echo "- JavaScript Static Analysis Reports" >> $GITHUB_STEP_SUMMARY
+        echo "- Security Scan Results" >> $GITHUB_STEP_SUMMARY
+
+    - name: Fail if any analysis failed
+      if: needs.python-analysis.result == 'failure' || needs.javascript-analysis.result == 'failure' || needs.security-analysis.result == 'failure'
+      run: |
+        echo "One or more static analysis jobs failed"
+        exit 1 

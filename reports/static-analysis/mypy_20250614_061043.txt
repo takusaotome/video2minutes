@@ -1,0 +1,58 @@
+src/backend/app/models.py:75: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/models.py:104: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/models.py:104: note: Use "-> None" if function does not return a value
+src/backend/app/config.py:72: error: Missing named argument "openai_api_key" for "Settings"  [call-arg]
+src/backend/app/services/transcription.py:4: error: Library stubs not installed for "aiofiles"  [import-untyped]
+src/backend/app/services/transcription.py:4: note: Hint: "python3 -m pip install types-aiofiles"
+src/backend/app/services/transcription.py:4: note: (or run "mypy --install-types" to install all missing stub packages)
+src/backend/app/services/transcription.py:4: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
+src/backend/app/services/transcription.py:14: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/services/transcription.py:14: note: Use "-> None" if function does not return a value
+src/backend/app/services/transcription.py:76: error: Returning Any from function declared to return "str"  [no-any-return]
+src/backend/app/services/transcription.py:164: error: Returning Any from function declared to return "dict[Any, Any]"  [no-any-return]
+src/backend/app/services/task_queue.py:22: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/backend/app/services/task_queue.py:49: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/services/task_queue.py:49: note: Use "-> None" if function does not return a value
+src/backend/app/services/task_queue.py:61: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/services/task_queue.py:61: note: Use "-> None" if function does not return a value
+src/backend/app/services/task_queue.py:82: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/backend/app/services/task_queue.py:94: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/services/task_queue.py:123: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/services/task_queue.py:164: error: No overload variant of "__sub__" of "datetime" matches argument type "None"  [operator]
+src/backend/app/services/task_queue.py:164: note: Possible overload variants:
+src/backend/app/services/task_queue.py:164: note:     def __sub__(self, datetime, /) -> timedelta
+src/backend/app/services/task_queue.py:164: note:     def __sub__(self, timedelta, /) -> datetime
+src/backend/app/services/task_queue.py:164: note: Right operand is of type "Optional[datetime]"
+src/backend/app/services/task_queue.py:181: error: Argument "key" to "sorted" has incompatible type "Callable[[QueuedTask], Optional[datetime]]"; expected "Callable[[QueuedTask], Union[SupportsDunderLT[Any], SupportsDunderGT[Any]]]"  [arg-type]
+src/backend/app/services/task_queue.py:181: error: Incompatible return value type (got "Optional[datetime]", expected "Union[SupportsDunderLT[Any], SupportsDunderGT[Any]]")  [return-value]
+src/backend/app/services/task_queue.py:250: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/services/task_queue.py:250: note: Use "-> None" if function does not return a value
+src/backend/app/services/task_queue.py:256: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/services/task_queue.py:256: note: Use "-> None" if function does not return a value
+src/backend/app/services/minutes_generator.py:13: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/services/minutes_generator.py:13: note: Use "-> None" if function does not return a value
+src/backend/app/services/minutes_generator.py:116: error: Returning Any from function declared to return "str"  [no-any-return]
+src/backend/app/utils/file_handler.py:6: error: Library stubs not installed for "aiofiles"  [import-untyped]
+src/backend/app/utils/file_handler.py:68: error: Argument 1 to "Path" has incompatible type "Optional[str]"; expected "Union[str, PathLike[str]]"  [arg-type]
+src/backend/app/services/video_processor.py:198: error: Incompatible types in assignment (expression has type "float", variable has type "int")  [assignment]
+src/backend/app/api/endpoints/minutes.py:44: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/api/endpoints/minutes.py:67: error: Argument "video_filename" to "MinutesTask" has incompatible type "Optional[str]"; expected "str"  [arg-type]
+src/backend/app/api/endpoints/minutes.py:105: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/api/endpoints/minutes.py:115: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/api/endpoints/minutes.py:124: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/api/endpoints/minutes.py:146: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/api/endpoints/minutes.py:169: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/api/endpoints/minutes.py:190: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/api/endpoints/minutes.py:272: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/api/endpoints/minutes.py:301: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/api/endpoints/minutes.py:339: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/main.py:49: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/main.py:49: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/backend/app/main.py:113: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/main.py:113: note: Use "-> None" if function does not return a value
+src/backend/app/main.py:119: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/main.py:119: note: Use "-> None" if function does not return a value
+src/backend/app/main.py:125: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/main.py:129: error: Function is missing a return type annotation  [no-untyped-def]
+src/backend/app/main.py:145: error: Function is missing a type annotation  [no-untyped-def]
+Found 41 errors in 9 files (checked 15 source files)

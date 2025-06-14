@@ -1,0 +1,358 @@
+
+
++===========================================================================================================================================================================================+
+
+
+DEPRECATED: this command (`check`) has been DEPRECATED, and will be unsupported beyond 01 June 2024.
+
+
+We highly encourage switching to the new `scan` command which is easier to use, more powerful, and can be set up to mimic the deprecated command if required.
+
+
++===========================================================================================================================================================================================+
+
+
+/Users/takueisaotome/Library/Python/3.9/lib/python/site-packages/safety/safety.py:1853: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
++==============================================================================+
+
+                                   /$$$$$$            /$$
+                                  /$$__  $$          | $$
+               /$$$$$$$  /$$$$$$ | $$  \__//$$$$$$  /$$$$$$   /$$   /$$
+              /$$_____/ |____  $$| $$$$   /$$__  $$|_  $$_/  | $$  | $$
+             |  $$$$$$   /$$$$$$$| $$_/  | $$$$$$$$  | $$    | $$  | $$
+              \____  $$ /$$__  $$| $$    | $$_____/  | $$ /$$| $$  | $$
+              /$$$$$$$/|  $$$$$$$| $$    |  $$$$$$$  |  $$$$/|  $$$$$$$
+             |_______/  \_______/|__/     \_______/   \___/   \____  $$
+                                                              /$$  | $$
+                                                             |  $$$$$$/
+      by safetycli.com                                        \______/
+
++==============================================================================+
+
+ REPORT 
+
+  Safety v3.5.2 is scanning for Vulnerabilities...
+  Scanning dependencies in your environment:
+
+  -> /Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/lib-dynload
+  -> /Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-
+  packages
+  -> /Users/takueisaotome/Library/Python/3.9/lib/python/site-packages
+  -> /Users/takueisaotome/Library/Python/3.9/lib/python/site-
+  packages/setuptools/_vendor
+  -> /Users/takueisaotome/PycharmProjects/video2minutes
+  -> /Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9
+  -> /Library/Frameworks/Python.framework/Versions/3.9/lib/python39.zip
+
+  Using open-source vulnerability database
+  Found and scanned 149 packages
+  Timestamp 2025-06-14 06:11:58
+  23 vulnerabilities reported
+  0 vulnerabilities ignored
+
++==============================================================================+
+ VULNERABILITIES FOUND
++==============================================================================+
+
+-> Vulnerability found in virtualenv version 20.4.7
+   Vulnerability ID: 68477
+   Affected spec: <20.21.0
+   ADVISORY: Virtualenv version 20.21.0 addresses a race condition in
+   `virtualenv.cli_run` where a `FileNotFoundError` could occur for a JSON...
+   PVE-2024-68477
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/68477/97c
+   To ignore this vulnerability, use PyUp vulnerability id 68477 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in virtualenv version 20.4.7
+   Vulnerability ID: 73456
+   Affected spec: <20.26.6
+   ADVISORY: Affected versions of the virtualenv package are
+   vulnerable to command injection. This vulnerability could allow an...
+   PVE-2024-73456
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/73456/97c
+   To ignore this vulnerability, use PyUp vulnerability id 73456 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in urllib3 version 1.26.16
+   Vulnerability ID: 71608
+   Affected spec: <=1.26.18
+   ADVISORY: Urllib3's ProxyManager ensures that the Proxy-
+   Authorization header is correctly directed only to configured proxies....
+   CVE-2024-37891
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/71608/97c
+   To ignore this vulnerability, use PyUp vulnerability id 71608 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in urllib3 version 1.26.16
+   Vulnerability ID: 61601
+   Affected spec: <1.26.17
+   ADVISORY: Urllib3 1.26.17 and 2.0.5 include a fix for
+   CVE-2023-43804: Urllib3 doesn't treat the 'Cookie' HTTP header special...
+   CVE-2023-43804
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/61601/97c
+   To ignore this vulnerability, use PyUp vulnerability id 61601 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in urllib3 version 1.26.16
+   Vulnerability ID: 61893
+   Affected spec: <1.26.18
+   ADVISORY: Affected versions of urllib3 are vulnerable to an HTTP
+   redirect handling vulnerability that fails to remove the HTTP request...
+   CVE-2023-45803
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/61893/97c
+   To ignore this vulnerability, use PyUp vulnerability id 61893 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in requests version 2.31.0
+   Vulnerability ID: 71064
+   Affected spec: <2.32.2
+   ADVISORY: Affected versions of Requests, when making requests
+   through a Requests `Session`, if the first request is made with...
+   CVE-2024-35195
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/71064/97c
+   To ignore this vulnerability, use PyUp vulnerability id 71064 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in jinja2 version 3.1.4
+   Vulnerability ID: 76378
+   Affected spec: <3.1.5
+   ADVISORY: An oversight in how the Jinja sandboxed environment
+   detects calls to str.format allows an attacker who controls the content...
+   CVE-2024-56326
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/76378/97c
+   To ignore this vulnerability, use PyUp vulnerability id 76378 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in jinja2 version 3.1.4
+   Vulnerability ID: 74735
+   Affected spec: <3.1.5
+   ADVISORY: A vulnerability in the Jinja compiler allows an attacker
+   who can control both the content and filename of a template to execute...
+   CVE-2024-56201
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/74735/97c
+   To ignore this vulnerability, use PyUp vulnerability id 74735 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in jinja2 version 3.1.4
+   Vulnerability ID: 75976
+   Affected spec: <3.1.6
+   ADVISORY: Prior to 3.1.6, an oversight in how the Jinja sandboxed
+   environment interacts with the |attr filter allows an attacker that...
+   CVE-2025-27516
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/75976/97c
+   To ignore this vulnerability, use PyUp vulnerability id 75976 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in idna version 3.4
+   Vulnerability ID: 67895
+   Affected spec: <3.7
+   ADVISORY: Affected versions of Idna are vulnerable to Denial Of
+   Service via the idna.encode(), where a specially crafted argument could...
+   CVE-2024-3651
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/67895/97c
+   To ignore this vulnerability, use PyUp vulnerability id 67895 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in cryptography version 41.0.1
+   Vulnerability ID: 65278
+   Affected spec: <42.0.0
+   ADVISORY: Affected versions of Cryptography may allow a remote
+   attacker to decrypt captured messages in TLS servers that use RSA key...
+   CVE-2023-50782
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/65278/97c
+   To ignore this vulnerability, use PyUp vulnerability id 65278 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in cryptography version 41.0.1
+   Vulnerability ID: 62556
+   Affected spec: >=3.1,<41.0.6
+   ADVISORY: Affected versions of Cryptography are vulnerable to
+   NULL-dereference when loading PKCS7 certificates. Calling...
+   CVE-2023-49083
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/62556/97c
+   To ignore this vulnerability, use PyUp vulnerability id 62556 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in cryptography version 41.0.1
+   Vulnerability ID: 65212
+   Affected spec: >=35.0.0,<42.0.2
+   ADVISORY: Versions of Cryptograph starting from 35.0.0 are
+   susceptible to a security flaw in the POLY1305 MAC algorithm on PowerPC...
+   CVE-2023-6129
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/65212/97c
+   To ignore this vulnerability, use PyUp vulnerability id 65212 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in cryptography version 41.0.1
+   Vulnerability ID: 65647
+   Affected spec: <42.0.5
+   ADVISORY: Cryptography version 42.0.5 introduces a limit on the
+   number of name constraint checks during X.509 path validation to...
+   PVE-2024-65647
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/65647/97c
+   To ignore this vulnerability, use PyUp vulnerability id 65647 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in cryptography version 41.0.1
+   Vulnerability ID: 66704
+   Affected spec: >=38.0.0,<42.0.4
+   ADVISORY: cryptography is a package designed to expose
+   cryptographic primitives and recipes to Python developers. Starting in...
+   CVE-2024-26130
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/66704/97c
+   To ignore this vulnerability, use PyUp vulnerability id 66704 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in cryptography version 41.0.1
+   Vulnerability ID: 59473
+   Affected spec: <41.0.2
+   ADVISORY: The cryptography package before 41.0.2 for Python
+   mishandles SSH certificates that have critical options.
+   CVE-2023-38325
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/59473/97c
+   To ignore this vulnerability, use PyUp vulnerability id 59473 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in certifi version 2023.11.17
+   Vulnerability ID: 72083
+   Affected spec: >=2021.05.30,<2024.07.04
+   ADVISORY: Certifi affected versions recognized root certificates
+   from GLOBALTRUST. Certifi patch removes these root certificates from...
+   CVE-2024-39689
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/72083/97c
+   To ignore this vulnerability, use PyUp vulnerability id 72083 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in starlette version 0.36.3
+   Vulnerability ID: 73725
+   Affected spec: <0.40.0
+   ADVISORY: Affected versions of the Starlette framework are
+   vulnerable to Denial of Service (DoS) attacks due to the lack of...
+   CVE-2024-47874
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/73725/97c
+   To ignore this vulnerability, use PyUp vulnerability id 73725 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in python-multipart version 0.0.9
+   Vulnerability ID: 74427
+   Affected spec: <0.0.18
+   ADVISORY: Affected versions of python-multipart are vulnerable to
+   Allocation of Resources Without Limits or Throttling (CWE-770). An...
+   CVE-2024-53981
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/74427/97c
+   To ignore this vulnerability, use PyUp vulnerability id 74427 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in python-jose version 3.3.0
+   Vulnerability ID: 70716
+   Affected spec: >=0
+   ADVISORY: Affected versions of Python-jose allow attackers to
+   cause a denial of service (resource consumption) during a decode via a...
+   CVE-2024-33664
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/70716/97c
+   To ignore this vulnerability, use PyUp vulnerability id 70716 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in python-jose version 3.3.0
+   Vulnerability ID: 70715
+   Affected spec: >=0
+   ADVISORY: Affected versions of Python-jose have a algorithm
+   confusion vulnerability with OpenSSH ECDSA keys and other key formats....
+   CVE-2024-33663
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/70715/97c
+   To ignore this vulnerability, use PyUp vulnerability id 70715 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in ecdsa version 0.19.1
+   Vulnerability ID: 64459
+   Affected spec: >=0
+   ADVISORY: The python-ecdsa library, which implements ECDSA
+   cryptography in Python, is vulnerable to the Minerva attack...
+   CVE-2024-23342
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/64459/97c
+   To ignore this vulnerability, use PyUp vulnerability id 64459 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
+-> Vulnerability found in ecdsa version 0.19.1
+   Vulnerability ID: 64396
+   Affected spec: >=0
+   ADVISORY: Ecdsa does not protects against side-channel attacks.
+   This is because Python does not provide side-channel secure primitives...
+   PVE-2024-64396
+   For more information about this vulnerability, visit
+   https://data.safetycli.com/v/64396/97c
+   To ignore this vulnerability, use PyUp vulnerability id 64396 in safety’s
+   ignore command-line argument or add the ignore to your safety policy file.
+
+
++==============================================================================+
+   REMEDIATIONS
+
+  23 vulnerabilities were reported in 11 packages. For detailed remediation & 
+  fix recommendations, upgrade to a commercial license. 
+
++==============================================================================+
+
+ Scan was completed. 23 vulnerabilities were reported. 
+
++==============================================================================+
+
+
++===========================================================================================================================================================================================+
+
+
+DEPRECATED: this command (`check`) has been DEPRECATED, and will be unsupported beyond 01 June 2024.
+
+
+We highly encourage switching to the new `scan` command which is easier to use, more powerful, and can be set up to mimic the deprecated command if required.
+
+
++===========================================================================================================================================================================================+
+
+
