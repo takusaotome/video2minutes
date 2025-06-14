@@ -1,9 +1,11 @@
 <template>
   <div id="app">
     <header class="app-header">
-      <h1 class="app-title" @click="goToHome">
-        <i class="pi pi-video"></i>
-        Video2Minutes
+      <h1 class="app-title">
+        <RouterLink to="/" class="app-title-link">
+          <i class="pi pi-video"></i>
+          Video2Minutes
+        </RouterLink>
       </h1>
       <p class="app-subtitle">動画から議事録を自動生成</p>
     </header>
@@ -17,27 +19,15 @@
 </template>
 
 <script>
-import { RouterView, useRouter } from 'vue-router'
+import { RouterView, RouterLink } from 'vue-router'
 import Toast from 'primevue/toast'
 
 export default {
   name: 'App',
   components: {
     RouterView,
+    RouterLink,
     Toast
-  },
-  setup() {
-    const router = useRouter()
-
-    const goToHome = () => {
-      if (router.currentRoute.value.name !== 'dashboard') {
-        router.push({ name: 'dashboard' })
-      }
-    }
-
-    return {
-      goToHome
-    }
   }
 }
 </script>
@@ -113,6 +103,14 @@ export default {
 .app-title i {
   font-size: 3.5rem;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.app-title-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
 }
 
 .app-subtitle {
