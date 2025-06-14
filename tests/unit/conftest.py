@@ -3,7 +3,6 @@ import os
 import shutil
 import tempfile
 from datetime import datetime
-from typing import Generator
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -15,7 +14,7 @@ os.environ.setdefault("ANTHROPIC_API_KEY", "test-anthropic-key")
 from fastapi.testclient import TestClient
 
 from app.main import create_app
-from app.models import MinutesTask, ProcessingStepName
+from app.models import MinutesTask
 
 
 @pytest.fixture(scope="session")
@@ -212,7 +211,8 @@ def cleanup_test_dirs():
 def cleanup_tasks_store():
     """テスト後のタスクストアクリーンアップ"""
     yield
-    
+
     # タスクストアをクリア
     from app.store import tasks_store
+
     tasks_store.clear()

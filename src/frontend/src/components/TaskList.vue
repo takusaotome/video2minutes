@@ -44,21 +44,27 @@
         </div>
 
         <!-- Empty State - 初期化済みでタスクが空の場合 -->
-        <div v-else-if="initialized && tasks.length === 0 && !loading" class="empty-state">
+        <div
+          v-else-if="initialized && tasks.length === 0 && !loading"
+          class="empty-state"
+        >
           <i class="pi pi-inbox empty-icon"></i>
           <h3>タスクがありません</h3>
           <p>動画ファイルをアップロードして議事録生成を開始してください</p>
         </div>
 
         <!-- Loading overlay for manual refresh - 手動更新時のみ表示 -->
-        <div v-else-if="loading && initialized && tasks.length === 0" class="refresh-loading">
+        <div
+          v-else-if="loading && initialized && tasks.length === 0"
+          class="refresh-loading"
+        >
           <ProgressSpinner
             strokeWidth="3"
             fill="transparent"
             animationDuration="1s"
-            style="width: 24px; height: 24px;"
+            style="width: 24px; height: 24px"
           />
-          <p style="font-size: 0.9rem; margin-top: 0.5rem;">更新中...</p>
+          <p style="font-size: 0.9rem; margin-top: 0.5rem">更新中...</p>
         </div>
 
         <!-- Task Table -->

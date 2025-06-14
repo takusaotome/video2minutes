@@ -206,12 +206,12 @@ export function extractTableOfContents(markdown, options = {}) {
       if (token.depth < minLevel || token.depth > maxLevel) {
         return
       }
-      
+
       // Skip if text matches excluded patterns
-      const shouldExclude = excludeTexts.some(excludeText => 
+      const shouldExclude = excludeTexts.some(excludeText =>
         token.text.toLowerCase().includes(excludeText.toLowerCase())
       )
-      
+
       if (shouldExclude) {
         return
       }

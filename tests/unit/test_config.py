@@ -1,8 +1,6 @@
 import os
 from unittest.mock import patch
 
-import pytest
-
 from app.config import Settings, settings
 
 
@@ -22,7 +20,7 @@ class TestSettings:
         # デフォルト値が正しく設定されることを確認
         assert test_settings.host == "0.0.0.0"
         assert test_settings.port == 8000
-        assert test_settings.debug == False
+        assert not test_settings.debug
         assert test_settings.max_file_size == 5 * 1024 * 1024 * 1024  # 5GB
         assert test_settings.upload_dir == "uploads"
         assert test_settings.temp_dir == "temp"
@@ -100,7 +98,7 @@ class TestSettings:
         assert test_settings.anthropic_api_key == "custom-anthropic-key"
         assert test_settings.host == "127.0.0.1"
         assert test_settings.port == 9000
-        assert test_settings.debug == True
+        assert test_settings.debug
         assert test_settings.max_file_size == 1024 * 1024 * 1024
         assert test_settings.upload_dir == "custom_uploads"
         assert test_settings.temp_dir == "custom_temp"
@@ -121,14 +119,14 @@ class TestSettingsValidation:
         test_settings = Settings(openai_api_key="test-key")
         assert test_settings.openai_api_key == "test-key"
         # anthropic_api_keyはオプションなので何らかの値を持つ場合がある
-        
+
         # Settingsクラスのフィールド情報を確認
         settings_fields = Settings.model_fields
         assert "openai_api_key" in settings_fields
-        
+
         # openai_api_keyが必須（デフォルト値がない）ことを確認
         openai_field = settings_fields["openai_api_key"]
-        assert openai_field.annotation == str  # strタイプであることを確認
+        assert openai_field.annotation is str  # strタイプであることを確認
 
     def test_port_validation(self):
         """ポート番号バリデーションテスト"""
@@ -184,7 +182,7 @@ class TestEnvironmentVariableIntegration:
         assert test_settings.anthropic_api_key == "env-anthropic-key"
         assert test_settings.host == "192.168.1.100"
         assert test_settings.port == 9999
-        assert test_settings.debug == True
+        assert test_settings.debug
         assert test_settings.max_file_size == 1073741824
         assert test_settings.upload_dir == "env_uploads"
         assert test_settings.temp_dir == "env_temp"

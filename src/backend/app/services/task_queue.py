@@ -141,8 +141,7 @@ class AsyncTaskQueue(LoggerMixin):
                 loop = asyncio.get_event_loop()
                 result = await loop.run_in_executor(
                     None,
-                    lambda: queued_task.func(
-                        *queued_task.args, **queued_task.kwargs),
+                    lambda: queued_task.func(*queued_task.args, **queued_task.kwargs),
                 )
 
             # 成功
@@ -244,8 +243,7 @@ def get_task_queue() -> AsyncTaskQueue:
     if task_queue is None:
         from app.config import settings
 
-        task_queue = AsyncTaskQueue(
-            max_concurrent_tasks=settings.max_concurrent_tasks)
+        task_queue = AsyncTaskQueue(max_concurrent_tasks=settings.max_concurrent_tasks)
     return task_queue
 
 

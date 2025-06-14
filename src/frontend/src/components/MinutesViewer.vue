@@ -277,7 +277,7 @@ export default {
     const showTranscript = ref(false)
     const windowWidth = ref(window.innerWidth)
     const wordCount = ref(0)
-    
+
     // Meeting details editing
     const meetingName = ref('')
     const meetingDate = ref(null)
@@ -290,20 +290,24 @@ export default {
     // Generate minutes content with updated meeting details inserted
     const minutesWithUpdatedInfo = computed(() => {
       if (!minutes.value) return ''
-      
+
       let content = minutes.value.minutes
-      
+
       // Prepare updated meeting information
       const meetingNameText = meetingName.value || '未設定'
-      const meetingDateText = meetingDate.value ? formatDate(meetingDate.value) : '未設定'
-      const attendeesText = attendees.value.length > 0 ? attendees.value.join('、') : '未設定'
-      
+      const meetingDateText = meetingDate.value
+        ? formatDate(meetingDate.value)
+        : '未設定'
+      const attendeesText =
+        attendees.value.length > 0 ? attendees.value.join('、') : '未設定'
+
       // Find and replace existing meeting information section
-      const meetingInfoPattern = /(#+\s*(?:会議情報|Meeting Information|会議概要)[\s\S]*?)(?=\n#{1,6}\s+(?!.*(?:会議情報|Meeting Information|会議概要))|$)/i
-      
+      const meetingInfoPattern =
+        /(#+\s*(?:会議情報|Meeting Information|会議概要)[\s\S]*?)(?=\n#{1,6}\s+(?!.*(?:会議情報|Meeting Information|会議概要))|$)/i
+
       if (meetingInfoPattern.test(content)) {
         // Replace existing meeting info section
-        content = content.replace(meetingInfoPattern, (match) => {
+        content = content.replace(meetingInfoPattern, match => {
           return `#### 会議情報
 
 **会議名:** ${meetingNameText}  
@@ -315,25 +319,34 @@ export default {
       } else {
         // Look for individual meeting detail patterns and replace them
         let hasReplacements = false
-        
+
         // Replace meeting name
         if (/(?:会議名|件名|タイトル)[:：]/i.test(content)) {
-          content = content.replace(/(\*\*)?(?:会議名|件名|タイトル)[:：](\*\*)?\s*[^\n]*/gi, `**会議名:** ${meetingNameText}`)
+          content = content.replace(
+            /(\*\*)?(?:会議名|件名|タイトル)[:：](\*\*)?\s*[^\n]*/gi,
+            `**会議名:** ${meetingNameText}`
+          )
           hasReplacements = true
         }
-        
+
         // Replace meeting date
         if (/(?:開催日時?|会議日時?|開催日|会議日|日時)[:：]/i.test(content)) {
-          content = content.replace(/(\*\*)?(?:開催日時?|会議日時?|開催日|会議日|日時)[:：](\*\*)?\s*[^\n]*/gi, `**開催日時:** ${meetingDateText}`)
+          content = content.replace(
+            /(\*\*)?(?:開催日時?|会議日時?|開催日|会議日|日時)[:：](\*\*)?\s*[^\n]*/gi,
+            `**開催日時:** ${meetingDateText}`
+          )
           hasReplacements = true
         }
-        
+
         // Replace attendees
         if (/(?:出席者|参加者)[:：]/i.test(content)) {
-          content = content.replace(/(\*\*)?(?:出席者|参加者)[:：](\*\*)?\s*[^\n]*/gi, `**出席者:** ${attendeesText}`)
+          content = content.replace(
+            /(\*\*)?(?:出席者|参加者)[:：](\*\*)?\s*[^\n]*/gi,
+            `**出席者:** ${attendeesText}`
+          )
           hasReplacements = true
         }
-        
+
         // If no existing patterns found, add meeting info at the beginning
         if (!hasReplacements) {
           const meetingInfoHeader = `#### 会議情報
@@ -348,28 +361,31 @@ export default {
           // Check if content starts with a title
           if (/^#/.test(content.trim())) {
             // Insert after the first heading
-            content = content.replace(/^(#+[^\n]*\n)/i, `$1\n${meetingInfoHeader}`)
+            content = content.replace(
+              /^(#+[^\n]*\n)/i,
+              `$1\n${meetingInfoHeader}`
+            )
           } else {
             // Insert at the beginning
             content = meetingInfoHeader + content
           }
         }
       }
-      
+
       // Clean up multiple newlines
       content = content.replace(/\n{3,}/g, '\n\n')
       content = content.trim()
-      
+
       return content
     })
-    
+
     // Keep the clean version for backward compatibility
     const cleanMinutesContent = computed(() => {
       if (!minutes.value) return ''
-      
+
       // Remove any existing meeting details from the minutes content
       let content = minutes.value.minutes
-      
+
       // Remove common meeting detail patterns
       content = content.replace(/^#\s*議事録\s*\n/i, '')
 
@@ -395,25 +411,24 @@ export default {
       content = content.replace(/^会議情報\s*\n/gm, '')
       content = content.replace(/^\s*\d+\.\s*会議情報.*\n/gm, '')
       content = content.replace(/^---+\s*\n/gm, '')
-      
+
       // Clean up multiple newlines
       content = content.replace(/\n{3,}/g, '\n\n')
       content = content.trim()
-      
+
       return content
     })
-    
 
     // Generate complete content for downloads (includes meeting details)
     const completeMinutesForDownload = computed(() => {
       if (!minutes.value) return ''
-      
+
       // Add file info to the updated minutes content
       const fileInfo = `**ファイル名:** ${minutes.value.video_filename}  
 **作成日時:** ${formatDate(minutes.value.created_at)}  
 
 `
-      
+
       // Insert file info at the beginning
       let content = minutesWithUpdatedInfo.value
       if (content.includes('#### 会議情報')) {
@@ -426,7 +441,7 @@ export default {
         // Insert at the beginning
         content = fileInfo + content
       }
-      
+
       return content
     })
 
@@ -456,7 +471,7 @@ export default {
         // Use the API service
         const response = await minutesApi.getTaskResult(props.taskId)
         minutes.value = response.data
-        
+
         // Initialize meeting details by extracting from minutes content
         initializeMeetingDetails()
         hasUnsavedChanges.value = false
@@ -509,8 +524,11 @@ export default {
 **作成日時:** ${formatDate(minutes.value.created_at)}  
 
 `
-      
-      const content = completeMinutesForDownload.value.replace('# 議事録\n\n', `# 議事録\n\n${fileInfo}`)
+
+      const content = completeMinutesForDownload.value.replace(
+        '# 議事録\n\n',
+        `# 議事録\n\n${fileInfo}`
+      )
 
       const blob = new Blob([content], { type: 'text/markdown' })
       const url = URL.createObjectURL(blob)
@@ -528,19 +546,22 @@ export default {
 
       // Convert markdown to plain text format
       let textContent = minutesWithUpdatedInfo.value
-      
+
       // Remove markdown formatting
       textContent = textContent.replace(/#{1,6}\s+/g, '') // Remove headers
       textContent = textContent.replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
       textContent = textContent.replace(/\*(.*?)\*/g, '$1') // Remove italic
       textContent = textContent.replace(/\[(.*?)\]\(.*?\)/g, '$1') // Remove links
       textContent = textContent.replace(/^-\s+/gm, '• ') // Convert bullets
-      textContent = textContent.replace(/^\d+\.\s+/gm, (match, offset, string) => {
-        const lineStart = string.lastIndexOf('\n', offset) + 1
-        const lineContent = string.substring(lineStart, offset)
-        return match
-      })
-      
+      textContent = textContent.replace(
+        /^\d+\.\s+/gm,
+        (match, offset, string) => {
+          const lineStart = string.lastIndexOf('\n', offset) + 1
+          const lineContent = string.substring(lineStart, offset)
+          return match
+        }
+      )
+
       // Add file information at the top
       const fileInfo = `議事録
 
@@ -576,10 +597,14 @@ ${'-'.repeat(50)}
 
       try {
         // Find the existing rendered markdown content
-        const markdownRenderer = document.querySelector('.markdown-renderer .markdown-content')
-        
+        const markdownRenderer = document.querySelector(
+          '.markdown-renderer .markdown-content'
+        )
+
         if (!markdownRenderer) {
-          throw new Error('レンダリングされたマークダウンコンテンツが見つかりません')
+          throw new Error(
+            'レンダリングされたマークダウンコンテンツが見つかりません'
+          )
         }
 
         // Create a temporary container for PDF content
@@ -590,18 +615,22 @@ ${'-'.repeat(50)}
         tempContainer.style.width = '800px'
         tempContainer.style.padding = '40px'
         tempContainer.style.backgroundColor = 'white'
-        tempContainer.style.fontFamily = '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif'
+        tempContainer.style.fontFamily =
+          '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif'
 
         // Create header for PDF
         const header = document.createElement('div')
         header.style.marginBottom = '30px'
         header.style.borderBottom = '2px solid var(--gray-200)'
         header.style.paddingBottom = '20px'
-        
+
         const meetingNameText = meetingName.value || '未設定'
-        const attendeesText = attendees.value.length > 0 ? attendees.value.join(', ') : '未設定'
-        const meetingDateText = meetingDate.value ? formatDate(meetingDate.value) : '未設定'
-        
+        const attendeesText =
+          attendees.value.length > 0 ? attendees.value.join(', ') : '未設定'
+        const meetingDateText = meetingDate.value
+          ? formatDate(meetingDate.value)
+          : '未設定'
+
         header.innerHTML = `
           <h1 style="color: var(--gray-700); font-size: 24px; margin: 0 0 15px 0; font-weight: bold;">議事録</h1>
           <div style="color: var(--gray-500); font-size: 12px;">
@@ -615,13 +644,13 @@ ${'-'.repeat(50)}
 
         // Clone the rendered markdown content
         const markdownClone = markdownRenderer.cloneNode(true)
-        
+
         // Apply PDF-specific styles to the cloned content
-        const applyPDFStyles = (element) => {
+        const applyPDFStyles = element => {
           element.style.color = 'var(--gray-700)'
           element.style.fontSize = '14px'
           element.style.lineHeight = '1.6'
-          
+
           // Style headings
           const h1Elements = element.querySelectorAll('h1')
           h1Elements.forEach(h1 => {
@@ -762,7 +791,7 @@ ${'-'.repeat(50)}
 
         const imgData = canvas.toDataURL('image/png')
         const pdf = new jsPDF('p', 'mm', 'a4')
-        
+
         const imgWidth = 210 // A4 width in mm
         const pageHeight = 295 // A4 height in mm
         const imgHeight = (canvas.height * imgWidth) / canvas.width
@@ -823,27 +852,32 @@ ${'-'.repeat(50)}
       // First, try to load from localStorage
       const storageKey = `meeting_details_${props.taskId}`
       const savedDetails = localStorage.getItem(storageKey)
-      
+
       console.log('Loading meeting details with key:', storageKey)
       console.log('Saved details from localStorage:', savedDetails)
-      
+
       if (savedDetails) {
         try {
           const parsed = JSON.parse(savedDetails)
           console.log('Parsed meeting details:', parsed)
-          console.log('Parsed attendees:', parsed.attendees, 'Type:', typeof parsed.attendees)
-          
+          console.log(
+            'Parsed attendees:',
+            parsed.attendees,
+            'Type:',
+            typeof parsed.attendees
+          )
+
           meetingName.value = parsed.meeting_name || ''
           meetingDate.value = new Date(parsed.meeting_date)
           attendees.value = parsed.attendees || []
-          
+
           console.log('Set attendees.value to:', attendees.value)
           return
         } catch (error) {
           console.warn('Failed to parse saved meeting details:', error)
         }
       }
-      
+
       // If no saved data, extract from minutes content
       if (!minutes.value?.minutes) {
         meetingName.value = ''
@@ -853,34 +887,44 @@ ${'-'.repeat(50)}
       }
 
       const content = minutes.value.minutes
-      
+
       // Extract meeting name
       const namePatterns = [
         /(?:会議名|件名|タイトル)[:：]\s*([^\n]+)/i,
         /\*\*(?:会議名|件名|タイトル)[:：]\*\*\s*([^\n]+)/i
       ]
-      
+
       let extractedName = ''
       for (const pattern of namePatterns) {
         const match = content.match(pattern)
-        if (match && match[1] && !match[1].includes('未設定') && !match[1].includes('未記載')) {
+        if (
+          match &&
+          match[1] &&
+          !match[1].includes('未設定') &&
+          !match[1].includes('未記載')
+        ) {
           extractedName = match[1].trim()
           break
         }
       }
-      
+
       meetingName.value = extractedName
-      
+
       // Extract meeting date
       const datePatterns = [
         /^(?:\s*[-*]\s*)?\*\*(?:開催日時?|会議日時?|開催日|会議日|日時)[:：]\*\*\s*([^\n]+)/m,
         /^(?:\s*[-*]\s*)?(?:開催日時?|会議日時?|開催日|会議日|日時)[:：]\s*([^\n]+)/m
       ]
-      
+
       let extractedDate = null
       for (const pattern of datePatterns) {
         const match = content.match(pattern)
-        if (match && match[1] && !match[1].includes('未記載') && !match[1].includes('未設定')) {
+        if (
+          match &&
+          match[1] &&
+          !match[1].includes('未記載') &&
+          !match[1].includes('未設定')
+        ) {
           const dateStr = match[1].trim()
           // Try to parse various date formats
           const parsedDate = parseJapaneseDate(dateStr)
@@ -890,19 +934,24 @@ ${'-'.repeat(50)}
           }
         }
       }
-      
+
       meetingDate.value = extractedDate || new Date()
-      
+
       // Extract attendees
       const attendeePatterns = [
         /^(?:\s*[-*]\s*)?\*\*(?:出席者|参加者)[:：]\*\*\s*([^\n]+)/m,
         /^(?:\s*[-*]\s*)?(?:出席者|参加者)[:：]\s*([^\n]+)/m
       ]
-      
+
       let extractedAttendees = []
       for (const pattern of attendeePatterns) {
         const match = content.match(pattern)
-        if (match && match[1] && !match[1].includes('未設定') && !match[1].includes('未記載')) {
+        if (
+          match &&
+          match[1] &&
+          !match[1].includes('未設定') &&
+          !match[1].includes('未記載')
+        ) {
           const attendeesStr = match[1].trim()
           // Split by common separators and clean up
           extractedAttendees = attendeesStr
@@ -912,13 +961,13 @@ ${'-'.repeat(50)}
           break
         }
       }
-      
+
       console.log('Extracted attendees from content:', extractedAttendees)
       attendees.value = extractedAttendees
     }
 
     // Parse Japanese date formats
-    const parseJapaneseDate = (dateStr) => {
+    const parseJapaneseDate = dateStr => {
       try {
         // Handle various Japanese date formats
         let normalizedDate = dateStr
@@ -927,31 +976,35 @@ ${'-'.repeat(50)}
           .replace(/日/g, '')
           .replace(/\s+/g, ' ')
           .trim()
-        
+
         // Try to parse the normalized date
         const parsed = new Date(normalizedDate)
         if (!isNaN(parsed.getTime())) {
           return parsed
         }
-        
+
         // If that fails, try some other common patterns
         const patterns = [
           /(\d{4})\/(\d{1,2})\/(\d{1,2})/,
           /(\d{1,2})\/(\d{1,2})\/(\d{4})/,
           /(\d{4})-(\d{1,2})-(\d{1,2})/
         ]
-        
+
         for (const pattern of patterns) {
           const match = normalizedDate.match(pattern)
           if (match) {
             const [, year, month, day] = match
-            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+            const date = new Date(
+              parseInt(year),
+              parseInt(month) - 1,
+              parseInt(day)
+            )
             if (!isNaN(date.getTime())) {
               return date
             }
           }
         }
-        
+
         return null
       } catch (error) {
         return null
@@ -975,16 +1028,26 @@ ${'-'.repeat(50)}
         // Debug logging
         console.log('Saving meeting details...')
         console.log('attendees.value:', attendees.value)
-        console.log('attendees type:', typeof attendees.value, 'Is Array:', Array.isArray(attendees.value))
+        console.log(
+          'attendees type:',
+          typeof attendees.value,
+          'Is Array:',
+          Array.isArray(attendees.value)
+        )
         if (Array.isArray(attendees.value) && attendees.value.length > 0) {
-          console.log('First attendee:', attendees.value[0], 'Type:', typeof attendees.value[0])
+          console.log(
+            'First attendee:',
+            attendees.value[0],
+            'Type:',
+            typeof attendees.value[0]
+          )
         }
-        
+
         // Update the local minutes object
         minutes.value.meeting_name = meetingName.value
         minutes.value.meeting_date = meetingDate.value
         minutes.value.attendees = attendees.value
-        
+
         // Save to localStorage for persistence
         const storageKey = `meeting_details_${props.taskId}`
         const meetingDetails = {
@@ -993,20 +1056,20 @@ ${'-'.repeat(50)}
           attendees: attendees.value,
           updated_at: new Date().toISOString()
         }
-        
+
         console.log('Saving to localStorage with key:', storageKey)
         console.log('Meeting details to save:', meetingDetails)
         console.log('attendees.value before save:', attendees.value)
         console.log('attendees is Array?', Array.isArray(attendees.value))
-        
+
         localStorage.setItem(storageKey, JSON.stringify(meetingDetails))
-        
+
         // Verify the save
         const savedData = localStorage.getItem(storageKey)
         console.log('Data saved to localStorage:', savedData)
         const parsedSaved = JSON.parse(savedData)
         console.log('Parsed saved attendees:', parsedSaved.attendees)
-        
+
         // Here you would typically save to the backend
         // await minutesApi.updateMeetingDetails(props.taskId, {
         //   meeting_date: meetingDate.value,
@@ -1015,7 +1078,7 @@ ${'-'.repeat(50)}
 
         isEditing.value = false
         hasUnsavedChanges.value = false
-        
+
         toast.add({
           severity: 'success',
           summary: '保存完了',
@@ -1033,43 +1096,52 @@ ${'-'.repeat(50)}
       }
     }
 
-    const onMeetingDetailsChange = (value) => {
+    const onMeetingDetailsChange = value => {
       console.log('onMeetingDetailsChange called with value:', value)
       console.log('Current attendees.value:', attendees.value)
       hasUnsavedChanges.value = true
     }
 
     // Watch attendees for debugging and real-time updates
-    watch(attendees, (newValue, oldValue) => {
-      console.log('Attendees watch triggered')
-      console.log('Old value:', oldValue)
-      console.log('New value:', newValue)
-      console.log('New value type:', typeof newValue, 'Is Array:', Array.isArray(newValue))
-      
-      // Mark as changed for real-time preview
-      if (isEditing.value) {
-        hasUnsavedChanges.value = true
-      }
-    }, { deep: true })
-    
+    watch(
+      attendees,
+      (newValue, oldValue) => {
+        console.log('Attendees watch triggered')
+        console.log('Old value:', oldValue)
+        console.log('New value:', newValue)
+        console.log(
+          'New value type:',
+          typeof newValue,
+          'Is Array:',
+          Array.isArray(newValue)
+        )
+
+        // Mark as changed for real-time preview
+        if (isEditing.value) {
+          hasUnsavedChanges.value = true
+        }
+      },
+      { deep: true }
+    )
+
     // Watch meeting name for real-time updates
     watch(meetingName, (newValue, oldValue) => {
       console.log('Meeting name watch triggered')
       console.log('Old value:', oldValue)
       console.log('New value:', newValue)
-      
+
       // Mark as changed for real-time preview
       if (isEditing.value) {
         hasUnsavedChanges.value = true
       }
     })
-    
+
     // Watch meeting date for real-time updates
     watch(meetingDate, (newValue, oldValue) => {
       console.log('Meeting date watch triggered')
       console.log('Old value:', oldValue)
       console.log('New value:', newValue)
-      
+
       // Mark as changed for real-time preview
       if (isEditing.value) {
         hasUnsavedChanges.value = true

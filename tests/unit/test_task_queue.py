@@ -1,6 +1,5 @@
 import asyncio
-from datetime import datetime
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -54,7 +53,7 @@ class TestAsyncTaskQueue:
         assert len(task_queue.running_tasks) == 0
         assert len(task_queue.completed_tasks) == 0
         assert len(task_queue.workers) == 0
-        assert task_queue._shutdown == False
+        assert not task_queue._shutdown
 
     @pytest.mark.asyncio
     async def test_add_task(self, task_queue):
@@ -90,7 +89,7 @@ class TestAsyncTaskQueue:
         await task_queue.stop_workers()
 
         assert len(task_queue.workers) == 0
-        assert task_queue._shutdown == True
+        assert task_queue._shutdown
 
     @pytest.mark.asyncio
     async def test_execute_sync_task_success(self, task_queue):
@@ -183,7 +182,7 @@ class TestAsyncTaskQueue:
         assert status["completed_tasks"] == 0
         assert status["max_concurrent"] == 2
         assert status["workers"] == 0
-        assert status["shutdown"] == False
+        assert not status["shutdown"]
 
     def test_get_task_status_not_found(self, task_queue):
         """存在しないタスクのステータス取得テスト"""

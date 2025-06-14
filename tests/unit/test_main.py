@@ -1,7 +1,5 @@
 from unittest.mock import Mock, patch
 
-import pytest
-from fastapi import Request
 from fastapi.testclient import TestClient
 
 from app.main import app, create_app
@@ -125,7 +123,7 @@ class TestGlobalExceptionHandler:
 
         # HTTP例外を発生させるエンドポイントをテスト
         from fastapi import HTTPException
-        
+
         @test_app.get("/test-http-error")
         async def test_error():
             raise HTTPException(status_code=400, detail="Test HTTP error")
@@ -165,8 +163,8 @@ class TestTasksStore:
         """タスクストアとヘルスチェックの統合テスト"""
         from datetime import datetime
 
-        from app.store import tasks_store
         from app.models import MinutesTask
+        from app.store import tasks_store
 
         # テストタスクを追加
         test_task = MinutesTask(

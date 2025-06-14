@@ -551,7 +551,11 @@ export default {
 .overall-progress {
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, var(--gray-600-light) 0%, var(--gray-625-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--gray-600-light) 0%,
+    var(--gray-625-light) 100%
+  );
   border-radius: 12px;
   border: 1px solid #e9ecef;
 }

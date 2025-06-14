@@ -1065,7 +1065,12 @@ export default {
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(to right, transparent, var(--gray-200), transparent);
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--gray-200),
+    transparent
+  );
 }
 
 .divider span {
@@ -1109,7 +1114,11 @@ export default {
   font-size: 1rem;
   font-weight: 600;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-700) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--brand-500) 0%,
+    var(--brand-700) 100%
+  );
   border: none;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
@@ -1325,7 +1334,11 @@ export default {
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-700) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--brand-500) 0%,
+    var(--brand-700) 100%
+  );
   border-radius: 10px;
   color: white;
   font-size: 1.5rem;
@@ -1454,7 +1467,11 @@ export default {
   font-size: 1.1rem;
   font-weight: 600;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--success-600) 0%, var(--success-700) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--success-600) 0%,
+    var(--success-700) 100%
+  );
   border: none;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);

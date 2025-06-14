@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from app.config import settings
 from app.services.minutes_generator import MinutesGeneratorService
 
 
@@ -193,7 +192,7 @@ class TestMinutesGeneratorServiceConfiguration:
     def test_initialization_with_api_key(self, mock_settings):
         """API キーを使用した初期化テスト"""
         with patch("openai.AsyncOpenAI") as mock_openai:
-            service = MinutesGeneratorService()
+            MinutesGeneratorService()
 
             # OpenAI クライアントが正しいAPI キーで初期化されることを確認
             mock_openai.assert_called_once_with(api_key=mock_settings.openai_api_key)

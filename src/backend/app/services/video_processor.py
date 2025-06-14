@@ -1,9 +1,8 @@
 import asyncio
 import os
-from typing import Optional
+from fractions import Fraction
 
 import ffmpeg
-from fractions import Fraction
 
 from app.config import settings
 from app.utils.file_handler import FileHandler
@@ -25,8 +24,7 @@ class VideoProcessor(LoggerMixin):
             raise FileNotFoundError(f"タスク {task_id} の動画ファイルが見つかりません")
 
         # 出力音声ファイルパス（MP3形式）
-        audio_path = FileHandler.get_audio_path(
-            task_id).replace(".wav", ".mp3")
+        audio_path = FileHandler.get_audio_path(task_id).replace(".wav", ".mp3")
 
         self.logger.info(f"ffmpeg音声抽出: {video_path} -> {audio_path}")
 
@@ -37,8 +35,7 @@ class VideoProcessor(LoggerMixin):
 
             # ファイルサイズ制限（20MB）に基づいてビットレートを計算
             target_file_size_mb = settings.audio_max_file_size_mb  # 設定から取得
-            max_bitrate = self._calculate_max_bitrate(
-                duration, target_file_size_mb)
+            max_bitrate = self._calculate_max_bitrate(duration, target_file_size_mb)
             bitrate = min(max_bitrate, settings.audio_bitrate_max)  # 設定から取得
 
             self.logger.info(
@@ -187,8 +184,7 @@ class VideoProcessor(LoggerMixin):
             chunk_index = 0
 
             while start_time < duration:
-                chunk_path = os.path.join(
-                    chunks_dir, f"chunk_{chunk_index:03d}.mp3")
+                chunk_path = os.path.join(chunks_dir, f"chunk_{chunk_index:03d}.mp3")
 
                 # 分割コマンドを実行
                 await self._split_audio_chunk(
@@ -265,7 +261,11 @@ class VideoProcessor(LoggerMixin):
                     "codec": video_info["codec_name"] if video_info else None,
                     "width": int(video_info["width"]) if video_info else None,
                     "height": int(video_info["height"]) if video_info else None,
-                    "fps": float(Fraction(video_info["r_frame_rate"])) if video_info else None,
+                    "fps": (
+                        float(Fraction(video_info["r_frame_rate"]))
+                        if video_info
+                        else None
+                    ),
                 },
                 "audio": {
                     "codec": audio_info["codec_name"] if audio_info else None,

@@ -3,11 +3,10 @@ from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from fastapi import UploadFile
 from fastapi.testclient import TestClient
 
 from app.main import create_app
-from app.models import MinutesTask, ProcessingStepName, ProcessingStepStatus, TaskStatus
+from app.models import MinutesTask, TaskStatus
 
 
 class TestMinutesEndpoints:
@@ -42,7 +41,7 @@ class TestMinutesEndpoints:
             )
 
             # バックグラウンドタスクをモック
-            with patch("app.api.endpoints.minutes.process_video_task") as mock_process:
+            with patch("app.api.endpoints.minutes.process_video_task"):
 
                 # ファイルデータを準備
                 test_file_content = b"fake video content"
@@ -193,14 +192,13 @@ class TestProcessVideoTask:
                 "app.api.endpoints.minutes.TranscriptionService"
             ) as mock_transcription:
                 with patch(
-                    "app.api.endpoints.minutes.MinutesGeneratorService", create=True
+                    "app.api.endpoints.minutes.MinutesGeneratorService",
+                    create=True,
                 ) as mock_minutes:
-                    with patch(
-                        "app.api.endpoints.minutes.FileHandler"
-                    ) as mock_file_handler:
+                    with patch("app.api.endpoints.minutes.FileHandler"):
                         with patch(
                             "app.api.endpoints.minutes.broadcast_progress_update"
-                        ) as mock_broadcast:
+                        ):
                             with patch(
                                 "app.api.endpoints.minutes.broadcast_task_completed"
                             ) as mock_completed:
@@ -251,9 +249,7 @@ class TestProcessVideoTask:
         """動画処理タスクエラーテスト"""
         with patch("app.api.endpoints.minutes.VideoProcessor") as mock_video_processor:
             with patch("app.api.endpoints.minutes.FileHandler") as mock_file_handler:
-                with patch(
-                    "app.api.endpoints.minutes.broadcast_progress_update"
-                ) as mock_broadcast:
+                with patch("app.api.endpoints.minutes.broadcast_progress_update"):
                     with patch(
                         "app.api.endpoints.minutes.broadcast_task_failed"
                     ) as mock_failed:

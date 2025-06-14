@@ -4,7 +4,7 @@ import os
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -72,7 +72,7 @@ class TestSetupLogging:
     def test_setup_logging_handlers_configuration(self):
         """ハンドラー設定テスト"""
         with tempfile.TemporaryDirectory() as temp_dir:
-            logger = setup_logging(log_dir=temp_dir, app_name="test")
+            setup_logging(log_dir=temp_dir, app_name="test")
 
             # ルートロガーにハンドラーが設定されていることを確認
             root_logger = logging.getLogger()
@@ -330,9 +330,9 @@ class TestLoggingIntegration:
             # 最初にロギングを設定
             setup_logging(log_dir=temp_dir, app_name="test", log_level="DEBUG")
 
-            # 新しいロガーを取得
-            logger1 = get_logger("test_module")
-            logger2 = logging.getLogger("another_module")
+            # 新しいロガーを取得し、ハンドラー設定を確認
+            get_logger("test_module")
+            logging.getLogger("another_module")
 
             # 両方のロガーが設定されたハンドラーを使用していることを確認
             root_logger = logging.getLogger()

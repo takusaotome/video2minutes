@@ -85,8 +85,7 @@ class FileHandler:
                         await f.close()
                         os.remove(file_path)
                         file_size_gb = file_size / (1024 * 1024 * 1024)
-                        max_size_gb = settings.max_file_size / \
-                            (1024 * 1024 * 1024)
+                        max_size_gb = settings.max_file_size / (1024 * 1024 * 1024)
                         FileHandler.logger.warning(
                             f"アップロード中にファイルサイズ超過: {file.filename} ({file_size_gb:.2f}GB > {max_size_gb:.1f}GB)"
                         )

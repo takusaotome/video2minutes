@@ -1,4 +1,3 @@
-import asyncio
 import os
 import tempfile
 from unittest.mock import AsyncMock, Mock, patch
@@ -29,7 +28,6 @@ class TestVideoProcessor:
     async def test_extract_audio_success(self, video_processor, mock_file_handler):
         """音声抽出成功テスト"""
         task_id = "test-task-123"
-        expected_audio_path = "/path/to/test_audio.mp3"  # MP3形式に更新
 
         # VideoProcessor.get_video_infoをモック
         with patch.object(video_processor, "get_video_info") as mock_get_info:
@@ -101,7 +99,7 @@ class TestVideoProcessor:
             ) as mock_ffmpeg:
                 mock_ffmpeg.side_effect = RuntimeError("ffmpeg error")
 
-                with patch("os.path.exists", return_value=True) as mock_exists:
+                with patch("os.path.exists", return_value=True):
                     with patch("os.remove") as mock_remove:
                         with pytest.raises(RuntimeError) as exc_info:
                             await video_processor.extract_audio(task_id)

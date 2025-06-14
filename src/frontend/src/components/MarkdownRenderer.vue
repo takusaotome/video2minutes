@@ -370,7 +370,11 @@ export default {
 .markdown-blockquote {
   margin: 1.5rem 0;
   padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, var(--gray-600-light) 0%, var(--gray-650-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--gray-600-light) 0%,
+    var(--gray-650-light) 100%
+  );
   border-radius: 8px;
   position: relative;
   border-left: 4px solid var(--brand-500);
@@ -382,7 +386,11 @@ export default {
   top: 0;
   bottom: 0;
   width: 4px;
-  background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-700) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--brand-500) 0%,
+    var(--brand-700) 100%
+  );
   border-radius: 2px;
 }
 
@@ -552,7 +560,12 @@ export default {
 .markdown-divider hr {
   border: none;
   height: 2px;
-  background: linear-gradient(to right, transparent, var(--gray-200), transparent);
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--gray-200),
+    transparent
+  );
   margin: 0;
 }
 

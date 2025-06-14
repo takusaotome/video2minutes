@@ -1,4 +1,3 @@
-import asyncio
 import json
 from datetime import datetime
 from typing import Dict, List
@@ -14,7 +13,6 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 
 from app.models import (
-    ErrorResponse,
     MinutesTask,
     ProcessingStepName,
     ProcessingStepStatus,
@@ -27,14 +25,12 @@ from app.models import (
 from app.services.minutes_generator import MinutesGeneratorService
 from app.services.transcription import TranscriptionService
 from app.services.video_processor import VideoProcessor
+from app.store import tasks_store
 from app.utils.file_handler import FileHandler
 from app.utils.logger import get_logger
 
 router = APIRouter()
 logger = get_logger(__name__)
-
-# グローバルタスクストア（共有ストアから参照）
-from app.store import tasks_store
 
 # WebSocket接続管理
 websocket_connections: Dict[str, List[WebSocket]] = {}
@@ -169,42 +165,40 @@ async def get_task_result(task_id: str):
 async def delete_task(task_id: str):
     """タスクを削除"""
     logger.info(f"タスク削除要求: {task_id}")
-    
+
     if task_id not in tasks_store:
         logger.warning(f"削除対象のタスクが見つかりません: {task_id}")
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
 
     task = tasks_store[task_id]
-    
+
     # 処理中のタスクは削除できない
     if task.status == TaskStatus.PROCESSING:
         logger.warning(f"処理中のタスクは削除できません: {task_id}")
         raise HTTPException(status_code=400, detail="処理中のタスクは削除できません")
-    
+
     try:
         # ファイルクリーンアップ
         FileHandler.cleanup_files(task_id)
         logger.info(f"ファイルクリーンアップ完了: {task_id}")
-        
+
         # タスクストアから削除
         del tasks_store[task_id]
         logger.info(f"タスク削除完了: {task_id}")
-        
+
         # WebSocket接続がある場合は削除
         if task_id in websocket_connections:
             del websocket_connections[task_id]
             logger.info(f"WebSocket接続削除完了: {task_id}")
-        
+
         return JSONResponse(
-            status_code=200,
-            content={"message": f"タスク {task_id} を削除しました"}
+            status_code=200, content={"message": f"タスク {task_id} を削除しました"}
         )
-        
+
     except Exception as e:
         logger.error(f"タスク削除エラー: {task_id} - {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=500, 
-            detail=f"タスクの削除中にエラーが発生しました: {str(e)}"
+            status_code=500, detail=f"タスクの削除中にエラーが発生しました: {str(e)}"
         )
 
 
@@ -333,7 +327,7 @@ async def broadcast_progress_update(task_id: str, task: MinutesTask):
     for websocket in websocket_connections[task_id]:
         try:
             await websocket.send_text(json.dumps(message))
-        except:
+        except Exception:
             disconnected.append(websocket)
 
     # 切断されたWebSocketを削除

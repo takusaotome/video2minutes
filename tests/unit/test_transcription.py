@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, Mock, mock_open, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -350,7 +350,7 @@ class TestTranscriptionServiceConfiguration:
     def test_initialization_with_api_key(self):
         """API キーを使用した初期化テスト"""
         with patch("openai.AsyncOpenAI") as mock_openai:
-            service = TranscriptionService()
+            TranscriptionService()
 
             # OpenAI クライアントが正しいAPI キーで初期化されることを確認
             mock_openai.assert_called_once_with(api_key=settings.openai_api_key)

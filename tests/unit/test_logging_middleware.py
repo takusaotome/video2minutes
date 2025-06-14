@@ -1,7 +1,6 @@
-import pytest
-from unittest.mock import Mock, patch
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+
 from app.main import create_app
 
 
@@ -11,10 +10,10 @@ class TestLoggingMiddleware:
     def test_request_logging_middleware_success(self, caplog):
         """リクエストロギングミドルウェアの成功テスト"""
         import logging
-        
+
         # ログレベルを設定
         caplog.set_level(logging.INFO)
-        
+
         app = create_app()
         client = TestClient(app)
 
@@ -31,10 +30,10 @@ class TestLoggingMiddleware:
     def test_request_logging_middleware_with_error(self, caplog):
         """リクエストロギングミドルウェアのエラーテスト"""
         import logging
-        
+
         # ログレベルを設定
         caplog.set_level(logging.INFO)
-        
+
         app = create_app()
 
         # エラーを発生させるエンドポイントを追加
@@ -57,9 +56,9 @@ class TestLoggingMiddleware:
     def test_request_logging_middleware_timing(self, caplog):
         """リクエストロギングミドルウェアのタイミングテスト"""
         import logging
-        
+
         caplog.set_level(logging.INFO)
-        
+
         app = create_app()
 
         # 遅延を発生させるエンドポイントを追加
@@ -82,9 +81,9 @@ class TestLoggingMiddleware:
     def test_request_logging_middleware_extra_data(self, caplog):
         """リクエストロギングミドルウェアの追加データテスト"""
         import logging
-        
+
         caplog.set_level(logging.INFO)
-        
+
         app = create_app()
         client = TestClient(app)
 
@@ -102,9 +101,9 @@ class TestLoggingMiddleware:
     def test_request_logging_middleware_client_ip(self, caplog):
         """リクエストロギングミドルウェアのクライアントIP テスト"""
         import logging
-        
+
         caplog.set_level(logging.INFO)
-        
+
         app = create_app()
         client = TestClient(app)
 
@@ -124,12 +123,12 @@ class TestApplicationInitializationLogging:
     def test_application_initialization_logging(self, caplog):
         """アプリケーション初期化ロギングテスト"""
         import logging
-        
+
         caplog.set_level(logging.INFO)
-        
+
         # アプリケーションを作成
-        app = create_app()
-        
+        create_app()
+
         # 初期化ログが出力されたことを確認
         log_messages = caplog.text
         assert "アプリケーション初期化完了" in log_messages
@@ -137,12 +136,12 @@ class TestApplicationInitializationLogging:
     def test_logging_system_initialization(self, caplog):
         """ロギングシステム初期化テスト"""
         import logging
-        
+
         caplog.set_level(logging.INFO)
-        
+
         # アプリケーションを作成
-        app = create_app()
-        
+        create_app()
+
         # アプリケーション初期化が確認できればOK
         log_messages = caplog.text
         assert "アプリケーション初期化完了" in log_messages
@@ -154,14 +153,14 @@ class TestGlobalExceptionHandlerLogging:
     def test_global_exception_handler_logging(self, caplog):
         """グローバル例外ハンドラーのロギングテスト"""
         import logging
-        
+
         caplog.set_level(logging.ERROR)
-        
+
         app = create_app()
 
         # HTTP例外を発生させるエンドポイントを追加
         from fastapi import HTTPException
-        
+
         @app.get("/test-http-exception")
         async def test_http_exception():
             raise HTTPException(status_code=400, detail="Test HTTP exception")
@@ -183,17 +182,17 @@ class TestLoggingConfiguration:
     def test_logging_configuration_with_different_levels(self, caplog):
         """異なるログレベルでの設定テスト"""
         import logging
-        
+
         # DEBUGレベルでのテスト
         caplog.set_level(logging.DEBUG)
-        
+
         app = create_app()
         client = TestClient(app)
-        
+
         response = client.get("/")
-        
+
         assert response.status_code == 200
-        
+
         # ログが出力されていることを確認
         log_messages = caplog.text
         assert "リクエスト開始" in log_messages
