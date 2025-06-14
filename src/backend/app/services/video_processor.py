@@ -3,6 +3,7 @@ import os
 from typing import Optional
 
 import ffmpeg
+from fractions import Fraction
 
 from app.config import settings
 from app.utils.file_handler import FileHandler
@@ -264,7 +265,7 @@ class VideoProcessor(LoggerMixin):
                     "codec": video_info["codec_name"] if video_info else None,
                     "width": int(video_info["width"]) if video_info else None,
                     "height": int(video_info["height"]) if video_info else None,
-                    "fps": eval(video_info["r_frame_rate"]) if video_info else None,
+                    "fps": float(Fraction(video_info["r_frame_rate"])) if video_info else None,
                 },
                 "audio": {
                     "codec": audio_info["codec_name"] if audio_info else None,

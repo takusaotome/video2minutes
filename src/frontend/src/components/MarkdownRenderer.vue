@@ -98,7 +98,11 @@ export default {
 
         // Extract table of contents
         if (props.showToc) {
-          tableOfContents.value = extractTableOfContents(props.content)
+          tableOfContents.value = extractTableOfContents(props.content, {
+            excludeTexts: ['会議情報', 'Meeting Information', '会議概要'],
+            minLevel: 1,
+            maxLevel: 3
+          })
         }
 
         // Emit word count

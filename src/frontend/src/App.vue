@@ -81,26 +81,29 @@ export default {
   font-size: 3rem;
   font-weight: 800;
   margin-bottom: var(--space-3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-4);
   position: relative;
   z-index: 1;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
   user-select: none;
 }
 
-.app-title:hover {
+.home-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.home-link:hover {
   transform: scale(1.05);
   text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   filter: brightness(1.1);
 }
 
-.app-title i {
+.home-link i {
   font-size: 3.5rem;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
@@ -145,13 +148,13 @@ export default {
     padding: var(--space-10) var(--space-4);
   }
 
-  .app-title {
+  .home-link {
     font-size: 2.25rem;
     flex-direction: column;
     gap: var(--space-3);
   }
 
-  .app-title i {
+  .home-link i {
     font-size: 2.75rem;
   }
 
@@ -169,11 +172,11 @@ export default {
     padding: var(--space-8) var(--space-3);
   }
 
-  .app-title {
+  .home-link {
     font-size: 1.875rem;
   }
 
-  .app-title i {
+  .home-link i {
     font-size: 2.25rem;
   }
 

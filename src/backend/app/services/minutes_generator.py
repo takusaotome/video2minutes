@@ -70,7 +70,7 @@ class MinutesGeneratorService(LoggerMixin):
 **出力フォーマット**
 1. 会議情報  
    - **会議名**: {meeting_name}  
-   - **開催日**: {date}  
+   - **開催日時 **: {date}  
    - **出席者**: {attendees}
 
 2. アクションアイテム  
