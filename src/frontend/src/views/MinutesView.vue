@@ -410,7 +410,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-6);
+  padding: var(--space-6) calc(var(--space-6) - 8px) var(--space-6) var(--space-6);
   margin: 0 24px var(--space-6) 24px;
   border-bottom: 2px solid var(--gray-200);
   background: white;
@@ -459,11 +459,16 @@ export default {
   background: white;
 }
 
+.task-info-card :deep(.p-card-content) {
+  padding-right: calc(var(--space-6) - 8px);
+}
+
 .task-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--space-8);
+  padding: 0 8px 0 0;
 }
 
 .task-file {

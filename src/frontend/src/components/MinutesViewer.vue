@@ -66,159 +66,163 @@
           class="transcript-toggle p-button-outlined"
         />
 
-        <!-- Transcript Sidebar -->
-        <div
-          v-show="!isMobile || showTranscript"
-          class="transcript-sidebar"
-          :class="{ 'mobile-overlay': isMobile && showTranscript }"
-        >
-          <Card class="transcript-card">
-            <template #title>
-              <div class="transcript-header">
-                <i class="pi pi-microphone"></i>
-                文字起こし全文
-                <Button
-                  v-if="isMobile"
-                  icon="pi pi-times"
-                  class="p-button-text p-button-sm close-transcript"
-                  @click="toggleTranscript"
-                />
-              </div>
-            </template>
-
-            <template #content>
-              <ScrollPanel class="transcript-scroll">
-                <div class="transcript-content">
-                  <pre class="transcript-text">{{ minutes.transcription }}</pre>
+        <!-- Left Column: Transcript -->
+        <div class="left-column">
+          <div
+            v-show="!isMobile || showTranscript"
+            class="transcript-sidebar"
+            :class="{ 'mobile-overlay': isMobile && showTranscript }"
+          >
+            <Card class="transcript-card">
+              <template #title>
+                <div class="transcript-header">
+                  <i class="pi pi-microphone"></i>
+                  文字起こし全文
+                  <Button
+                    v-if="isMobile"
+                    icon="pi pi-times"
+                    class="p-button-text p-button-sm close-transcript"
+                    @click="toggleTranscript"
+                  />
                 </div>
-              </ScrollPanel>
-            </template>
-          </Card>
+              </template>
+
+              <template #content>
+                <ScrollPanel class="transcript-scroll">
+                  <div class="transcript-content">
+                    <pre class="transcript-text">{{ minutes.transcription }}</pre>
+                  </div>
+                </ScrollPanel>
+              </template>
+            </Card>
+          </div>
         </div>
 
-        <!-- Minutes Main Content -->
-        <div class="minutes-main">
-          <!-- Meeting Details Card -->
-          <Card class="meeting-details-card">
-            <template #title>
-              <div class="meeting-details-header">
-                <div class="header-title">
-                  <i class="pi pi-calendar"></i>
-                  会議詳細
-                </div>
-                <div class="header-actions">
-                  <Button
-                    v-if="!isEditing"
-                    icon="pi pi-pencil"
-                    label="編集"
-                    @click="startEditing"
-                    class="p-button-outlined p-button-sm"
-                  />
-                  <div v-else class="edit-actions">
+        <!-- Right Column: Meeting Details and Minutes -->
+        <div class="right-column">
+          <div class="minutes-main">
+            <!-- Meeting Details Card -->
+            <Card class="meeting-details-card">
+              <template #title>
+                <div class="meeting-details-header">
+                  <div class="header-title">
+                    <i class="pi pi-calendar"></i>
+                    会議詳細
+                  </div>
+                  <div class="header-actions">
                     <Button
-                      icon="pi pi-check"
-                      label="保存"
-                      @click="saveMeetingDetails"
-                      class="p-button-sm p-button-success"
-                      :disabled="!hasUnsavedChanges"
+                      v-if="!isEditing"
+                      icon="pi pi-pencil"
+                      label="編集"
+                      @click="startEditing"
+                      class="p-button-outlined p-button-sm"
                     />
-                    <Button
-                      icon="pi pi-times"
-                      label="キャンセル"
-                      @click="cancelEditing"
-                      class="p-button-sm p-button-outlined"
-                    />
-                  </div>
-                </div>
-              </div>
-            </template>
-
-            <template #content>
-              <div class="meeting-details-content">
-                <!-- Meeting Name -->
-                <div class="detail-field">
-                  <label class="field-label">会議名</label>
-                  <div v-if="!isEditing" class="field-display">
-                    {{ meetingName || '未設定' }}
-                  </div>
-                  <InputText
-                    v-else
-                    v-model="meetingName"
-                    @update:modelValue="onMeetingDetailsChange"
-                    placeholder="会議名を入力"
-                    class="meeting-name-input"
-                  />
-                </div>
-
-                <!-- Meeting Date -->
-                <div class="detail-field">
-                  <label class="field-label">開催日時</label>
-                  <div v-if="!isEditing" class="field-display">
-                    {{ meetingDate ? formatDate(meetingDate) : '未設定' }}
-                  </div>
-                  <Calendar
-                    v-else
-                    v-model="meetingDate"
-                    @update:modelValue="onMeetingDetailsChange"
-                    showTime
-                    hourFormat="24"
-                    dateFormat="yy/mm/dd"
-                    placeholder="開催日時を選択"
-                    class="meeting-date-input"
-                  />
-                </div>
-
-                <!-- Attendees -->
-                <div class="detail-field">
-                  <label class="field-label">出席者</label>
-                  <div v-if="!isEditing" class="field-display">
-                    <div v-if="attendees.length === 0" class="no-attendees">
-                      未設定
-                    </div>
-                    <div v-else class="attendees-list">
-                      <span
-                        v-for="(attendee, index) in attendees"
-                        :key="index"
-                        class="attendee-chip"
-                      >
-                        {{ attendee }}
-                      </span>
+                    <div v-else class="edit-actions">
+                      <Button
+                        icon="pi pi-check"
+                        label="保存"
+                        @click="saveMeetingDetails"
+                        class="p-button-sm p-button-success"
+                        :disabled="!hasUnsavedChanges"
+                      />
+                      <Button
+                        icon="pi pi-times"
+                        label="キャンセル"
+                        @click="cancelEditing"
+                        class="p-button-sm p-button-outlined"
+                      />
                     </div>
                   </div>
-                  <Chips
-                    v-else
-                    v-model="attendees"
-                    @update:modelValue="onMeetingDetailsChange"
-                    placeholder="出席者名を入力してEnterキーで追加"
-                    class="attendees-input"
-                    :allowDuplicate="false"
-                    separator=","
-                  />
                 </div>
-              </div>
-            </template>
-          </Card>
+              </template>
 
-          <!-- Minutes Content Card -->
-          <Card class="minutes-card">
-            <template #title>
-              <div class="minutes-card-header">
-                <i class="pi pi-file"></i>
-                生成された議事録
-                <div class="minutes-stats">
-                  <small>{{ wordCount }}文字</small>
+              <template #content>
+                <div class="meeting-details-content">
+                  <!-- Meeting Name -->
+                  <div class="detail-field">
+                    <label class="field-label">会議名</label>
+                    <div v-if="!isEditing" class="field-display">
+                      {{ meetingName || '未設定' }}
+                    </div>
+                    <InputText
+                      v-else
+                      v-model="meetingName"
+                      @update:modelValue="onMeetingDetailsChange"
+                      placeholder="会議名を入力"
+                      class="meeting-name-input"
+                    />
+                  </div>
+
+                  <!-- Meeting Date -->
+                  <div class="detail-field">
+                    <label class="field-label">開催日時</label>
+                    <div v-if="!isEditing" class="field-display">
+                      {{ meetingDate ? formatDate(meetingDate) : '未設定' }}
+                    </div>
+                    <Calendar
+                      v-else
+                      v-model="meetingDate"
+                      @update:modelValue="onMeetingDetailsChange"
+                      showTime
+                      hourFormat="24"
+                      dateFormat="yy/mm/dd"
+                      placeholder="開催日時を選択"
+                      class="meeting-date-input"
+                    />
+                  </div>
+
+                  <!-- Attendees -->
+                  <div class="detail-field">
+                    <label class="field-label">出席者</label>
+                    <div v-if="!isEditing" class="field-display">
+                      <div v-if="attendees.length === 0" class="no-attendees">
+                        未設定
+                      </div>
+                      <div v-else class="attendees-list">
+                        <span
+                          v-for="(attendee, index) in attendees"
+                          :key="index"
+                          class="attendee-chip"
+                        >
+                          {{ attendee }}
+                        </span>
+                      </div>
+                    </div>
+                    <Chips
+                      v-else
+                      v-model="attendees"
+                      @update:modelValue="onMeetingDetailsChange"
+                      placeholder="出席者名を入力してEnterキーで追加"
+                      class="attendees-input"
+                      :allowDuplicate="false"
+                      separator=","
+                    />
+                  </div>
                 </div>
-              </div>
-            </template>
+              </template>
+            </Card>
 
-            <template #content>
-              <MarkdownRenderer
-                :content="minutesWithUpdatedInfo"
-                :show-toc="false"
-                @word-count="updateWordCount"
-              />
-            </template>
-          </Card>
+            <!-- Minutes Content Card -->
+            <Card class="minutes-card">
+              <template #title>
+                <div class="minutes-card-header">
+                  <i class="pi pi-file"></i>
+                  生成された議事録
+                  <div class="minutes-stats">
+                    <small>{{ wordCount }}文字</small>
+                  </div>
+                </div>
+              </template>
+
+              <template #content>
+                <MarkdownRenderer
+                  :content="minutesWithUpdatedInfo"
+                  :show-toc="false"
+                  @word-count="updateWordCount"
+                />
+              </template>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
@@ -1138,12 +1142,6 @@ ${'-'.repeat(50)}
   padding: 0;
 }
 
-.minutes-viewer :deep(.p-card-title) {
-  padding: 20px 24px;
-  margin: 0;
-  border-bottom: 1px solid var(--gray-200);
-}
-
 .loading-state,
 .error-state {
   display: flex;
@@ -1187,6 +1185,8 @@ ${'-'.repeat(50)}
   box-shadow: var(--shadow-lg);
   position: relative;
   overflow: hidden;
+  width: calc(100% - 48px);
+  box-sizing: border-box;
 }
 
 .minutes-header::before {
@@ -1269,12 +1269,43 @@ ${'-'.repeat(50)}
   grid-template-columns: 35% 65%;
   gap: 24px;
   position: relative;
-  padding: 0;
+  padding: 0 24px;
   align-items: start;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+}
+
+/* 新しいカラム構造 */
+.left-column,
+.right-column {
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.left-column {
+  padding-left: 0;
+}
+
+.right-column {
+  padding-right: 0;
+}
+
+/* 上端を確実に揃える */
+.left-column .transcript-sidebar,
+.right-column .minutes-main {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.left-column .transcript-card,
+.right-column .meeting-details-card {
+  margin-top: 0 !important;
 }
 
 .transcript-sidebar {
@@ -1283,19 +1314,38 @@ ${'-'.repeat(50)}
   height: fit-content;
   max-height: calc(100vh - 200px);
   width: 100%;
-  margin-top: 0;
-  padding-left: 24px;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .transcript-sidebar :deep(.p-card) {
-  margin-top: 0;
+  margin: 0 !important;
+}
+
+.transcript-sidebar :deep(.p-card-body) {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.transcript-sidebar :deep(.p-card-caption) {
+  margin: 0 !important;
 }
 
 .transcript-sidebar :deep(.p-card-title) {
-  padding: 20px 24px;
-  min-height: 80px;
+  padding: 16px 20px !important;
+  margin: 0 !important;
+  height: 72px;
   display: flex;
   align-items: center;
+  border-bottom: 1px solid var(--gray-200);
+  box-sizing: border-box;
+}
+
+.transcript-sidebar :deep(.p-card-content) {
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 .mobile-overlay {
@@ -1322,7 +1372,9 @@ ${'-'.repeat(50)}
   width: 100%;
   height: fit-content;
   box-sizing: border-box;
-  margin-top: 0;
+  margin: 0 !important;
+  flex: 1;
+  align-self: flex-start;
 }
 
 .transcript-card :deep(.p-card) {
@@ -1386,19 +1438,41 @@ ${'-'.repeat(50)}
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  margin-top: 0;
-  padding-right: 24px;
+  gap: 20px;
+  margin: 0 !important;
+  padding: 0;
+  align-self: start;
+}
+
+.minutes-main > * {
+  margin: 0 !important;
 }
 
 /* 会議詳細カードと議事録カードの統一スタイル */
 .meeting-details-card,
 .minutes-card {
   width: 100%;
-  margin-bottom: 0;
+  margin: 0 !important;
   box-sizing: border-box;
   max-width: 100%;
   overflow: hidden;
+  align-self: flex-start;
+}
+
+/* Debug: 上端位置を視覚的に確認するためのデバッグスタイル */
+.debug-alignment {
+  position: relative;
+}
+
+.debug-alignment::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: red;
+  z-index: 9999;
 }
 
 .meeting-details-card :deep(.p-card),
@@ -1412,7 +1486,7 @@ ${'-'.repeat(50)}
 
 .meeting-details-card :deep(.p-card-content),
 .minutes-card :deep(.p-card-content) {
-  padding: 24px;
+  padding: 20px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -1423,20 +1497,61 @@ ${'-'.repeat(50)}
 .meeting-details-card :deep(.p-card) {
   background: #f0f7ff;
   border: 1px solid rgba(99, 102, 241, 0.1);
-  margin-top: 0;
+  margin: 0 !important;
+}
+
+.meeting-details-card :deep(.p-card-body) {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.meeting-details-card :deep(.p-card-caption) {
+  margin: 0 !important;
 }
 
 .meeting-details-card :deep(.p-card-title) {
-  padding: 20px 24px;
-  min-height: 80px;
+  padding: 16px 20px !important;
+  margin: 0 !important;
+  height: 72px;
   display: flex;
   align-items: center;
+  border-bottom: 1px solid var(--gray-200);
+  box-sizing: border-box;
+}
+
+.meeting-details-card :deep(.p-card-content) {
+  padding: 20px !important;
+  margin: 0 !important;
 }
 
 /* 議事録カード固有のスタイル */
 .minutes-card :deep(.p-card) {
   background: white;
   border: 1px solid var(--gray-200);
+}
+
+.minutes-card :deep(.p-card-body) {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.minutes-card :deep(.p-card-caption) {
+  margin: 0 !important;
+}
+
+.minutes-card :deep(.p-card-title) {
+  padding: 16px 20px !important;
+  margin: 0 !important;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--gray-200);
+  box-sizing: border-box;
+}
+
+.minutes-card :deep(.p-card-content) {
+  padding: 20px !important;
+  margin: 0 !important;
 }
 
 .minutes-card :deep(.markdown-renderer) {
@@ -1481,6 +1596,7 @@ ${'-'.repeat(50)}
   font-size: 1.2rem;
   color: var(--gray-800);
   font-weight: 600;
+  width: 100%;
 }
 
 .minutes-card-header i {
@@ -1582,7 +1698,7 @@ ${'-'.repeat(50)}
 
 .meeting-details-content {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-5);
 }
 
 .detail-field {
@@ -1664,13 +1780,16 @@ ${'-'.repeat(50)}
     padding: 0;
   }
   
-  .transcript-sidebar {
+  .left-column {
     padding-left: 16px;
   }
   
-  .minutes-main {
-    gap: 20px;
+  .right-column {
     padding-right: 16px;
+  }
+  
+  .minutes-main {
+    gap: 18px;
   }
   
   .minutes-header {
@@ -1684,8 +1803,12 @@ ${'-'.repeat(50)}
     gap: 16px;
   }
 
-  .transcript-sidebar {
+  .left-column {
     padding-left: 16px;
+  }
+
+  .right-column {
+    padding-right: 16px;
   }
 
   .transcript-scroll {
@@ -1694,7 +1817,6 @@ ${'-'.repeat(50)}
   
   .minutes-main {
     gap: 16px;
-    padding-right: 16px;
   }
   
   .minutes-header {
@@ -1720,17 +1842,15 @@ ${'-'.repeat(50)}
     padding: 0;
   }
 
+  .left-column,
+  .right-column {
+    padding: 0 16px;
+  }
+
   .transcript-sidebar {
     position: static;
     max-height: none;
     margin-bottom: 20px;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-  
-  .minutes-main {
-    padding-left: 16px;
-    padding-right: 16px;
   }
 
   .minutes-title {

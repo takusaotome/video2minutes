@@ -304,7 +304,7 @@ export default {
 .markdown-heading {
   color: var(--gray-800);
   font-weight: 700;
-  margin: 2rem 0 1rem 0;
+  margin: 1.5rem 0 0.75rem 0;
   line-height: 1.3;
   position: relative;
   scroll-margin-top: 2rem;
@@ -314,32 +314,35 @@ export default {
   font-size: 2.25rem;
   border-bottom: 3px solid var(--gray-200);
   padding-bottom: 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .markdown-h2 {
   font-size: 1.875rem;
   border-bottom: 2px solid var(--gray-100);
   padding-bottom: 0.5rem;
-  margin-top: 2.5rem;
+  margin-top: 2rem;
 }
 
 .markdown-h3 {
   font-size: 1.5rem;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
 }
 
 .markdown-h4 {
   font-size: 1.25rem;
+  margin-top: 1.25rem;
 }
 
 .markdown-h5 {
   font-size: 1.125rem;
+  margin-top: 1rem;
 }
 
 .markdown-h6 {
   font-size: 1rem;
   color: var(--gray-500);
+  margin-top: 1rem;
 }
 
 .heading-highlight {
@@ -351,14 +354,14 @@ export default {
 
 /* Paragraphs */
 .markdown-paragraph {
-  margin: 1rem 0;
+  margin: 0.75rem 0;
   line-height: 1.7;
 }
 
 /* Lists */
 .markdown-list {
-  margin: 1rem 0;
-  padding-left: 2rem;
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
 }
 
 .markdown-ul {
@@ -370,18 +373,18 @@ export default {
 }
 
 .markdown-list-item {
-  margin: 0.5rem 0;
+  margin: 0.375rem 0;
   line-height: 1.6;
 }
 
 .markdown-list .markdown-list {
-  margin: 0.5rem 0;
+  margin: 0.375rem 0;
 }
 
 /* Blockquotes */
 .markdown-blockquote {
-  margin: 1.5rem 0;
-  padding: 1rem 1.5rem;
+  margin: 1rem 0;
+  padding: 0.75rem 1.25rem;
   background: linear-gradient(135deg, var(--gray-600-light) 0%, var(--gray-650-light) 100%);
   border-radius: 8px;
   position: relative;
@@ -420,7 +423,7 @@ export default {
 }
 
 .markdown-code-block {
-  margin: 1.5rem 0;
+  margin: 1rem 0;
   border-radius: 8px;
   overflow: hidden;
   background: var(--gray-800);
@@ -487,7 +490,7 @@ export default {
 
 /* Tables */
 .markdown-table-wrapper {
-  margin: 1.5rem 0;
+  margin: 1rem 0;
   overflow-x: auto;
   border-radius: 8px;
   border: 1px solid var(--gray-200);
@@ -557,7 +560,7 @@ export default {
 
 /* Horizontal rule */
 .markdown-divider {
-  margin: 2rem 0;
+  margin: 1.5rem 0;
   text-align: center;
 }
 
