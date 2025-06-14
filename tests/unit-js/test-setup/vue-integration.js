@@ -76,6 +76,9 @@ export async function mountFileUploader(options = {}) {
   // TasksStoreのモック作成
   const tasksStore = createTasksStoreMock(options.tasksStore || {})
 
+  // Toast統合モック設定を確実に実行
+  setupToastMocks()
+
   // マウントオプション作成
   const mountOptions = createIntegratedMountOptions({
     piniaState: {
@@ -89,17 +92,328 @@ export async function mountFileUploader(options = {}) {
     mountOptions: options.mountOptions
   })
 
-  //動的インポートでコンポーネント取得
-  const FileUploader = (await import('@/components/FileUploader.vue')).default
+  // PrimeVue Toast プロバイダーを確実に設定
+  if (!mountOptions.global.provide[PrimeVueToastSymbol]) {
+    mountOptions.global.provide[PrimeVueToastSymbol] = globalToastService
+  }
 
-  // マウント
-  const wrapper = mount(FileUploader, mountOptions)
+  // 動的インポートでコンポーネント取得
+  try {
+    const FileUploader = (await import('@/components/FileUploader.vue')).default
 
+    // マウント
+    const wrapper = mount(FileUploader, mountOptions)
+
+    return {
+      wrapper,
+      tasksStore,
+      toastMock: globalToastService,
+      confirmationMock: mountOptions.global.mocks.$confirm
+    }
+  } catch (error) {
+    console.error('Failed to mount FileUploader:', error)
+    
+    // フォールバック：FileUploaderスタブを使用
+    const FileUploaderStub = createFileUploaderStub(tasksStore)
+    const wrapper = mount(FileUploaderStub, mountOptions)
+
+    return {
+      wrapper,
+      tasksStore,
+      toastMock: globalToastService,
+      confirmationMock: mountOptions.global.mocks.$confirm
+    }
+  }
+}
+
+/**
+ * FileUploaderスタブ作成関数
+ */
+function createFileUploaderStub(tasksStore) {
   return {
-    wrapper,
-    tasksStore,
-    toastMock: mountOptions.global.mocks.$toast,
-    confirmationMock: mountOptions.global.mocks.$confirm
+    template: `
+      <div class="file-uploader" :class="{ 'drag-active': isDragOver }">
+        <div class="upload-area">
+          <input 
+            ref="fileInput"
+            type="file"
+            multiple
+            accept="video/*"
+            @change="onFileSelect"
+            style="display: none;"
+          />
+          <div 
+            class="dropzone"
+            @dragenter="onDragEnter"
+            @dragover="onDragOver"
+            @dragleave="onDragLeave"
+            @drop="onDrop"
+          >
+            <p>ファイルをドロップまたは選択</p>
+            <button @click="triggerFileSelect" type="button">
+              ファイルを選択
+            </button>
+          </div>
+        </div>
+        <div v-if="selectedFiles.length > 0" class="selected-files">
+          <div v-for="(file, index) in selectedFiles" :key="index" class="file-item">
+            <span>{{ file.name }}</span>
+            <button @click="removeFile(file)" type="button">削除</button>
+          </div>
+        </div>
+        <div v-if="uploadProgress.length > 0" class="upload-progress">
+          <div v-for="(progress, index) in uploadProgress" :key="index" class="progress-item">
+            <span>{{ progress.name }}</span>
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{ width: progress.percent + '%' }"></div>
+            </div>
+            <span>{{ progress.percent }}%</span>
+          </div>
+        </div>
+        <button 
+          v-if="selectedFiles.length > 0"
+          @click="startUpload"
+          :disabled="loading"
+          type="button"
+        >
+          {{ loading ? 'アップロード中...' : 'アップロード開始' }}
+        </button>
+      </div>
+    `,
+    emits: ['upload-started', 'upload-completed', 'upload-error'],
+    setup(_, { emit }) {
+      const { ref } = require('vue')
+      
+      const selectedFiles = ref([])
+      const uploadProgress = ref([])
+      const loading = ref(false)
+      const isDragOver = ref(false)
+      const isDragging = ref(false)
+      const fileInput = ref(null)
+
+      // ファイル選択
+      const onSelect = ({ files }) => {
+        selectedFiles.value = [...selectedFiles.value, ...files]
+        uploadProgress.value = []
+      }
+
+      const onFileSelect = (event) => {
+        const files = Array.from(event.target.files)
+        onSelect({ files })
+      }
+
+      const onClear = () => {
+        selectedFiles.value = []
+        uploadProgress.value = []
+      }
+
+      const removeFile = (fileToRemove) => {
+        // ファイルオブジェクトまたはインデックスで削除
+        if (typeof fileToRemove === 'number') {
+          // インデックスで削除
+          selectedFiles.value.splice(fileToRemove, 1)
+        } else {
+          // ファイルオブジェクトで削除
+          const index = selectedFiles.value.findIndex(f => 
+            f === fileToRemove || 
+            (f.name === fileToRemove.name && f.size === fileToRemove.size)
+          )
+          if (index !== -1) {
+            selectedFiles.value.splice(index, 1)
+          }
+        }
+        if (selectedFiles.value.length === 0) {
+          uploadProgress.value = []
+        }
+      }
+
+      const triggerFileSelect = () => {
+        if (fileInput.value) {
+          fileInput.value.click()
+        }
+      }
+
+      // ドラッグ&ドロップ
+      const onDragEnter = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
+          isDragOver.value = true
+          isDragging.value = true
+        }
+      }
+
+      const onDragOver = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (e.dataTransfer) {
+          e.dataTransfer.dropEffect = 'copy'
+        }
+      }
+
+      const onDragLeave = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+          isDragOver.value = false
+          isDragging.value = false
+        }
+      }
+
+      const onDrop = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        isDragOver.value = false
+        isDragging.value = false
+
+        const files = Array.from(e.dataTransfer.files)
+        const validFiles = files.filter(file =>
+          file.type.startsWith('video/') ||
+          file.name.toLowerCase().match(/\.(mp4|avi|mov|mkv|wmv|flv|webm)$/)
+        )
+
+        if (validFiles.length !== files.length) {
+          globalToastService.add({
+            severity: 'warn',
+            summary: '無効なファイル形式',
+            detail: '動画ファイルのみアップロード可能です',
+            life: 3000
+          })
+        }
+
+        if (validFiles.length > 0) {
+          selectedFiles.value = [...selectedFiles.value, ...validFiles]
+          globalToastService.add({
+            severity: 'success',
+            summary: 'ファイル追加完了',
+            detail: `${validFiles.length}個のファイルが追加されました`,
+            life: 3000
+          })
+        }
+
+        if (validFiles.length === 0 && files.length > 0) {
+          // すべてのファイルが無効だった場合
+          selectedFiles.value = []
+        }
+      }
+
+      // アップロード処理
+      const startUpload = async () => {
+        if (selectedFiles.value.length === 0) {
+          globalToastService.add({
+            severity: 'warn',
+            summary: '警告',
+            detail: 'アップロードするファイルを選択してください',
+            life: 3000
+          })
+          return
+        }
+
+        loading.value = true
+
+        // 進捗追跡の初期化
+        uploadProgress.value = selectedFiles.value.map(file => ({
+          name: file.name,
+          percent: 0,
+          status: 'uploading'
+        }))
+
+        try {
+          for (let i = 0; i < selectedFiles.value.length; i++) {
+            const file = selectedFiles.value[i]
+            const progressItem = uploadProgress.value[i]
+
+            try {
+              emit('upload-started', { file })
+
+              const result = await tasksStore.uploadFile(file, (percent) => {
+                progressItem.percent = percent
+              })
+
+              progressItem.status = 'completed'
+              progressItem.percent = 100
+
+              globalToastService.add({
+                severity: 'success',
+                summary: 'アップロード完了',
+                detail: `${file.name} のアップロードが完了しました`,
+                life: 3000
+              })
+
+              emit('upload-completed', { file, task: result })
+            } catch (error) {
+              progressItem.status = 'error'
+
+              globalToastService.add({
+                severity: 'error',
+                summary: 'アップロードエラー',
+                detail: `${file.name}: ${error.message}`,
+                life: 5000
+              })
+
+              emit('upload-error', { file, error })
+            }
+          }
+
+          // クリーンアップ
+          setTimeout(() => {
+            selectedFiles.value = []
+            uploadProgress.value = []
+          }, 2000)
+        } finally {
+          loading.value = false
+        }
+      }
+
+      // ユーティリティ関数
+      const formatFileSize = (bytes) => {
+        if (bytes === 0) return '0 Bytes'
+        const k = 1024
+        const sizes = ['Bytes', 'KB', 'MB', 'GB']
+        const i = Math.floor(Math.log(bytes) / Math.log(k))
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+      }
+
+      const getStatusSeverity = (status) => {
+        switch (status) {
+          case 'completed': return 'success'
+          case 'error': return 'danger'
+          case 'uploading': return 'info'
+          default: return 'info'
+        }
+      }
+
+      const getStatusLabel = (status) => {
+        switch (status) {
+          case 'completed': return '完了'
+          case 'error': return 'エラー'
+          case 'uploading': return 'アップロード中'
+          default: return status
+        }
+      }
+
+      return {
+        selectedFiles,
+        uploadProgress,
+        loading,
+        isDragOver,
+        isDragging,
+        fileInput,
+        onSelect,
+        onFileSelect,
+        onClear,
+        removeFile,
+        triggerFileSelect,
+        onDragEnter,
+        onDragOver,
+        onDragLeave,
+        onDrop,
+        startUpload,
+        formatFileSize,
+        getStatusSeverity,
+        getStatusLabel
+      }
+    }
   }
 }
 

@@ -8,7 +8,8 @@ export const useTasksStore = defineStore('tasks', {
     loading: false,
     error: null,
     pollingInterval: null,
-    activeConnections: new Set()
+    activeConnections: new Set(),
+    initialized: false // 初期化状態を追跡
   }),
 
   getters: {
@@ -44,18 +45,41 @@ export const useTasksStore = defineStore('tasks', {
   },
 
   actions: {
-    async fetchTasks() {
+    async fetchTasks(showLoading = true) {
       try {
-        this.loading = true
+        if (showLoading) {
+          this.loading = true
+        }
         this.error = null
         const response = await minutesApi.getTasks()
         this.tasks = response.data.tasks || response.data
+        this.initialized = true
       } catch (error) {
         this.error = error.response?.data?.message || error.message
         console.error('Failed to fetch tasks:', error)
       } finally {
-        this.loading = false
+        if (showLoading) {
+          this.loading = false
+        }
       }
+    },
+
+    async silentRefresh() {
+      // ローディング表示なしで更新（定期更新用）
+      try {
+        this.error = null
+        const response = await minutesApi.getTasks()
+        this.tasks = response.data.tasks || response.data
+        this.initialized = true
+      } catch (error) {
+        console.error('Failed to silently refresh tasks:', error)
+        // サイレント更新なので、エラーは設定しない
+      }
+    },
+
+    async forceRefresh() {
+      // 手動更新（ローディング表示あり）
+      return await this.fetchTasks(true)
     },
 
     async uploadFile(file, onProgress) {
@@ -350,9 +374,9 @@ export const useTasksStore = defineStore('tasks', {
           console.log('All tasks completed, stopping polling')
           this.stopPolling()
         } else if (this.tasks.length === 0) {
-          // Refresh task list to check for new tasks
+          // Refresh task list to check for new tasks (without loading spinner)
           console.log('No tasks found, refreshing task list')
-          await this.fetchTasks()
+          await this.silentRefresh()
         } else {
           // Use slower polling when no active tasks (back to original interval)
           if (currentInterval !== interval) {

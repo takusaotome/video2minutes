@@ -179,16 +179,18 @@ export default {
       })
     }
 
-    // Auto-refresh tasks periodically
+    // Auto-refresh tasks periodically (silent refresh)
     const refreshTasks = () => {
       if (document.visibilityState === 'visible') {
-        tasksStore.fetchTasks()
+        tasksStore.silentRefresh()
       }
     }
 
     onMounted(async () => {
-      // Initial load
-      await tasksStore.fetchTasks()
+      // 初期化されていない場合のみ初回読み込みを実行
+      if (!tasksStore.initialized) {
+        await tasksStore.fetchTasks(false) // 初回はローディング表示せずに即座に実行
+      }
 
       // Start polling for real-time updates
       tasksStore.startPolling(5000) // 5秒間隔でポーリング

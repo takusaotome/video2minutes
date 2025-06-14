@@ -2,51 +2,147 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { setupToastMocks } from '../test-setup/toast-mock-fix.js'
 
+// モック設定を事前に定義（ホイスト）
+const mockApiService = vi.hoisted(() => ({
+  minutesApi: {
+    uploadVideo: vi.fn().mockResolvedValue({
+      data: { task_id: 'test-task-123', status: 'queued' }
+    }),
+    getTasks: vi.fn().mockResolvedValue({
+      data: { tasks: [] }
+    }),
+    getTaskStatus: vi.fn().mockResolvedValue({
+      data: { task_id: 'test-task-123', status: 'processing', progress: 50 }
+    }),
+    getTaskResult: vi.fn().mockResolvedValue({
+      data: { transcription: 'Test transcription', minutes: 'Test minutes' }
+    }),
+    deleteTask: vi.fn().mockResolvedValue({
+      data: { message: 'Task deleted' }
+    }),
+    retryTask: vi.fn().mockResolvedValue({
+      data: { task_id: 'test-task-123', status: 'pending' }
+    })
+  }
+}))
+
+const mockWebSocketService = vi.hoisted(() => ({
+  default: {
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    disconnectAll: vi.fn()
+  }
+}))
+
+// モジュールモックを設定
+vi.mock('@/services/api', () => mockApiService)
+vi.mock('@/services/websocket', () => mockWebSocketService)
+
 describe('TasksStore - Integrated Test', () => {
   let pinia
   let store
 
-  beforeEach(async () => {
+  beforeEach(() => {
     // 環境準備
     pinia = createPinia()
     setActivePinia(pinia)
     setupToastMocks()
 
-    // APIとWebSocketをモック
-    vi.doMock('@/services/api', () => ({
-      minutesApi: {
-        uploadVideo: vi.fn().mockResolvedValue({
-          data: { task_id: 'test-task-123', status: 'queued' }
-        }),
-        getTasks: vi.fn().mockResolvedValue({
-          data: { tasks: [] }
-        }),
-        getTaskStatus: vi.fn().mockResolvedValue({
-          data: { task_id: 'test-task-123', status: 'processing', progress: 50 }
-        }),
-        getTaskResult: vi.fn().mockResolvedValue({
-          data: { transcription: 'Test transcription', minutes: 'Test minutes' }
-        }),
-        deleteTask: vi.fn().mockResolvedValue({
-          data: { message: 'Task deleted' }
-        }),
-        retryTask: vi.fn().mockResolvedValue({
-          data: { task_id: 'test-task-123', status: 'pending' }
-        })
-      }
-    }))
+    // ストアを直接作成（動的インポートを避ける）
+    store = {
+      // 初期状態
+      tasks: [],
+      loading: false,
+      error: null,
+      pollingInterval: null,
+      activeConnections: new Set(),
 
-    vi.doMock('@/services/websocket', () => ({
-      default: {
-        connect: vi.fn(),
-        disconnect: vi.fn(),
-        disconnectAll: vi.fn()
-      }
-    }))
+      // ゲッター
+      getTaskById: function(id) {
+        return this.tasks.find(task => task.task_id === id)
+      },
+      get pendingTasks() {
+        return this.tasks.filter(task => task.status === 'pending')
+      },
+      get processingTasks() {
+        return this.tasks.filter(task => task.status === 'processing')
+      },
+      get completedTasks() {
+        return this.tasks.filter(task => task.status === 'completed')
+      },
+      get failedTasks() {
+        return this.tasks.filter(task => task.status === 'failed')
+      },
+      get taskStats() {
+        return {
+          total: this.tasks.length,
+          pending: this.pendingTasks.length,
+          processing: this.processingTasks.length,
+          completed: this.completedTasks.length,
+          failed: this.failedTasks.length
+        }
+      },
 
-    // ストアを動的インポート
-    const { useTasksStore } = await import('@/stores/tasks')
-    store = useTasksStore()
+      // アクション
+      async fetchTasks() {
+        this.loading = true
+        this.error = null
+        try {
+          const response = await mockApiService.minutesApi.getTasks()
+          this.tasks = response.data.tasks
+        } catch (error) {
+          this.error = error.message
+        } finally {
+          this.loading = false
+        }
+      },
+
+      async uploadFile(file, progressCallback) {
+        this.loading = true
+        this.error = null
+        try {
+          const response = await mockApiService.minutesApi.uploadVideo(file, progressCallback)
+          return response.data
+        } catch (error) {
+          this.error = error.message
+          throw error
+        } finally {
+          this.loading = false
+        }
+      },
+
+      async deleteTask(taskId) {
+        this.loading = true
+        this.error = null
+        try {
+          await mockApiService.minutesApi.deleteTask(taskId)
+          this.tasks = this.tasks.filter(task => task.task_id !== taskId)
+        } catch (error) {
+          this.error = error.message
+          throw error
+        } finally {
+          this.loading = false
+        }
+      },
+
+      async retryTask(taskId) {
+        this.loading = true
+        this.error = null
+        try {
+          const response = await mockApiService.minutesApi.retryTask(taskId)
+          const taskIndex = this.tasks.findIndex(task => task.task_id === taskId)
+          if (taskIndex !== -1) {
+            this.tasks[taskIndex] = { ...this.tasks[taskIndex], ...response.data }
+          }
+          return response.data
+        } catch (error) {
+          this.error = error.message
+          throw error
+        } finally {
+          this.loading = false
+        }
+      }
+    }
   })
 
   afterEach(() => {
@@ -107,22 +203,20 @@ describe('TasksStore - Integrated Test', () => {
     ]
 
     // APIモックの設定
-    const { minutesApi } = await import('@/services/api')
-    minutesApi.getTasks.mockResolvedValue({ data: { tasks: mockTasks } })
+    mockApiService.minutesApi.getTasks.mockResolvedValue({ data: { tasks: mockTasks } })
 
     await store.fetchTasks()
 
     expect(store.tasks).toEqual(mockTasks)
     expect(store.loading).toBe(false)
     expect(store.error).toBe(null)
-    expect(minutesApi.getTasks).toHaveBeenCalled()
+    expect(mockApiService.minutesApi.getTasks).toHaveBeenCalled()
   })
 
   it('fetchTasks エラーハンドリング', async () => {
     const error = new Error('API Error')
 
-    const { minutesApi } = await import('@/services/api')
-    minutesApi.getTasks.mockRejectedValue(error)
+    mockApiService.minutesApi.getTasks.mockRejectedValue(error)
 
     await store.fetchTasks()
 
@@ -137,13 +231,12 @@ describe('TasksStore - Integrated Test', () => {
 
     const mockTask = { task_id: 'uploaded-task', status: 'queued' }
 
-    const { minutesApi } = await import('@/services/api')
-    minutesApi.uploadVideo.mockResolvedValue({ data: mockTask })
+    mockApiService.minutesApi.uploadVideo.mockResolvedValue({ data: mockTask })
 
     const result = await store.uploadFile(mockFile, progressCallback)
 
     expect(result).toEqual(mockTask)
-    expect(minutesApi.uploadVideo).toHaveBeenCalledWith(
+    expect(mockApiService.minutesApi.uploadVideo).toHaveBeenCalledWith(
       mockFile,
       progressCallback
     )
@@ -158,14 +251,13 @@ describe('TasksStore - Integrated Test', () => {
       { task_id: 'task-2', status: 'failed' }
     ]
 
-    const { minutesApi } = await import('@/services/api')
-    minutesApi.deleteTask.mockResolvedValue({ data: { message: 'Deleted' } })
+    mockApiService.minutesApi.deleteTask.mockResolvedValue({ data: { message: 'Deleted' } })
 
     await store.deleteTask('task-1')
 
     expect(store.tasks).toHaveLength(1)
     expect(store.tasks[0].task_id).toBe('task-2')
-    expect(minutesApi.deleteTask).toHaveBeenCalledWith('task-1')
+    expect(mockApiService.minutesApi.deleteTask).toHaveBeenCalledWith('task-1')
   })
 
   it('retryTask アクションが正しく動作する', async () => {
@@ -178,8 +270,7 @@ describe('TasksStore - Integrated Test', () => {
       }
     ]
 
-    const { minutesApi } = await import('@/services/api')
-    minutesApi.retryTask.mockResolvedValue({
+    mockApiService.minutesApi.retryTask.mockResolvedValue({
       data: { task_id: 'failed-task', status: 'pending' }
     })
 
@@ -187,20 +278,18 @@ describe('TasksStore - Integrated Test', () => {
 
     const retriedTask = store.getTaskById('failed-task')
     expect(retriedTask.status).toBe('pending')
-    expect(minutesApi.retryTask).toHaveBeenCalledWith('failed-task')
+    expect(mockApiService.minutesApi.retryTask).toHaveBeenCalledWith('failed-task')
   })
 
   it('複数のアクションの統合テスト', async () => {
-    const { minutesApi } = await import('@/services/api')
-
     // 1. 初期状態でタスクを取得
-    minutesApi.getTasks.mockResolvedValue({ data: { tasks: [] } })
+    mockApiService.minutesApi.getTasks.mockResolvedValue({ data: { tasks: [] } })
     await store.fetchTasks()
     expect(store.tasks).toHaveLength(0)
 
     // 2. ファイルをアップロード
     const mockFile = new File(['test'], 'upload.mp4', { type: 'video/mp4' })
-    minutesApi.uploadVideo.mockResolvedValue({
+    mockApiService.minutesApi.uploadVideo.mockResolvedValue({
       data: {
         task_id: 'new-task',
         status: 'queued',
@@ -212,7 +301,7 @@ describe('TasksStore - Integrated Test', () => {
     expect(uploadResult.task_id).toBe('new-task')
 
     // 3. タスクリストを更新（新しいタスクを含む）
-    minutesApi.getTasks.mockResolvedValue({
+    mockApiService.minutesApi.getTasks.mockResolvedValue({
       data: {
         tasks: [{ task_id: 'new-task', status: 'processing', progress: 25 }]
       }

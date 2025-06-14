@@ -33,8 +33,8 @@
           </div>
         </div>
 
-        <!-- Loading State -->
-        <div v-if="loading" class="loading-state">
+        <!-- Loading State - 初期化されていない場合のみ表示 -->
+        <div v-if="loading && !initialized" class="loading-state">
           <ProgressSpinner
             strokeWidth="4"
             fill="transparent"
@@ -43,16 +43,27 @@
           <p>タスクを読み込み中...</p>
         </div>
 
-        <!-- Empty State -->
-        <div v-else-if="tasks.length === 0" class="empty-state">
+        <!-- Empty State - 初期化済みでタスクが空の場合 -->
+        <div v-else-if="initialized && tasks.length === 0 && !loading" class="empty-state">
           <i class="pi pi-inbox empty-icon"></i>
           <h3>タスクがありません</h3>
           <p>動画ファイルをアップロードして議事録生成を開始してください</p>
         </div>
 
+        <!-- Loading overlay for manual refresh - 手動更新時のみ表示 -->
+        <div v-else-if="loading && initialized && tasks.length === 0" class="refresh-loading">
+          <ProgressSpinner
+            strokeWidth="3"
+            fill="transparent"
+            animationDuration="1s"
+            style="width: 24px; height: 24px;"
+          />
+          <p style="font-size: 0.9rem; margin-top: 0.5rem;">更新中...</p>
+        </div>
+
         <!-- Task Table -->
         <DataTable
-          v-else
+          v-else-if="initialized && tasks.length > 0"
           :value="tasks"
           :paginator="true"
           :rows="10"
@@ -265,6 +276,7 @@ export default {
 
     const tasks = computed(() => tasksStore.tasks)
     const loading = computed(() => tasksStore.loading)
+    const initialized = computed(() => tasksStore.initialized)
     const taskStats = computed(() => tasksStore.taskStats)
 
     const viewDetails = task => {
@@ -405,8 +417,10 @@ export default {
 
     // Lifecycle
     onMounted(async () => {
-      // TaskList only fetches tasks, polling is handled by DashboardView
-      await tasksStore.fetchTasks()
+      // 初期化されていない場合のみ初回読み込みを実行
+      if (!tasksStore.initialized) {
+        await tasksStore.fetchTasks(false) // 初回はローディング表示せずに即座に実行
+      }
     })
 
     onUnmounted(() => {
@@ -416,6 +430,7 @@ export default {
     return {
       tasks,
       loading,
+      initialized,
       taskStats,
       showDetailModal,
       selectedTask,
@@ -481,6 +496,15 @@ export default {
   align-items: center;
   gap: 1rem;
   padding: 3rem;
+}
+
+.refresh-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: #6c757d;
 }
 
 .empty-state {

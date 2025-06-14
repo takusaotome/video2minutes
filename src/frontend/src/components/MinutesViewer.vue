@@ -98,6 +98,91 @@
 
         <!-- Minutes Main Content -->
         <div class="minutes-main">
+          <!-- Meeting Details Card -->
+          <Card class="meeting-details-card">
+            <template #title>
+              <div class="meeting-details-header">
+                <div class="header-title">
+                  <i class="pi pi-calendar"></i>
+                  会議詳細
+                </div>
+                <div class="header-actions">
+                  <Button
+                    v-if="!isEditing"
+                    icon="pi pi-pencil"
+                    label="編集"
+                    @click="startEditing"
+                    class="p-button-outlined p-button-sm"
+                  />
+                  <div v-else class="edit-actions">
+                    <Button
+                      icon="pi pi-check"
+                      label="保存"
+                      @click="saveMeetingDetails"
+                      class="p-button-sm p-button-success"
+                      :disabled="!hasUnsavedChanges"
+                    />
+                    <Button
+                      icon="pi pi-times"
+                      label="キャンセル"
+                      @click="cancelEditing"
+                      class="p-button-sm p-button-outlined"
+                    />
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <template #content>
+              <div class="meeting-details-content">
+                <!-- Meeting Date -->
+                <div class="detail-field">
+                  <label class="field-label">開催日時</label>
+                  <div v-if="!isEditing" class="field-display">
+                    {{ meetingDate ? formatDate(meetingDate) : '未設定' }}
+                  </div>
+                  <Calendar
+                    v-else
+                    v-model="meetingDate"
+                    @update:modelValue="onMeetingDetailsChange"
+                    showTime
+                    hourFormat="24"
+                    dateFormat="yy/mm/dd"
+                    placeholder="開催日時を選択"
+                    class="meeting-date-input"
+                  />
+                </div>
+
+                <!-- Attendees -->
+                <div class="detail-field">
+                  <label class="field-label">出席者</label>
+                  <div v-if="!isEditing" class="field-display">
+                    <div v-if="attendees.length === 0" class="no-attendees">
+                      未設定
+                    </div>
+                    <div v-else class="attendees-list">
+                      <span
+                        v-for="(attendee, index) in attendees"
+                        :key="index"
+                        class="attendee-chip"
+                      >
+                        {{ attendee }}
+                      </span>
+                    </div>
+                  </div>
+                  <Chips
+                    v-else
+                    v-model="attendees"
+                    @update:modelValue="onMeetingDetailsChange"
+                    placeholder="出席者名を入力してEnterキーで追加"
+                    class="attendees-input"
+                  />
+                </div>
+              </div>
+            </template>
+          </Card>
+
+          <!-- Minutes Content Card -->
           <Card class="minutes-card">
             <template #title>
               <div class="minutes-card-header">
@@ -111,7 +196,7 @@
 
             <template #content>
               <MarkdownRenderer
-                :content="minutes.minutes"
+                :content="cleanMinutesContent"
                 :show-toc="true"
                 @word-count="updateWordCount"
               />
@@ -137,7 +222,12 @@ import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
 import ScrollPanel from 'primevue/scrollpanel'
 import Toast from 'primevue/toast'
+import InputText from 'primevue/inputtext'
+import Calendar from 'primevue/calendar'
+import Chips from 'primevue/chips'
 import MarkdownRenderer from './MarkdownRenderer.vue'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 export default {
   name: 'MinutesViewer',
@@ -149,6 +239,9 @@ export default {
     ProgressSpinner,
     ScrollPanel,
     Toast,
+    InputText,
+    Calendar,
+    Chips,
     MarkdownRenderer
   },
   props: {
@@ -167,8 +260,59 @@ export default {
     const showTranscript = ref(false)
     const windowWidth = ref(window.innerWidth)
     const wordCount = ref(0)
+    
+    // Meeting details editing
+    const meetingDate = ref(null)
+    const attendees = ref([])
+    const isEditing = ref(false)
+    const hasUnsavedChanges = ref(false)
 
     const isMobile = computed(() => windowWidth.value < 768)
+
+    // Generate minutes content without duplicate meeting details
+    const cleanMinutesContent = computed(() => {
+      if (!minutes.value) return ''
+      
+      // Remove any existing meeting details from the minutes content
+      let content = minutes.value.minutes
+      
+      // Remove common meeting detail patterns
+      content = content.replace(/^#\s*議事録\s*\n/i, '')
+      content = content.replace(/^\*\*開催日時?[:：].*\n/gm, '')
+      content = content.replace(/^\*\*開催日[:：].*\n/gm, '')
+      content = content.replace(/^\*\*出席者[:：].*\n/gm, '')
+      content = content.replace(/^開催日時?[:：].*\n/gm, '')
+      content = content.replace(/^開催日[:：].*\n/gm, '')
+      content = content.replace(/^出席者[:：].*\n/gm, '')
+      content = content.replace(/^会議情報\s*\n/gm, '')
+      content = content.replace(/^会議名[:：].*\n/gm, '')
+      content = content.replace(/^---+\s*\n/gm, '')
+      
+      // Clean up multiple newlines
+      content = content.replace(/\n{3,}/g, '\n\n')
+      content = content.trim()
+      
+      return content
+    })
+
+    // Generate complete content for downloads (includes meeting details)
+    const completeMinutesForDownload = computed(() => {
+      if (!minutes.value) return ''
+      
+      const meetingDateText = meetingDate.value ? formatDate(meetingDate.value) : '未設定'
+      const attendeesText = attendees.value.length > 0 ? attendees.value.join(', ') : '未設定'
+      
+      const header = `# 議事録
+
+**開催日時:** ${meetingDateText}  
+**出席者:** ${attendeesText}
+
+---
+
+`
+      
+      return header + cleanMinutesContent.value
+    })
 
     const downloadOptions = ref([
       {
@@ -196,6 +340,10 @@ export default {
         // Use the API service
         const response = await minutesApi.getTaskResult(props.taskId)
         minutes.value = response.data
+        
+        // Initialize meeting details by extracting from minutes content
+        initializeMeetingDetails()
+        hasUnsavedChanges.value = false
       } catch (err) {
         error.value = err.message
         console.error('Failed to load minutes:', err)
@@ -220,7 +368,7 @@ export default {
       if (!minutes.value) return
 
       try {
-        await navigator.clipboard.writeText(minutes.value.minutes)
+        await navigator.clipboard.writeText(completeMinutesForDownload.value)
         toast.add({
           severity: 'success',
           summary: 'コピー完了',
@@ -240,7 +388,14 @@ export default {
     const downloadMarkdown = () => {
       if (!minutes.value) return
 
-      const content = `# 議事録\n\n**ファイル名:** ${minutes.value.video_filename}\n**作成日時:** ${formatDate(minutes.value.created_at)}\n\n---\n\n${minutes.value.minutes}`
+      // Add file info to the complete content for download
+      const fileInfo = `**ファイル名:** ${minutes.value.video_filename}  
+**作成日時:** ${formatDate(minutes.value.created_at)}  
+
+`
+      
+      const content = completeMinutesForDownload.value.replace('# 議事録\n\n', `# 議事録\n\n${fileInfo}`)
+
       const blob = new Blob([content], { type: 'text/markdown' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -255,7 +410,20 @@ export default {
     const downloadText = () => {
       if (!minutes.value) return
 
-      const content = `議事録\n\nファイル名: ${minutes.value.video_filename}\n作成日時: ${formatDate(minutes.value.created_at)}\n\n${'-'.repeat(50)}\n\n${minutes.value.minutes}`
+      const meetingDateText = meetingDate.value ? formatDate(meetingDate.value) : '未設定'
+      const attendeesText = attendees.value.length > 0 ? attendees.value.join(', ') : '未設定'
+
+      const content = `議事録
+
+ファイル名: ${minutes.value.video_filename}
+作成日時: ${formatDate(minutes.value.created_at)}
+開催日時: ${meetingDateText}
+出席者: ${attendeesText}
+
+${'-'.repeat(50)}
+
+${cleanMinutesContent.value}`
+
       const blob = new Blob([content], { type: 'text/plain' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -267,13 +435,241 @@ export default {
       URL.revokeObjectURL(url)
     }
 
-    const downloadPDF = () => {
+    const downloadPDF = async () => {
+      if (!minutes.value) return
+
       toast.add({
         severity: 'info',
-        summary: 'PDF機能',
-        detail: 'PDF出力機能は今後実装予定です',
+        summary: 'PDF生成中',
+        detail: 'PDFを生成しています...',
         life: 3000
       })
+
+      try {
+        // Find the existing rendered markdown content
+        const markdownRenderer = document.querySelector('.markdown-renderer .markdown-content')
+        
+        if (!markdownRenderer) {
+          throw new Error('レンダリングされたマークダウンコンテンツが見つかりません')
+        }
+
+        // Create a temporary container for PDF content
+        const tempContainer = document.createElement('div')
+        tempContainer.style.position = 'absolute'
+        tempContainer.style.left = '-9999px'
+        tempContainer.style.top = '-9999px'
+        tempContainer.style.width = '800px'
+        tempContainer.style.padding = '40px'
+        tempContainer.style.backgroundColor = 'white'
+        tempContainer.style.fontFamily = '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif'
+
+        // Create header for PDF
+        const header = document.createElement('div')
+        header.style.marginBottom = '30px'
+        header.style.borderBottom = '2px solid #e5e7eb'
+        header.style.paddingBottom = '20px'
+        
+        const attendeesText = attendees.value.length > 0 ? attendees.value.join(', ') : '未設定'
+        const meetingDateText = meetingDate.value ? formatDate(meetingDate.value) : '未設定'
+        
+        header.innerHTML = `
+          <h1 style="color: #374151; font-size: 24px; margin: 0 0 15px 0; font-weight: bold;">議事録</h1>
+          <div style="color: #6b7280; font-size: 12px;">
+            <div style="margin-bottom: 5px;"><strong>ファイル名:</strong> ${minutes.value.video_filename}</div>
+            <div style="margin-bottom: 5px;"><strong>作成日時:</strong> ${formatDate(minutes.value.created_at)}</div>
+            <div style="margin-bottom: 5px;"><strong>開催日時:</strong> ${meetingDateText}</div>
+            <div><strong>出席者:</strong> ${attendeesText}</div>
+          </div>
+        `
+
+        // Clone the rendered markdown content
+        const markdownClone = markdownRenderer.cloneNode(true)
+        
+        // Apply PDF-specific styles to the cloned content
+        const applyPDFStyles = (element) => {
+          element.style.color = '#374151'
+          element.style.fontSize = '14px'
+          element.style.lineHeight = '1.6'
+          
+          // Style headings
+          const h1Elements = element.querySelectorAll('h1')
+          h1Elements.forEach(h1 => {
+            h1.style.fontSize = '20px'
+            h1.style.fontWeight = 'bold'
+            h1.style.color = '#1f2937'
+            h1.style.marginTop = '24px'
+            h1.style.marginBottom = '16px'
+            h1.style.borderBottom = '2px solid #e5e7eb'
+            h1.style.paddingBottom = '8px'
+          })
+
+          const h2Elements = element.querySelectorAll('h2')
+          h2Elements.forEach(h2 => {
+            h2.style.fontSize = '18px'
+            h2.style.fontWeight = 'bold'
+            h2.style.color = '#1f2937'
+            h2.style.marginTop = '20px'
+            h2.style.marginBottom = '12px'
+          })
+
+          const h3Elements = element.querySelectorAll('h3')
+          h3Elements.forEach(h3 => {
+            h3.style.fontSize = '16px'
+            h3.style.fontWeight = 'bold'
+            h3.style.color = '#1f2937'
+            h3.style.marginTop = '16px'
+            h3.style.marginBottom = '8px'
+          })
+
+          // Style paragraphs
+          const pElements = element.querySelectorAll('p')
+          pElements.forEach(p => {
+            p.style.marginBottom = '12px'
+            p.style.color = '#374151'
+          })
+
+          // Style lists
+          const ulElements = element.querySelectorAll('ul')
+          ulElements.forEach(ul => {
+            ul.style.marginBottom = '12px'
+            ul.style.paddingLeft = '20px'
+          })
+
+          const olElements = element.querySelectorAll('ol')
+          olElements.forEach(ol => {
+            ol.style.marginBottom = '12px'
+            ol.style.paddingLeft = '20px'
+          })
+
+          const liElements = element.querySelectorAll('li')
+          liElements.forEach(li => {
+            li.style.marginBottom = '4px'
+            li.style.color = '#374151'
+          })
+
+          // Style strong and em
+          const strongElements = element.querySelectorAll('strong')
+          strongElements.forEach(strong => {
+            strong.style.fontWeight = 'bold'
+            strong.style.color = '#1f2937'
+          })
+
+          const emElements = element.querySelectorAll('em')
+          emElements.forEach(em => {
+            em.style.fontStyle = 'italic'
+            em.style.color = '#4b5563'
+          })
+
+          // Style code blocks
+          const codeElements = element.querySelectorAll('code')
+          codeElements.forEach(code => {
+            code.style.backgroundColor = '#f3f4f6'
+            code.style.padding = '2px 4px'
+            code.style.borderRadius = '4px'
+            code.style.fontFamily = 'monospace'
+            code.style.fontSize = '12px'
+          })
+
+          const preElements = element.querySelectorAll('pre')
+          preElements.forEach(pre => {
+            pre.style.backgroundColor = '#f3f4f6'
+            pre.style.padding = '12px'
+            pre.style.borderRadius = '6px'
+            pre.style.overflow = 'visible'
+            pre.style.whiteSpace = 'pre-wrap'
+            pre.style.fontFamily = 'monospace'
+            pre.style.fontSize = '12px'
+            pre.style.marginBottom = '12px'
+          })
+
+          // Style tables
+          const tableElements = element.querySelectorAll('table')
+          tableElements.forEach(table => {
+            table.style.borderCollapse = 'collapse'
+            table.style.width = '100%'
+            table.style.marginBottom = '12px'
+          })
+
+          const thElements = element.querySelectorAll('th')
+          thElements.forEach(th => {
+            th.style.border = '1px solid #d1d5db'
+            th.style.padding = '8px'
+            th.style.backgroundColor = '#f9fafb'
+            th.style.fontWeight = 'bold'
+          })
+
+          const tdElements = element.querySelectorAll('td')
+          tdElements.forEach(td => {
+            td.style.border = '1px solid #d1d5db'
+            td.style.padding = '8px'
+          })
+
+          // Remove any interactive elements that don't work in PDF
+          const buttonElements = element.querySelectorAll('button')
+          buttonElements.forEach(button => button.remove())
+        }
+
+        applyPDFStyles(markdownClone)
+
+        // Assemble the final content
+        tempContainer.appendChild(header)
+        tempContainer.appendChild(markdownClone)
+        document.body.appendChild(tempContainer)
+
+        // Generate PDF using html2canvas and jsPDF
+        const canvas = await html2canvas(tempContainer, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          height: tempContainer.scrollHeight,
+          windowHeight: tempContainer.scrollHeight
+        })
+
+        // Remove temporary container
+        document.body.removeChild(tempContainer)
+
+        const imgData = canvas.toDataURL('image/png')
+        const pdf = new jsPDF('p', 'mm', 'a4')
+        
+        const imgWidth = 210 // A4 width in mm
+        const pageHeight = 295 // A4 height in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width
+        let heightLeft = imgHeight
+
+        let position = 0
+
+        // Add first page
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+
+        // Add additional pages if needed
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeight
+          pdf.addPage()
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+          heightLeft -= pageHeight
+        }
+
+        // Download the PDF
+        const filename = `議事録_${minutes.value.video_filename.replace(/\.[^/.]+$/, '')}.pdf`
+        pdf.save(filename)
+
+        toast.add({
+          severity: 'success',
+          summary: 'PDF生成完了',
+          detail: 'PDFファイルをダウンロードしました',
+          life: 3000
+        })
+      } catch (error) {
+        console.error('PDF generation failed:', error)
+        toast.add({
+          severity: 'error',
+          summary: 'PDF生成エラー',
+          detail: 'PDFの生成に失敗しました',
+          life: 3000
+        })
+      }
     }
 
     const toggleTranscript = () => {
@@ -289,6 +685,152 @@ export default {
       if (!isMobile.value) {
         showTranscript.value = false
       }
+    }
+
+    // Extract meeting details from minutes content
+    const initializeMeetingDetails = () => {
+      if (!minutes.value?.minutes) {
+        meetingDate.value = new Date()
+        attendees.value = []
+        return
+      }
+
+      const content = minutes.value.minutes
+      
+      // Extract meeting date
+      const datePatterns = [
+        /(?:開催日時?|会議日時?)[:：]\s*([^\n]+)/i,
+        /(?:開催日|会議日|日時)[:：]\s*([^\n]+)/i,
+        /\*\*(?:開催日時?|会議日時?)[:：]\*\*\s*([^\n]+)/i
+      ]
+      
+      let extractedDate = null
+      for (const pattern of datePatterns) {
+        const match = content.match(pattern)
+        if (match && match[1] && !match[1].includes('未記載') && !match[1].includes('未設定')) {
+          const dateStr = match[1].trim()
+          // Try to parse various date formats
+          const parsedDate = parseJapaneseDate(dateStr)
+          if (parsedDate) {
+            extractedDate = parsedDate
+            break
+          }
+        }
+      }
+      
+      meetingDate.value = extractedDate || new Date()
+      
+      // Extract attendees
+      const attendeePatterns = [
+        /(?:出席者|参加者)[:：]\s*([^\n]+)/i,
+        /\*\*(?:出席者|参加者)[:：]\*\*\s*([^\n]+)/i
+      ]
+      
+      let extractedAttendees = []
+      for (const pattern of attendeePatterns) {
+        const match = content.match(pattern)
+        if (match && match[1] && !match[1].includes('未設定') && !match[1].includes('未記載')) {
+          const attendeesStr = match[1].trim()
+          // Split by common separators and clean up
+          extractedAttendees = attendeesStr
+            .split(/[、,，;；]/)
+            .map(name => name.trim())
+            .filter(name => name && name !== '他' && name !== 'など')
+          break
+        }
+      }
+      
+      attendees.value = extractedAttendees
+    }
+
+    // Parse Japanese date formats
+    const parseJapaneseDate = (dateStr) => {
+      try {
+        // Handle various Japanese date formats
+        let normalizedDate = dateStr
+          .replace(/年/g, '/')
+          .replace(/月/g, '/')
+          .replace(/日/g, '')
+          .replace(/\s+/g, ' ')
+          .trim()
+        
+        // Try to parse the normalized date
+        const parsed = new Date(normalizedDate)
+        if (!isNaN(parsed.getTime())) {
+          return parsed
+        }
+        
+        // If that fails, try some other common patterns
+        const patterns = [
+          /(\d{4})\/(\d{1,2})\/(\d{1,2})/,
+          /(\d{1,2})\/(\d{1,2})\/(\d{4})/,
+          /(\d{4})-(\d{1,2})-(\d{1,2})/
+        ]
+        
+        for (const pattern of patterns) {
+          const match = normalizedDate.match(pattern)
+          if (match) {
+            const [, year, month, day] = match
+            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+            if (!isNaN(date.getTime())) {
+              return date
+            }
+          }
+        }
+        
+        return null
+      } catch (error) {
+        return null
+      }
+    }
+
+    // Meeting details editing functions
+    const startEditing = () => {
+      isEditing.value = true
+    }
+
+    const cancelEditing = () => {
+      // Reset to original values
+      meetingDate.value = minutes.value.meeting_date ? new Date(minutes.value.meeting_date) : new Date()
+      attendees.value = minutes.value.attendees || []
+      isEditing.value = false
+      hasUnsavedChanges.value = false
+    }
+
+    const saveMeetingDetails = async () => {
+      try {
+        // Update the local minutes object
+        minutes.value.meeting_date = meetingDate.value
+        minutes.value.attendees = attendees.value
+        
+        // Here you would typically save to the backend
+        // await minutesApi.updateMeetingDetails(props.taskId, {
+        //   meeting_date: meetingDate.value,
+        //   attendees: attendees.value
+        // })
+
+        isEditing.value = false
+        hasUnsavedChanges.value = false
+        
+        toast.add({
+          severity: 'success',
+          summary: '保存完了',
+          detail: '開催日時と出席者が更新されました',
+          life: 3000
+        })
+      } catch (error) {
+        console.error('Failed to save meeting details:', error)
+        toast.add({
+          severity: 'error',
+          summary: '保存エラー',
+          detail: '開催日時と出席者の保存に失敗しました',
+          life: 3000
+        })
+      }
+    }
+
+    const onMeetingDetailsChange = () => {
+      hasUnsavedChanges.value = true
     }
 
     // Lifecycle
@@ -308,6 +850,8 @@ export default {
       showTranscript,
       isMobile,
       wordCount,
+      cleanMinutesContent,
+      completeMinutesForDownload,
       downloadOptions,
       loadMinutes,
       formatDate,
@@ -316,7 +860,16 @@ export default {
       downloadText,
       downloadPDF,
       toggleTranscript,
-      updateWordCount
+      updateWordCount,
+      // Meeting details editing
+      meetingDate,
+      attendees,
+      isEditing,
+      hasUnsavedChanges,
+      startEditing,
+      cancelEditing,
+      saveMeetingDetails,
+      onMeetingDetailsChange
     }
   }
 }
@@ -610,6 +1163,111 @@ export default {
   font-weight: 500;
 }
 
+/* Meeting Details Styles */
+.meeting-details-card {
+  margin-bottom: var(--space-6);
+}
+
+.meeting-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: 1.2rem;
+  color: var(--gray-800);
+  font-weight: 600;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.header-title i {
+  color: var(--primary-500);
+}
+
+.edit-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.meeting-details-content {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.field-label {
+  font-weight: 600;
+  color: var(--gray-700);
+  font-size: 0.95rem;
+}
+
+.field-display {
+  padding: var(--space-3);
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  color: var(--gray-800);
+}
+
+.no-attendees {
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+.attendees-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.attendee-chip {
+  background: var(--primary-100);
+  color: var(--primary-800);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid var(--primary-200);
+}
+
+.meeting-date-input,
+.attendees-input {
+  width: 100%;
+}
+
+:deep(.meeting-date-input .p-inputtext) {
+  width: 100%;
+}
+
+:deep(.attendees-input .p-chips-multiple-container) {
+  min-height: 42px;
+  padding: var(--space-2);
+}
+
+:deep(.attendees-input .p-chips-token) {
+  background: var(--primary-100);
+  color: var(--primary-800);
+  border: 1px solid var(--primary-200);
+}
+
+:deep(.attendees-input .p-chips-input-token input) {
+  padding: var(--space-2);
+  min-width: 200px;
+}
+
 /* Mobile Responsive */
 @media (max-width: 1024px) {
   .content-layout {
@@ -644,6 +1302,16 @@ export default {
 
   .minutes-title {
     font-size: 1.5rem;
+  }
+
+  .meeting-details-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .edit-actions {
+    justify-content: center;
   }
 }
 

@@ -87,7 +87,7 @@ export function createTasksStoreMock(options = {}) {
 
   const defaultActions = {
     // ファイルアップロード
-    uploadFile: vi.fn().mockImplementation(async (file, progressCallback) => {
+    uploadFile: vi.fn().mockImplementation(async function(file, progressCallback) {
       // 進捗をシミュレート
       if (progressCallback) {
         for (let i = 0; i <= 100; i += 20) {
@@ -105,7 +105,9 @@ export function createTasksStoreMock(options = {}) {
       }
 
       // タスクリストに追加
-      this.tasks.push(task)
+      if (this.tasks && Array.isArray(this.tasks)) {
+        this.tasks.push(task)
+      }
       return task
     }),
 
@@ -113,22 +115,24 @@ export function createTasksStoreMock(options = {}) {
     fetchTasks: vi.fn().mockResolvedValue([]),
 
     // タスクステータス取得
-    fetchTaskStatus: vi.fn().mockImplementation(async taskId => {
-      const task = this.tasks.find(t => t.task_id === taskId)
+    fetchTaskStatus: vi.fn().mockImplementation(async function(taskId) {
+      const task = this.tasks?.find(t => t.task_id === taskId)
       return task || null
     }),
 
     // タスク削除
-    deleteTask: vi.fn().mockImplementation(async taskId => {
-      const index = this.tasks.findIndex(t => t.task_id === taskId)
-      if (index !== -1) {
-        this.tasks.splice(index, 1)
+    deleteTask: vi.fn().mockImplementation(async function(taskId) {
+      if (this.tasks && Array.isArray(this.tasks)) {
+        const index = this.tasks.findIndex(t => t.task_id === taskId)
+        if (index !== -1) {
+          this.tasks.splice(index, 1)
+        }
       }
     }),
 
     // タスク再試行
-    retryTask: vi.fn().mockImplementation(async taskId => {
-      const task = this.tasks.find(t => t.task_id === taskId)
+    retryTask: vi.fn().mockImplementation(async function(taskId) {
+      const task = this.tasks?.find(t => t.task_id === taskId)
       if (task) {
         task.status = 'pending'
         task.error_message = null

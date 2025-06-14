@@ -18,8 +18,8 @@ logger = setup_logging(
     log_level=settings.log_level, log_dir=settings.log_dir, app_name="video2minutes"
 )
 
-# グローバルタスクストア（本番環境ではRedisやDBを使用）
-tasks_store: Dict[str, MinutesTask] = {}
+# グローバルタスクストア（共有ストアから参照）
+from app.store import tasks_store
 
 # Basic認証は無効
 

@@ -33,8 +33,8 @@ from app.utils.logger import get_logger
 router = APIRouter()
 logger = get_logger(__name__)
 
-# グローバルタスクストア（main.pyからインポートする方が良いがここでは簡略化）
-tasks_store: Dict[str, MinutesTask] = {}
+# グローバルタスクストア（共有ストアから参照）
+from app.store import tasks_store
 
 # WebSocket接続管理
 websocket_connections: Dict[str, List[WebSocket]] = {}
@@ -163,6 +163,49 @@ async def get_task_result(task_id: str):
         minutes=task.minutes,
         upload_timestamp=task.upload_timestamp,
     )
+
+
+@router.delete("/{task_id}")
+async def delete_task(task_id: str):
+    """タスクを削除"""
+    logger.info(f"タスク削除要求: {task_id}")
+    
+    if task_id not in tasks_store:
+        logger.warning(f"削除対象のタスクが見つかりません: {task_id}")
+        raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
+
+    task = tasks_store[task_id]
+    
+    # 処理中のタスクは削除できない
+    if task.status == TaskStatus.PROCESSING:
+        logger.warning(f"処理中のタスクは削除できません: {task_id}")
+        raise HTTPException(status_code=400, detail="処理中のタスクは削除できません")
+    
+    try:
+        # ファイルクリーンアップ
+        FileHandler.cleanup_files(task_id)
+        logger.info(f"ファイルクリーンアップ完了: {task_id}")
+        
+        # タスクストアから削除
+        del tasks_store[task_id]
+        logger.info(f"タスク削除完了: {task_id}")
+        
+        # WebSocket接続がある場合は削除
+        if task_id in websocket_connections:
+            del websocket_connections[task_id]
+            logger.info(f"WebSocket接続削除完了: {task_id}")
+        
+        return JSONResponse(
+            status_code=200,
+            content={"message": f"タスク {task_id} を削除しました"}
+        )
+        
+    except Exception as e:
+        logger.error(f"タスク削除エラー: {task_id} - {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"タスクの削除中にエラーが発生しました: {str(e)}"
+        )
 
 
 @router.websocket("/ws/{task_id}")
