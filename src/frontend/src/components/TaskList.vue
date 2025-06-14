@@ -80,9 +80,13 @@
           <Column field="overall_progress" header="進捗" class="progress-column">
             <template #body="{ data }">
               <div class="progress-cell">
+                <div class="progress-header">
+                  <span class="progress-label">進捗</span>
+                  <span class="progress-value">{{ data.overall_progress || 0 }}%</span>
+                </div>
                 <ProgressBar
                   :value="data.overall_progress || 0"
-                  :showValue="true"
+                  :showValue="false"
                   class="task-progress"
                 />
                 <small v-if="data.status === 'processing' && data.estimated_time" class="eta">
@@ -107,17 +111,25 @@
                 <!-- View Details -->
                 <Button
                   icon="pi pi-eye"
-                  class="p-button-text p-button-sm"
-                  v-tooltip="'詳細を見る'"
+                  class="p-button-text p-button-info p-button-sm action-btn"
+                  v-tooltip="{
+                    value: 'タスクの詳細情報を表示します',
+                    showDelay: 300,
+                    hideDelay: 100
+                  }"
                   @click="viewDetails(data)"
                 />
 
                 <!-- View Minutes (completed only) -->
                 <Button
                   v-if="data.status === 'completed'"
-                  icon="pi pi-file-text"
-                  class="p-button-text p-button-success p-button-sm"
-                  v-tooltip="'議事録を見る'"
+                  icon="pi pi-file"
+                  class="p-button-text p-button-success p-button-sm action-btn"
+                  v-tooltip="{
+                    value: '生成された議事録を閲覧します',
+                    showDelay: 300,
+                    hideDelay: 100
+                  }"
                   @click="viewMinutes(data)"
                 />
 
@@ -125,8 +137,12 @@
                 <Button
                   v-if="data.status === 'failed'"
                   icon="pi pi-refresh"
-                  class="p-button-text p-button-warning p-button-sm"
-                  v-tooltip="'再実行'"
+                  class="p-button-text p-button-warning p-button-sm action-btn"
+                  v-tooltip="{
+                    value: 'エラーが発生したタスクを再実行します',
+                    showDelay: 300,
+                    hideDelay: 100
+                  }"
                   @click="retryTask(data)"
                   :loading="retryingTasks.has(data.task_id)"
                 />
@@ -134,8 +150,12 @@
                 <!-- Delete -->
                 <Button
                   icon="pi pi-trash"
-                  class="p-button-text p-button-danger p-button-sm"
-                  v-tooltip="'削除'"
+                  class="p-button-text p-button-danger p-button-sm action-btn"
+                  v-tooltip="{
+                    value: 'タスクを完全に削除します（復元不可）',
+                    showDelay: 300,
+                    hideDelay: 100
+                  }"
                   @click="deleteTask(data)"
                   :disabled="data.status === 'processing'"
                 />
@@ -438,7 +458,8 @@ export default {
 
 .filesize {
   font-size: 0.85rem;
-  color: #6c757d;
+  color: var(--gray-700);
+  font-weight: 500;
 }
 
 .status-cell {
@@ -449,14 +470,31 @@ export default {
 }
 
 .current-step {
-  font-size: 0.75rem;
-  color: #6b7280;
-  font-weight: 500;
+  font-size: 0.8rem;
+  color: var(--gray-800);
+  font-weight: 600;
   line-height: 1.2;
   margin-top: 0.25rem;
 }
 
-/* Badge styling improvements */
+/* Badge styling improvements - 日本語対応 */
+:deep(.p-badge) {
+  /* 日本語テキストのはみ出し修正 */
+  line-height: 1.2 !important;
+  height: auto !important;
+  min-height: 1.5rem;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.3rem 0.6rem !important;
+}
+
+/* 完了ステータスの色修正 */
+:deep(.p-badge.p-badge-success) {
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+}
+
 :deep(.status-cell .p-badge) {
   font-size: 0.75rem;
   padding: 0.4rem 0.8rem;
@@ -469,12 +507,34 @@ export default {
 .progress-cell {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-1);
+}
+
+.progress-label {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+  font-weight: 500;
+}
+
+.progress-value {
+  font-size: 0.85rem;
+  color: var(--primary-600);
+  font-weight: 700;
+  min-width: 35px;
+  text-align: right;
 }
 
 .task-progress {
   width: 100%;
-  height: 8px;
+  height: 10px;
+  border-radius: var(--radius-md);
 }
 
 :deep(.task-progress .p-progressbar-value) {
@@ -487,9 +547,9 @@ export default {
 }
 
 .eta {
-  color: #6b7280;
-  font-size: 0.75rem;
-  font-weight: 500;
+  color: var(--gray-800);
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .timestamp-cell {
@@ -505,7 +565,8 @@ export default {
 
 .time {
   font-size: 0.85rem;
-  color: #6c757d;
+  color: var(--gray-700);
+  font-weight: 500;
 }
 
 .action-buttons {
@@ -516,23 +577,91 @@ export default {
   flex-wrap: wrap;
 }
 
-:deep(.action-buttons .p-button) {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8rem;
-  border-radius: 6px;
-  min-width: 32px;
-  height: 32px;
+:deep(.action-buttons .p-button.action-btn) {
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  border-radius: var(--radius-md);
+  min-width: 36px;
+  height: 36px;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
 }
 
-:deep(.action-buttons .p-button.p-button-sm) {
-  padding: 0.4rem 0.6rem;
-  font-size: 0.75rem;
-  min-width: 28px;
-  height: 28px;
+:deep(.action-buttons .p-button.action-btn::before) {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
 }
 
-:deep(.action-buttons .p-button .p-button-icon) {
-  font-size: 0.8rem;
+:deep(.action-buttons .p-button.action-btn:hover::before) {
+  left: 100%;
+}
+
+:deep(.action-buttons .p-button.action-btn:hover) {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+:deep(.action-buttons .p-button.action-btn .p-button-icon) {
+  font-size: 1rem;
+  transition: all var(--transition-fast);
+}
+
+:deep(.action-buttons .p-button.action-btn:hover .p-button-icon) {
+  transform: scale(1.1);
+}
+
+/* Specific action button colors */
+:deep(.action-buttons .p-button-info.action-btn) {
+  color: var(--primary-600);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+:deep(.action-buttons .p-button-info.action-btn:hover) {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--primary-700);
+}
+
+:deep(.action-buttons .p-button-success.action-btn) {
+  color: var(--success-600);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+:deep(.action-buttons .p-button-success.action-btn:hover) {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success-700);
+}
+
+:deep(.action-buttons .p-button-warning.action-btn) {
+  color: var(--warning-600);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+:deep(.action-buttons .p-button-warning.action-btn:hover) {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--warning-700);
+}
+
+:deep(.action-buttons .p-button-danger.action-btn) {
+  color: var(--error-600);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+:deep(.action-buttons .p-button-danger.action-btn:hover) {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--error-700);
+}
+
+:deep(.action-buttons .p-button-danger.action-btn:disabled) {
+  opacity: 0.4;
+  transform: none;
+  box-shadow: none;
 }
 
 /* DataTable Styling */

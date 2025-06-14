@@ -44,10 +44,11 @@
         <div class="overall-progress">
           <div class="progress-header">
             <span>全体進捗</span>
-            <span class="progress-percentage">{{ task.progress || 0 }}%</span>
+            <span class="progress-percentage">{{ task.overall_progress || 0 }}%</span>
           </div>
           <ProgressBar 
-            :value="task.progress || 0" 
+            :value="task.overall_progress || 0" 
+            :showValue="false"
             class="overall-progress-bar"
           />
         </div>
@@ -145,7 +146,7 @@
         <Button
           v-if="task && task.status === 'completed'"
           label="議事録を見る"
-          icon="pi pi-file-text"
+          icon="pi pi-file"
           class="p-button-success"
           @click="handleViewMinutes"
         />
@@ -232,7 +233,7 @@ export default {
         {
           name: 'minutes_generation',
           label: '議事録生成',
-          icon: 'pi-file-text'
+          icon: 'pi-file'
         }
       ]
 
@@ -406,45 +407,81 @@ export default {
 .task-detail-content {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--space-8);
 }
 
 .task-overview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  padding: 2rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f4 100%);
-  border-radius: 12px;
-  border: 1px solid #e9ecef;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-6);
+  padding: var(--space-8);
+  background: linear-gradient(135deg, white 0%, var(--gray-50) 100%);
+  border-radius: var(--radius-xl);
+  border: 2px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-4);
 }
 
 .overview-item {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-100);
+  transition: all var(--transition-fast);
+}
+
+.overview-item:hover {
+  border-color: var(--primary-200);
+  box-shadow: var(--shadow-sm);
 }
 
 .overview-item label {
-  font-weight: 600;
-  color: #495057;
-  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gray-600);
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-bottom: var(--space-1);
 }
 
 .overview-item span {
-  font-size: 0.95rem;
-  color: #212529;
-  font-weight: 500;
+  font-size: 1rem;
+  color: var(--gray-800);
+  font-weight: 600;
+  line-height: 1.4;
 }
 
-/* Badge improvements in modal */
+/* Badge improvements in modal - 日本語対応 */
+:deep(.p-badge) {
+  /* 日本語テキストのはみ出し修正 */
+  line-height: 1.2 !important;
+  height: auto !important;
+  min-height: 1.5rem;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.4rem 0.8rem !important;
+}
+
 :deep(.overview-item .p-badge) {
   font-size: 0.8rem;
   padding: 0.5rem 1rem;
   font-weight: 600;
   align-self: flex-start;
+}
+
+/* 完了ステータスの色修正 */
+:deep(.p-badge.p-badge-success) {
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+}
+
+:deep(.step-header .p-badge.p-badge-success) {
+  background-color: #10b981 !important;
+  color: #ffffff !important;
 }
 
 .filename {
