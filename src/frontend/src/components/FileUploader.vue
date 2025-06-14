@@ -527,9 +527,22 @@ export default {
 .upload-header {
   text-align: center;
   padding: 2.5rem 2rem 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-700) 0%, var(--secondary-700) 100%);
   color: white;
   margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+  position: relative;
+}
+
+/* Dark overlay for better contrast */
+.upload-header::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.05);
+  pointer-events: none;
 }
 
 .title-section {
@@ -547,16 +560,24 @@ export default {
 
 .upload-title {
   font-size: 1.75rem;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0;
   line-height: 1.2;
+  color: white;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 1;
 }
 
 .upload-description {
   font-size: 1rem;
-  opacity: 0.9;
+  opacity: 1;
   margin: 0;
-  font-weight: 400;
+  font-weight: 500;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  position: relative;
+  z-index: 1;
 }
 
 /* Upload Area */
@@ -589,34 +610,76 @@ export default {
 }
 
 .upload-dropzone {
-  border: 3px dashed #e5e7eb;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  padding: 4rem 2rem;
+  border: 3px dashed var(--gray-300);
+  border-radius: var(--radius-2xl);
+  background: linear-gradient(135deg, white 0%, var(--gray-50) 100%);
+  padding: var(--space-16) var(--space-8);
   text-align: center;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  min-height: 400px;
+  min-height: 450px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.upload-dropzone::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(99, 102, 241, 0.05) 10px,
+    rgba(99, 102, 241, 0.05) 20px
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
 .upload-dropzone:hover {
-  border-color: #667eea;
-  background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+  border-color: var(--primary-400);
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px -12px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 20px 40px -12px rgba(99, 102, 241, 0.25);
+}
+
+.upload-dropzone:hover::after {
+  opacity: 1;
 }
 
 .upload-dropzone.dragover {
-  border-color: #10b981;
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-  transform: translateY(-4px) scale(1.02);
+  border-color: var(--success-500);
+  background: linear-gradient(135deg, var(--success-50) 0%, var(--success-100) 100%);
+  transform: translateY(-6px) scale(1.02);
   box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.35);
   border-style: solid;
+  border-width: 4px;
+  animation: dragPulse 1s ease-in-out infinite;
+}
+
+.upload-dropzone.dragover::after {
+  opacity: 1;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(16, 185, 129, 0.1) 10px,
+    rgba(16, 185, 129, 0.1) 20px
+  );
+}
+
+@keyframes dragPulse {
+  0%, 100% { box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.35); }
+  50% { box-shadow: 0 30px 60px -12px rgba(16, 185, 129, 0.45); }
 }
 
 .upload-dropzone::before {
@@ -819,17 +882,18 @@ export default {
   padding: 0.75rem 1.5rem;
   font-size: 0.9rem;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid #e5e7eb;
-  color: #6b7280;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--gray-300);
+  color: var(--gray-700);
+  font-weight: 500;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
 }
 
 .quick-action-btn:hover {
   background: white;
-  border-color: #667eea;
-  color: #667eea;
+  border-color: var(--primary-600);
+  color: var(--primary-700);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
 }
@@ -887,8 +951,9 @@ export default {
 }
 
 .file-limit {
-  color: #6b7280;
+  color: var(--gray-700);
   font-size: 0.85rem;
+  font-weight: 500;
 }
 
 /* Drag Overlay */
@@ -898,31 +963,64 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(16, 185, 129, 0.1);
-  backdrop-filter: blur(8px);
-  border-radius: 20px;
+  background: radial-gradient(
+    circle at center,
+    rgba(16, 185, 129, 0.15) 0%,
+    rgba(16, 185, 129, 0.05) 100%
+  );
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-2xl);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
-  animation: fadeIn 0.2s ease-out;
+  animation: overlaySlideIn 0.3s ease-out;
+  border: 3px solid var(--success-400);
+}
+
+@keyframes overlaySlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    backdrop-filter: blur(10px);
+  }
 }
 
 .drag-overlay-content {
   text-align: center;
-  color: #10b981;
-  font-weight: 600;
+  color: var(--success-700);
+  font-weight: 700;
+  padding: var(--space-8);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 2px solid var(--success-200);
+  backdrop-filter: blur(5px);
 }
 
 .drag-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  animation: bounce 0.6s ease-in-out infinite;
+  font-size: 5rem;
+  margin-bottom: var(--space-4);
+  animation: dragBounce 0.8s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(16, 185, 129, 0.3));
+}
+
+@keyframes dragBounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-15px) scale(1.1); }
+  60% { transform: translateY(-8px) scale(1.05); }
 }
 
 .drag-overlay p {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.025em;
 }
 
 @keyframes fadeIn {

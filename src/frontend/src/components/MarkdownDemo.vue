@@ -3,7 +3,7 @@
     <Card>
       <template #title>
         <div class="demo-header">
-          <i class="pi pi-file-text"></i>
+          <i class="pi pi-file"></i>
           議事録マークダウン表示デモ
         </div>
       </template>

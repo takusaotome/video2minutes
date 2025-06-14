@@ -28,7 +28,7 @@
       <div class="minutes-header">
         <div class="header-info">
           <h1 class="minutes-title">
-            <i class="pi pi-file-text"></i>
+            <i class="pi pi-file"></i>
             議事録
           </h1>
           <div class="file-info">
@@ -101,7 +101,7 @@
           <Card class="minutes-card">
             <template #title>
               <div class="minutes-card-header">
-                <i class="pi pi-file-text"></i>
+                <i class="pi pi-file"></i>
                 生成された議事録
                 <div class="minutes-stats">
                   <small>{{ wordCount }}文字</small>
@@ -327,43 +327,62 @@ export default {
 .minutes-viewer {
   max-width: 1400px;
   margin: 0 auto;
+  animation: fadeIn 0.6s ease-out;
 }
 
 .loading-state, .error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 3rem;
+  gap: var(--space-5);
+  padding: var(--space-12);
   text-align: center;
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--gray-200);
 }
 
 .error-content {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .error-content i {
-  font-size: 1.5rem;
-  color: #dc3545;
-  margin-top: 0.25rem;
+  font-size: 1.75rem;
+  color: var(--error-500);
+  margin-top: var(--space-1);
 }
 
 .retry-button {
-  margin-top: 1rem;
+  margin-top: var(--space-5);
 }
 
 .minutes-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 2rem;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 12px;
-  border: 1px solid #dee2e6;
+  gap: var(--space-8);
+  margin-bottom: var(--space-8);
+  padding: var(--space-8);
+  background: linear-gradient(135deg, white 0%, var(--gray-50) 100%);
+  border-radius: var(--radius-xl);
+  border: 2px solid var(--gray-200);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.minutes-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.05) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 .header-info {
@@ -373,57 +392,71 @@ export default {
 .minutes-title {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin: 0 0 0.5rem 0;
-  font-size: 2rem;
-  color: #495057;
-  font-weight: 700;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-3) 0;
+  font-size: 2.25rem;
+  color: var(--gray-800);
+  font-weight: 800;
+  position: relative;
+  z-index: 1;
+}
+
+.minutes-title i {
+  color: var(--primary-500);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .file-info {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--space-2);
+  position: relative;
+  z-index: 1;
 }
 
 .filename {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #6366f1;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--primary-600);
+  word-break: break-all;
 }
 
 .date {
-  font-size: 0.95rem;
-  color: #6c757d;
+  font-size: 1rem;
+  color: var(--gray-700);
+  font-weight: 500;
 }
 
 .header-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-3);
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .download-button {
-  min-width: 140px;
+  min-width: 150px;
 }
 
 .transcript-toggle {
   width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-5);
+  border-radius: var(--radius-lg);
 }
 
 .content-layout {
   display: grid;
-  grid-template-columns: 350px 1fr;
-  gap: 2rem;
+  grid-template-columns: 380px 1fr;
+  gap: var(--space-8);
   position: relative;
 }
 
 .transcript-sidebar {
   position: sticky;
-  top: 2rem;
+  top: var(--space-8);
   height: fit-content;
-  max-height: calc(100vh - 4rem);
+  max-height: calc(100vh - 6rem);
 }
 
 .mobile-overlay {
@@ -433,47 +466,60 @@ export default {
   right: 0;
   bottom: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  padding: var(--space-4);
   overflow-y: auto;
+  backdrop-filter: blur(8px);
 }
 
 .mobile-overlay .transcript-card {
   background: white;
-  margin-top: 2rem;
+  margin-top: var(--space-8);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
 }
 
 .transcript-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1.1rem;
-  color: #495057;
+  gap: var(--space-3);
+  font-size: 1.2rem;
+  color: var(--gray-800);
+  font-weight: 600;
   position: relative;
+}
+
+.transcript-header i {
+  color: var(--primary-500);
 }
 
 .close-transcript {
   position: absolute;
-  right: -0.5rem;
-  top: -0.5rem;
+  right: -var(--space-2);
+  top: -var(--space-2);
 }
 
 .transcript-scroll {
-  height: 400px;
+  height: 450px;
+  border-radius: var(--radius-md);
 }
 
 .transcript-content {
-  padding: 0.5rem;
+  padding: var(--space-4);
 }
 
 .transcript-text {
-  font-family: 'Courier New', monospace;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  color: #495057;
+  font-family: var(--font-family-mono);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--gray-700);
   margin: 0;
   white-space: pre-wrap;
   word-wrap: break-word;
+  background: var(--gray-50);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
 }
 
 .minutes-main {
@@ -484,64 +530,80 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  font-size: 1.1rem;
-  color: #495057;
+  gap: var(--space-4);
+  font-size: 1.2rem;
+  color: var(--gray-800);
+  font-weight: 600;
+}
+
+.minutes-card-header i {
+  color: var(--primary-500);
 }
 
 .minutes-stats {
-  font-size: 0.9rem;
-  color: #6c757d;
+  font-size: 0.95rem;
+  color: var(--primary-800);
+  font-weight: 600;
+  background: var(--primary-50);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--primary-200);
 }
 
 .minutes-text {
-  font-size: 1rem;
+  font-size: 1.1rem;
   line-height: 1.8;
-  color: #333;
+  color: var(--gray-800);
 }
 
 :deep(.minutes-text h1) {
-  font-size: 1.5rem;
-  color: #495057;
-  margin: 1.5rem 0 1rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e9ecef;
+  font-size: 1.75rem;
+  color: var(--gray-800);
+  margin: var(--space-6) 0 var(--space-4) 0;
+  padding-bottom: var(--space-3);
+  border-bottom: 3px solid var(--primary-200);
+  font-weight: 700;
 }
 
 :deep(.minutes-text h2) {
-  font-size: 1.3rem;
-  color: #495057;
-  margin: 1.25rem 0 0.75rem 0;
+  font-size: 1.5rem;
+  color: var(--gray-800);
+  margin: var(--space-5) 0 var(--space-3) 0;
+  font-weight: 600;
 }
 
 :deep(.minutes-text h3) {
-  font-size: 1.1rem;
-  color: #495057;
-  margin: 1rem 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: var(--gray-800);
+  margin: var(--space-4) 0 var(--space-2) 0;
+  font-weight: 600;
 }
 
 :deep(.minutes-text p) {
-  margin: 0 0 1rem 0;
+  margin: 0 0 var(--space-4) 0;
+  color: var(--gray-700);
 }
 
 :deep(.minutes-text ul) {
-  margin: 0 0 1rem 1.5rem;
+  margin: 0 0 var(--space-4) var(--space-6);
   padding: 0;
 }
 
 :deep(.minutes-text li) {
-  margin: 0.5rem 0;
-  line-height: 1.6;
+  margin: var(--space-2) 0;
+  line-height: 1.7;
+  color: var(--gray-700);
 }
 
 :deep(.minutes-text strong) {
-  font-weight: 600;
-  color: #495057;
+  font-weight: 700;
+  color: var(--gray-800);
 }
 
 :deep(.minutes-text em) {
   font-style: italic;
-  color: #6c757d;
+  color: var(--gray-600);
+  font-weight: 500;
 }
 
 /* Mobile Responsive */
