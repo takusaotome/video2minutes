@@ -114,6 +114,14 @@ export default {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
+.app-title-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
 .app-subtitle {
   font-size: 1.25rem;
   font-weight: 500;

@@ -98,7 +98,11 @@ export default {
 
         // Extract table of contents
         if (props.showToc) {
-          tableOfContents.value = extractTableOfContents(props.content)
+          tableOfContents.value = extractTableOfContents(props.content, {
+            excludeTexts: ['会議情報', 'Meeting Information', '会議概要'],
+            minLevel: 1,
+            maxLevel: 3
+          })
         }
 
         // Emit word count
@@ -162,7 +166,7 @@ export default {
 }
 
 .toc-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--gray-200);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -170,7 +174,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #495057;
+  color: var(--gray-550);
   font-size: 1rem;
   font-weight: 600;
 }
@@ -218,7 +222,7 @@ export default {
 .toc-link {
   display: block;
   padding: 0.5rem 0;
-  color: #6b7280;
+  color: var(--gray-500);
   text-decoration: none;
   font-size: 0.9rem;
   line-height: 1.4;
@@ -229,8 +233,8 @@ export default {
 }
 
 .toc-link:hover {
-  color: #667eea;
-  border-left-color: #667eea;
+  color: var(--brand-500);
+  border-left-color: var(--brand-500);
   background-color: rgba(102, 126, 234, 0.05);
 }
 
@@ -240,7 +244,7 @@ export default {
 }
 
 .markdown-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--gray-200);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -276,7 +280,7 @@ export default {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.7;
-  color: #374151;
+  color: var(--gray-700);
   max-width: none;
 }
 
@@ -286,7 +290,7 @@ export default {
 
 /* Headings */
 .markdown-heading {
-  color: #1f2937;
+  color: var(--gray-800);
   font-weight: 700;
   margin: 2rem 0 1rem 0;
   line-height: 1.3;
@@ -296,14 +300,14 @@ export default {
 
 .markdown-h1 {
   font-size: 2.25rem;
-  border-bottom: 3px solid #e5e7eb;
+  border-bottom: 3px solid var(--gray-200);
   padding-bottom: 0.75rem;
   margin-bottom: 1.5rem;
 }
 
 .markdown-h2 {
   font-size: 1.875rem;
-  border-bottom: 2px solid #f3f4f6;
+  border-bottom: 2px solid var(--gray-100);
   padding-bottom: 0.5rem;
   margin-top: 2.5rem;
 }
@@ -323,7 +327,7 @@ export default {
 
 .markdown-h6 {
   font-size: 1rem;
-  color: #6b7280;
+  color: var(--gray-500);
 }
 
 .heading-highlight {
@@ -366,10 +370,10 @@ export default {
 .markdown-blockquote {
   margin: 1.5rem 0;
   padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(135deg, var(--gray-600-light) 0%, var(--gray-650-light) 100%);
   border-radius: 8px;
   position: relative;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--brand-500);
 }
 
 .blockquote-indicator {
@@ -378,12 +382,12 @@ export default {
   top: 0;
   bottom: 0;
   width: 4px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-700) 100%);
   border-radius: 2px;
 }
 
 .blockquote-content {
-  color: #4b5563;
+  color: var(--gray-600);
   font-style: italic;
   font-size: 1.05rem;
 }
@@ -394,8 +398,8 @@ export default {
 
 /* Code */
 .markdown-inline-code {
-  background: #f3f4f6;
-  color: #d97706;
+  background: var(--gray-100);
+  color: var(--warning-600);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
@@ -407,8 +411,8 @@ export default {
   margin: 1.5rem 0;
   border-radius: 8px;
   overflow: hidden;
-  background: #1f2937;
-  border: 1px solid #374151;
+  background: var(--gray-800);
+  border: 1px solid var(--gray-700);
 }
 
 .code-header {
@@ -416,20 +420,20 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  background: #374151;
-  border-bottom: 1px solid #4b5563;
+  background: var(--gray-700);
+  border-bottom: 1px solid var(--gray-600);
 }
 
 .code-language {
-  color: #d1d5db;
+  color: var(--gray-300);
   font-size: 0.8rem;
   font-weight: 500;
   text-transform: uppercase;
 }
 
 .code-copy-btn {
-  background: #4b5563;
-  color: #d1d5db;
+  background: var(--gray-600);
+  color: var(--gray-300);
   border: none;
   padding: 0.375rem 0.75rem;
   border-radius: 4px;
@@ -442,20 +446,20 @@ export default {
 }
 
 .code-copy-btn:hover {
-  background: #6b7280;
+  background: var(--gray-500);
   color: white;
 }
 
 .code-copy-btn.copied {
-  background: #059669;
+  background: var(--success-600);
   color: white;
 }
 
 .code-content {
   margin: 0;
   padding: 1rem;
-  background: #1f2937;
-  color: #f9fafb;
+  background: var(--gray-800);
+  color: var(--gray-50);
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 0.9rem;
   line-height: 1.5;
@@ -474,7 +478,7 @@ export default {
   margin: 1.5rem 0;
   overflow-x: auto;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--gray-200);
 }
 
 .markdown-table {
@@ -484,23 +488,23 @@ export default {
 }
 
 .markdown-table-header {
-  background: #f9fafb;
+  background: var(--gray-50);
 }
 
 .markdown-table th,
 .markdown-table td {
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--gray-200);
 }
 
 .markdown-table th {
   font-weight: 600;
-  color: #374151;
+  color: var(--gray-700);
 }
 
 .markdown-table tbody tr:hover {
-  background: #f9fafb;
+  background: var(--gray-50);
 }
 
 .markdown-table tbody tr:last-child td {
@@ -510,17 +514,17 @@ export default {
 /* Text formatting */
 .markdown-strong {
   font-weight: 700;
-  color: #1f2937;
+  color: var(--gray-800);
 }
 
 .markdown-emphasis {
   font-style: italic;
-  color: #4b5563;
+  color: var(--gray-600);
 }
 
 /* Links */
 .markdown-link {
-  color: #667eea;
+  color: var(--brand-500);
   text-decoration: none;
   font-weight: 500;
   display: inline-flex;
@@ -530,7 +534,7 @@ export default {
 }
 
 .markdown-link:hover {
-  color: #5b6de8;
+  color: var(--brand-400);
   text-decoration: underline;
 }
 
@@ -548,15 +552,15 @@ export default {
 .markdown-divider hr {
   border: none;
   height: 2px;
-  background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+  background: linear-gradient(to right, transparent, var(--gray-200), transparent);
   margin: 0;
 }
 
 /* Error state */
 .markdown-error {
-  color: #dc2626;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  color: var(--error-600);
+  background: var(--error-50);
+  border: 1px solid var(--error-100);
   border-radius: 6px;
   padding: 1rem;
   font-weight: 500;

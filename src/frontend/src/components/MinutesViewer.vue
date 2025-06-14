@@ -135,6 +135,21 @@
 
             <template #content>
               <div class="meeting-details-content">
+                <!-- Meeting Name -->
+                <div class="detail-field">
+                  <label class="field-label">会議名</label>
+                  <div v-if="!isEditing" class="field-display">
+                    {{ meetingName || '未設定' }}
+                  </div>
+                  <InputText
+                    v-else
+                    v-model="meetingName"
+                    @update:modelValue="onMeetingDetailsChange"
+                    placeholder="会議名を入力"
+                    class="meeting-name-input"
+                  />
+                </div>
+
                 <!-- Meeting Date -->
                 <div class="detail-field">
                   <label class="field-label">開催日時</label>
@@ -176,6 +191,8 @@
                     @update:modelValue="onMeetingDetailsChange"
                     placeholder="出席者名を入力してEnterキーで追加"
                     class="attendees-input"
+                    :allowDuplicate="false"
+                    separator=","
                   />
                 </div>
               </div>
@@ -196,7 +213,7 @@
 
             <template #content>
               <MarkdownRenderer
-                :content="cleanMinutesContent"
+                :content="minutesWithUpdatedInfo"
                 :show-toc="true"
                 @word-count="updateWordCount"
               />
@@ -212,7 +229,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { minutesApi } from '@/services/api'
 import Card from 'primevue/card'
@@ -262,6 +279,7 @@ export default {
     const wordCount = ref(0)
     
     // Meeting details editing
+    const meetingName = ref('')
     const meetingDate = ref(null)
     const attendees = ref([])
     const isEditing = ref(false)
@@ -269,7 +287,83 @@ export default {
 
     const isMobile = computed(() => windowWidth.value < 768)
 
-    // Generate minutes content without duplicate meeting details
+    // Generate minutes content with updated meeting details inserted
+    const minutesWithUpdatedInfo = computed(() => {
+      if (!minutes.value) return ''
+      
+      let content = minutes.value.minutes
+      
+      // Prepare updated meeting information
+      const meetingNameText = meetingName.value || '未設定'
+      const meetingDateText = meetingDate.value ? formatDate(meetingDate.value) : '未設定'
+      const attendeesText = attendees.value.length > 0 ? attendees.value.join('、') : '未設定'
+      
+      // Find and replace existing meeting information section
+      const meetingInfoPattern = /(#+\s*(?:会議情報|Meeting Information|会議概要)[\s\S]*?)(?=\n#{1,6}\s+(?!.*(?:会議情報|Meeting Information|会議概要))|$)/i
+      
+      if (meetingInfoPattern.test(content)) {
+        // Replace existing meeting info section
+        content = content.replace(meetingInfoPattern, (match) => {
+          return `#### 会議情報
+
+**会議名:** ${meetingNameText}  
+**開催日時:** ${meetingDateText}  
+**出席者:** ${attendeesText}
+
+`
+        })
+      } else {
+        // Look for individual meeting detail patterns and replace them
+        let hasReplacements = false
+        
+        // Replace meeting name
+        if (/(?:会議名|件名|タイトル)[:：]/i.test(content)) {
+          content = content.replace(/(\*\*)?(?:会議名|件名|タイトル)[:：](\*\*)?\s*[^\n]*/gi, `**会議名:** ${meetingNameText}`)
+          hasReplacements = true
+        }
+        
+        // Replace meeting date
+        if (/(?:開催日時?|会議日時?|開催日|会議日|日時)[:：]/i.test(content)) {
+          content = content.replace(/(\*\*)?(?:開催日時?|会議日時?|開催日|会議日|日時)[:：](\*\*)?\s*[^\n]*/gi, `**開催日時:** ${meetingDateText}`)
+          hasReplacements = true
+        }
+        
+        // Replace attendees
+        if (/(?:出席者|参加者)[:：]/i.test(content)) {
+          content = content.replace(/(\*\*)?(?:出席者|参加者)[:：](\*\*)?\s*[^\n]*/gi, `**出席者:** ${attendeesText}`)
+          hasReplacements = true
+        }
+        
+        // If no existing patterns found, add meeting info at the beginning
+        if (!hasReplacements) {
+          const meetingInfoHeader = `#### 会議情報
+
+**会議名:** ${meetingNameText}  
+**開催日時:** ${meetingDateText}  
+**出席者:** ${attendeesText}
+
+---
+
+`
+          // Check if content starts with a title
+          if (/^#/.test(content.trim())) {
+            // Insert after the first heading
+            content = content.replace(/^(#+[^\n]*\n)/i, `$1\n${meetingInfoHeader}`)
+          } else {
+            // Insert at the beginning
+            content = meetingInfoHeader + content
+          }
+        }
+      }
+      
+      // Clean up multiple newlines
+      content = content.replace(/\n{3,}/g, '\n\n')
+      content = content.trim()
+      
+      return content
+    })
+    
+    // Keep the clean version for backward compatibility
     const cleanMinutesContent = computed(() => {
       if (!minutes.value) return ''
       
@@ -278,14 +372,28 @@ export default {
       
       // Remove common meeting detail patterns
       content = content.replace(/^#\s*議事録\s*\n/i, '')
+
+      // Lines with no bullet
       content = content.replace(/^\*\*開催日時?[:：].*\n/gm, '')
       content = content.replace(/^\*\*開催日[:：].*\n/gm, '')
       content = content.replace(/^\*\*出席者[:：].*\n/gm, '')
       content = content.replace(/^開催日時?[:：].*\n/gm, '')
       content = content.replace(/^開催日[:：].*\n/gm, '')
       content = content.replace(/^出席者[:：].*\n/gm, '')
-      content = content.replace(/^会議情報\s*\n/gm, '')
       content = content.replace(/^会議名[:：].*\n/gm, '')
+
+      // Bullet list lines
+      content = content.replace(/^\s*[-*]\s*\*\*開催日時?[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*\*\*開催日[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*\*\*出席者[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*開催日時?[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*開催日[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*出席者[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*会議名[:：].*\n/gm, '')
+
+      // Section headers
+      content = content.replace(/^会議情報\s*\n/gm, '')
+      content = content.replace(/^\s*\d+\.\s*会議情報.*\n/gm, '')
       content = content.replace(/^---+\s*\n/gm, '')
       
       // Clean up multiple newlines
@@ -294,24 +402,32 @@ export default {
       
       return content
     })
+    
 
     // Generate complete content for downloads (includes meeting details)
     const completeMinutesForDownload = computed(() => {
       if (!minutes.value) return ''
       
-      const meetingDateText = meetingDate.value ? formatDate(meetingDate.value) : '未設定'
-      const attendeesText = attendees.value.length > 0 ? attendees.value.join(', ') : '未設定'
-      
-      const header = `# 議事録
-
-**開催日時:** ${meetingDateText}  
-**出席者:** ${attendeesText}
-
----
+      // Add file info to the updated minutes content
+      const fileInfo = `**ファイル名:** ${minutes.value.video_filename}  
+**作成日時:** ${formatDate(minutes.value.created_at)}  
 
 `
       
-      return header + cleanMinutesContent.value
+      // Insert file info at the beginning
+      let content = minutesWithUpdatedInfo.value
+      if (content.includes('#### 会議情報')) {
+        // Insert file info before meeting info
+        content = content.replace('#### 会議情報', `${fileInfo}#### 会議情報`)
+      } else if (content.startsWith('# ')) {
+        // Insert after the main title
+        content = content.replace(/^(#[^\n]*\n)/, `$1\n${fileInfo}`)
+      } else {
+        // Insert at the beginning
+        content = fileInfo + content
+      }
+      
+      return content
     })
 
     const downloadOptions = ref([
@@ -368,7 +484,7 @@ export default {
       if (!minutes.value) return
 
       try {
-        await navigator.clipboard.writeText(completeMinutesForDownload.value)
+        await navigator.clipboard.writeText(minutesWithUpdatedInfo.value)
         toast.add({
           severity: 'success',
           summary: 'コピー完了',
@@ -410,19 +526,32 @@ export default {
     const downloadText = () => {
       if (!minutes.value) return
 
-      const meetingDateText = meetingDate.value ? formatDate(meetingDate.value) : '未設定'
-      const attendeesText = attendees.value.length > 0 ? attendees.value.join(', ') : '未設定'
-
-      const content = `議事録
+      // Convert markdown to plain text format
+      let textContent = minutesWithUpdatedInfo.value
+      
+      // Remove markdown formatting
+      textContent = textContent.replace(/#{1,6}\s+/g, '') // Remove headers
+      textContent = textContent.replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+      textContent = textContent.replace(/\*(.*?)\*/g, '$1') // Remove italic
+      textContent = textContent.replace(/\[(.*?)\]\(.*?\)/g, '$1') // Remove links
+      textContent = textContent.replace(/^-\s+/gm, '• ') // Convert bullets
+      textContent = textContent.replace(/^\d+\.\s+/gm, (match, offset, string) => {
+        const lineStart = string.lastIndexOf('\n', offset) + 1
+        const lineContent = string.substring(lineStart, offset)
+        return match
+      })
+      
+      // Add file information at the top
+      const fileInfo = `議事録
 
 ファイル名: ${minutes.value.video_filename}
 作成日時: ${formatDate(minutes.value.created_at)}
-開催日時: ${meetingDateText}
-出席者: ${attendeesText}
 
 ${'-'.repeat(50)}
 
-${cleanMinutesContent.value}`
+`
+
+      const content = fileInfo + textContent
 
       const blob = new Blob([content], { type: 'text/plain' })
       const url = URL.createObjectURL(blob)
@@ -466,17 +595,19 @@ ${cleanMinutesContent.value}`
         // Create header for PDF
         const header = document.createElement('div')
         header.style.marginBottom = '30px'
-        header.style.borderBottom = '2px solid #e5e7eb'
+        header.style.borderBottom = '2px solid var(--gray-200)'
         header.style.paddingBottom = '20px'
         
+        const meetingNameText = meetingName.value || '未設定'
         const attendeesText = attendees.value.length > 0 ? attendees.value.join(', ') : '未設定'
         const meetingDateText = meetingDate.value ? formatDate(meetingDate.value) : '未設定'
         
         header.innerHTML = `
-          <h1 style="color: #374151; font-size: 24px; margin: 0 0 15px 0; font-weight: bold;">議事録</h1>
-          <div style="color: #6b7280; font-size: 12px;">
+          <h1 style="color: var(--gray-700); font-size: 24px; margin: 0 0 15px 0; font-weight: bold;">議事録</h1>
+          <div style="color: var(--gray-500); font-size: 12px;">
             <div style="margin-bottom: 5px;"><strong>ファイル名:</strong> ${minutes.value.video_filename}</div>
             <div style="margin-bottom: 5px;"><strong>作成日時:</strong> ${formatDate(minutes.value.created_at)}</div>
+            <div style="margin-bottom: 5px;"><strong>会議名:</strong> ${meetingNameText}</div>
             <div style="margin-bottom: 5px;"><strong>開催日時:</strong> ${meetingDateText}</div>
             <div><strong>出席者:</strong> ${attendeesText}</div>
           </div>
@@ -487,7 +618,7 @@ ${cleanMinutesContent.value}`
         
         // Apply PDF-specific styles to the cloned content
         const applyPDFStyles = (element) => {
-          element.style.color = '#374151'
+          element.style.color = 'var(--gray-700)'
           element.style.fontSize = '14px'
           element.style.lineHeight = '1.6'
           
@@ -496,10 +627,10 @@ ${cleanMinutesContent.value}`
           h1Elements.forEach(h1 => {
             h1.style.fontSize = '20px'
             h1.style.fontWeight = 'bold'
-            h1.style.color = '#1f2937'
+            h1.style.color = 'var(--gray-800)'
             h1.style.marginTop = '24px'
             h1.style.marginBottom = '16px'
-            h1.style.borderBottom = '2px solid #e5e7eb'
+            h1.style.borderBottom = '2px solid var(--gray-200)'
             h1.style.paddingBottom = '8px'
           })
 
@@ -507,7 +638,7 @@ ${cleanMinutesContent.value}`
           h2Elements.forEach(h2 => {
             h2.style.fontSize = '18px'
             h2.style.fontWeight = 'bold'
-            h2.style.color = '#1f2937'
+            h2.style.color = 'var(--gray-800)'
             h2.style.marginTop = '20px'
             h2.style.marginBottom = '12px'
           })
@@ -516,7 +647,7 @@ ${cleanMinutesContent.value}`
           h3Elements.forEach(h3 => {
             h3.style.fontSize = '16px'
             h3.style.fontWeight = 'bold'
-            h3.style.color = '#1f2937'
+            h3.style.color = 'var(--gray-800)'
             h3.style.marginTop = '16px'
             h3.style.marginBottom = '8px'
           })
@@ -525,7 +656,7 @@ ${cleanMinutesContent.value}`
           const pElements = element.querySelectorAll('p')
           pElements.forEach(p => {
             p.style.marginBottom = '12px'
-            p.style.color = '#374151'
+            p.style.color = 'var(--gray-700)'
           })
 
           // Style lists
@@ -544,26 +675,26 @@ ${cleanMinutesContent.value}`
           const liElements = element.querySelectorAll('li')
           liElements.forEach(li => {
             li.style.marginBottom = '4px'
-            li.style.color = '#374151'
+            li.style.color = 'var(--gray-700)'
           })
 
           // Style strong and em
           const strongElements = element.querySelectorAll('strong')
           strongElements.forEach(strong => {
             strong.style.fontWeight = 'bold'
-            strong.style.color = '#1f2937'
+            strong.style.color = 'var(--gray-800)'
           })
 
           const emElements = element.querySelectorAll('em')
           emElements.forEach(em => {
             em.style.fontStyle = 'italic'
-            em.style.color = '#4b5563'
+            em.style.color = 'var(--gray-600)'
           })
 
           // Style code blocks
           const codeElements = element.querySelectorAll('code')
           codeElements.forEach(code => {
-            code.style.backgroundColor = '#f3f4f6'
+            code.style.backgroundColor = 'var(--gray-100)'
             code.style.padding = '2px 4px'
             code.style.borderRadius = '4px'
             code.style.fontFamily = 'monospace'
@@ -572,7 +703,7 @@ ${cleanMinutesContent.value}`
 
           const preElements = element.querySelectorAll('pre')
           preElements.forEach(pre => {
-            pre.style.backgroundColor = '#f3f4f6'
+            pre.style.backgroundColor = 'var(--gray-100)'
             pre.style.padding = '12px'
             pre.style.borderRadius = '6px'
             pre.style.overflow = 'visible'
@@ -592,15 +723,15 @@ ${cleanMinutesContent.value}`
 
           const thElements = element.querySelectorAll('th')
           thElements.forEach(th => {
-            th.style.border = '1px solid #d1d5db'
+            th.style.border = '1px solid var(--gray-300)'
             th.style.padding = '8px'
-            th.style.backgroundColor = '#f9fafb'
+            th.style.backgroundColor = 'var(--gray-50)'
             th.style.fontWeight = 'bold'
           })
 
           const tdElements = element.querySelectorAll('td')
           tdElements.forEach(td => {
-            td.style.border = '1px solid #d1d5db'
+            td.style.border = '1px solid var(--gray-300)'
             td.style.padding = '8px'
           })
 
@@ -689,7 +820,33 @@ ${cleanMinutesContent.value}`
 
     // Extract meeting details from minutes content
     const initializeMeetingDetails = () => {
+      // First, try to load from localStorage
+      const storageKey = `meeting_details_${props.taskId}`
+      const savedDetails = localStorage.getItem(storageKey)
+      
+      console.log('Loading meeting details with key:', storageKey)
+      console.log('Saved details from localStorage:', savedDetails)
+      
+      if (savedDetails) {
+        try {
+          const parsed = JSON.parse(savedDetails)
+          console.log('Parsed meeting details:', parsed)
+          console.log('Parsed attendees:', parsed.attendees, 'Type:', typeof parsed.attendees)
+          
+          meetingName.value = parsed.meeting_name || ''
+          meetingDate.value = new Date(parsed.meeting_date)
+          attendees.value = parsed.attendees || []
+          
+          console.log('Set attendees.value to:', attendees.value)
+          return
+        } catch (error) {
+          console.warn('Failed to parse saved meeting details:', error)
+        }
+      }
+      
+      // If no saved data, extract from minutes content
       if (!minutes.value?.minutes) {
+        meetingName.value = ''
         meetingDate.value = new Date()
         attendees.value = []
         return
@@ -697,11 +854,27 @@ ${cleanMinutesContent.value}`
 
       const content = minutes.value.minutes
       
+      // Extract meeting name
+      const namePatterns = [
+        /(?:会議名|件名|タイトル)[:：]\s*([^\n]+)/i,
+        /\*\*(?:会議名|件名|タイトル)[:：]\*\*\s*([^\n]+)/i
+      ]
+      
+      let extractedName = ''
+      for (const pattern of namePatterns) {
+        const match = content.match(pattern)
+        if (match && match[1] && !match[1].includes('未設定') && !match[1].includes('未記載')) {
+          extractedName = match[1].trim()
+          break
+        }
+      }
+      
+      meetingName.value = extractedName
+      
       // Extract meeting date
       const datePatterns = [
-        /(?:開催日時?|会議日時?)[:：]\s*([^\n]+)/i,
-        /(?:開催日|会議日|日時)[:：]\s*([^\n]+)/i,
-        /\*\*(?:開催日時?|会議日時?)[:：]\*\*\s*([^\n]+)/i
+        /^(?:\s*[-*]\s*)?\*\*(?:開催日時?|会議日時?|開催日|会議日|日時)[:：]\*\*\s*([^\n]+)/m,
+        /^(?:\s*[-*]\s*)?(?:開催日時?|会議日時?|開催日|会議日|日時)[:：]\s*([^\n]+)/m
       ]
       
       let extractedDate = null
@@ -722,8 +895,8 @@ ${cleanMinutesContent.value}`
       
       // Extract attendees
       const attendeePatterns = [
-        /(?:出席者|参加者)[:：]\s*([^\n]+)/i,
-        /\*\*(?:出席者|参加者)[:：]\*\*\s*([^\n]+)/i
+        /^(?:\s*[-*]\s*)?\*\*(?:出席者|参加者)[:：]\*\*\s*([^\n]+)/m,
+        /^(?:\s*[-*]\s*)?(?:出席者|参加者)[:：]\s*([^\n]+)/m
       ]
       
       let extractedAttendees = []
@@ -740,6 +913,7 @@ ${cleanMinutesContent.value}`
         }
       }
       
+      console.log('Extracted attendees from content:', extractedAttendees)
       attendees.value = extractedAttendees
     }
 
@@ -790,18 +964,48 @@ ${cleanMinutesContent.value}`
     }
 
     const cancelEditing = () => {
-      // Reset to original values
-      meetingDate.value = minutes.value.meeting_date ? new Date(minutes.value.meeting_date) : new Date()
-      attendees.value = minutes.value.attendees || []
+      // Reset to original extracted values
+      initializeMeetingDetails()
       isEditing.value = false
       hasUnsavedChanges.value = false
     }
 
     const saveMeetingDetails = async () => {
       try {
+        // Debug logging
+        console.log('Saving meeting details...')
+        console.log('attendees.value:', attendees.value)
+        console.log('attendees type:', typeof attendees.value, 'Is Array:', Array.isArray(attendees.value))
+        if (Array.isArray(attendees.value) && attendees.value.length > 0) {
+          console.log('First attendee:', attendees.value[0], 'Type:', typeof attendees.value[0])
+        }
+        
         // Update the local minutes object
+        minutes.value.meeting_name = meetingName.value
         minutes.value.meeting_date = meetingDate.value
         minutes.value.attendees = attendees.value
+        
+        // Save to localStorage for persistence
+        const storageKey = `meeting_details_${props.taskId}`
+        const meetingDetails = {
+          meeting_name: meetingName.value,
+          meeting_date: meetingDate.value,
+          attendees: attendees.value,
+          updated_at: new Date().toISOString()
+        }
+        
+        console.log('Saving to localStorage with key:', storageKey)
+        console.log('Meeting details to save:', meetingDetails)
+        console.log('attendees.value before save:', attendees.value)
+        console.log('attendees is Array?', Array.isArray(attendees.value))
+        
+        localStorage.setItem(storageKey, JSON.stringify(meetingDetails))
+        
+        // Verify the save
+        const savedData = localStorage.getItem(storageKey)
+        console.log('Data saved to localStorage:', savedData)
+        const parsedSaved = JSON.parse(savedData)
+        console.log('Parsed saved attendees:', parsedSaved.attendees)
         
         // Here you would typically save to the backend
         // await minutesApi.updateMeetingDetails(props.taskId, {
@@ -829,9 +1033,48 @@ ${cleanMinutesContent.value}`
       }
     }
 
-    const onMeetingDetailsChange = () => {
+    const onMeetingDetailsChange = (value) => {
+      console.log('onMeetingDetailsChange called with value:', value)
+      console.log('Current attendees.value:', attendees.value)
       hasUnsavedChanges.value = true
     }
+
+    // Watch attendees for debugging and real-time updates
+    watch(attendees, (newValue, oldValue) => {
+      console.log('Attendees watch triggered')
+      console.log('Old value:', oldValue)
+      console.log('New value:', newValue)
+      console.log('New value type:', typeof newValue, 'Is Array:', Array.isArray(newValue))
+      
+      // Mark as changed for real-time preview
+      if (isEditing.value) {
+        hasUnsavedChanges.value = true
+      }
+    }, { deep: true })
+    
+    // Watch meeting name for real-time updates
+    watch(meetingName, (newValue, oldValue) => {
+      console.log('Meeting name watch triggered')
+      console.log('Old value:', oldValue)
+      console.log('New value:', newValue)
+      
+      // Mark as changed for real-time preview
+      if (isEditing.value) {
+        hasUnsavedChanges.value = true
+      }
+    })
+    
+    // Watch meeting date for real-time updates
+    watch(meetingDate, (newValue, oldValue) => {
+      console.log('Meeting date watch triggered')
+      console.log('Old value:', oldValue)
+      console.log('New value:', newValue)
+      
+      // Mark as changed for real-time preview
+      if (isEditing.value) {
+        hasUnsavedChanges.value = true
+      }
+    })
 
     // Lifecycle
     onMounted(() => {
@@ -851,6 +1094,7 @@ ${cleanMinutesContent.value}`
       isMobile,
       wordCount,
       cleanMinutesContent,
+      minutesWithUpdatedInfo,
       completeMinutesForDownload,
       downloadOptions,
       loadMinutes,
@@ -862,6 +1106,7 @@ ${cleanMinutesContent.value}`
       toggleTranscript,
       updateWordCount,
       // Meeting details editing
+      meetingName,
       meetingDate,
       attendees,
       isEditing,
@@ -1243,6 +1488,7 @@ ${cleanMinutesContent.value}`
   border: 1px solid var(--primary-200);
 }
 
+.meeting-name-input,
 .meeting-date-input,
 .attendees-input {
   width: 100%;

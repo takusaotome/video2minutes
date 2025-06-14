@@ -901,7 +901,7 @@ export default {
 
 .upload-icon {
   font-size: 5rem;
-  color: #667eea;
+  color: var(--brand-500);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   z-index: 1;
@@ -930,7 +930,7 @@ export default {
 
 .upload-dropzone:hover .upload-icon {
   transform: scale(1.15);
-  color: #5b6de8;
+  color: var(--brand-400);
 }
 
 .upload-dropzone:hover .icon-glow {
@@ -938,7 +938,7 @@ export default {
 }
 
 .upload-dropzone.dragover .upload-icon {
-  color: #10b981;
+  color: var(--success-500);
   transform: scale(1.2);
 }
 
@@ -966,21 +966,21 @@ export default {
 .upload-text {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #374151;
+  color: var(--gray-700);
   margin: 0 0 0.75rem 0;
   line-height: 1.3;
   transition: all 0.3s ease;
 }
 
 .upload-text.highlight {
-  color: #10b981;
+  color: var(--success-500);
   transform: scale(1.08);
   text-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .upload-subtext {
   font-size: 1rem;
-  color: #6b7280;
+  color: var(--gray-500);
   margin: 0 0 1rem 0;
   line-height: 1.5;
   font-weight: 500;
@@ -1065,12 +1065,12 @@ export default {
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+  background: linear-gradient(to right, transparent, var(--gray-200), transparent);
 }
 
 .divider span {
   padding: 0 1rem;
-  color: #9ca3af;
+  color: var(--gray-400);
   font-size: 0.9rem;
   font-weight: 500;
   background: rgba(255, 255, 255, 0.8);
@@ -1109,7 +1109,7 @@ export default {
   font-size: 1rem;
   font-weight: 600;
   border-radius: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-700) 100%);
   border: none;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
@@ -1139,7 +1139,7 @@ export default {
 
 .note-content i {
   font-size: 1.1rem;
-  color: #667eea;
+  color: var(--brand-500);
   flex-shrink: 0;
 }
 
@@ -1152,7 +1152,7 @@ export default {
 }
 
 .supported-formats {
-  color: #374151;
+  color: var(--gray-700);
   font-weight: 500;
 }
 
@@ -1285,7 +1285,7 @@ export default {
   align-items: center;
   gap: 0.5rem;
   margin: 0;
-  color: #059669;
+  color: var(--success-600);
   font-size: 1.1rem;
   font-weight: 600;
 }
@@ -1303,7 +1303,7 @@ export default {
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--gray-200);
   transition: all 0.2s ease;
 }
 
@@ -1325,7 +1325,7 @@ export default {
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-700) 100%);
   border-radius: 10px;
   color: white;
   font-size: 1.5rem;
@@ -1339,14 +1339,14 @@ export default {
 
 .file-name {
   font-weight: 600;
-  color: #374151;
+  color: var(--gray-700);
   font-size: 1rem;
   line-height: 1.2;
 }
 
 .file-size {
   font-size: 0.9rem;
-  color: #6b7280;
+  color: var(--gray-500);
 }
 
 .file-remove-btn {
@@ -1390,7 +1390,7 @@ export default {
   align-items: center;
   gap: 0.5rem;
   margin: 0 0 1rem 0;
-  color: #3b82f6;
+  color: var(--info-500);
   font-size: 1.1rem;
   font-weight: 600;
 }
@@ -1405,7 +1405,7 @@ export default {
   border-radius: 12px;
   padding: 1.25rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--gray-200);
 }
 
 .progress-info {
@@ -1422,13 +1422,13 @@ export default {
 
 .progress-name {
   font-weight: 600;
-  color: #374151;
+  color: var(--gray-700);
   font-size: 1rem;
 }
 
 .progress-percent {
   font-weight: 700;
-  color: #3b82f6;
+  color: var(--info-500);
   font-size: 1.1rem;
 }
 
@@ -1454,7 +1454,7 @@ export default {
   font-size: 1.1rem;
   font-weight: 600;
   border-radius: 12px;
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: linear-gradient(135deg, var(--success-600) 0%, var(--success-700) 100%);
   border: none;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
