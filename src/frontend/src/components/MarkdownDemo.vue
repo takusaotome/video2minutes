@@ -147,20 +147,20 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #495057;
+  color: var(--gray-550);
   font-size: 1.25rem;
 }
 
 .demo-info {
   margin-top: 2rem;
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--gray-600-light);
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--brand-500);
 }
 
 .demo-info p {
   margin: 0.5rem 0;
-  color: #495057;
+  color: var(--gray-550);
 }
 </style>

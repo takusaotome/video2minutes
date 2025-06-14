@@ -31,10 +31,25 @@
   --gray-300: #d1d5db;
   --gray-400: #9ca3af;
   --gray-500: #6b7280;
+  --gray-600-light: #f8fafc;
+  --gray-650-light: #f1f5f9;
+  --gray-625-light: #f1f3f4;
   --gray-600: #4b5563;
   --gray-700: #374151;
   --gray-800: #1f2937;
   --gray-900: #111827;
+
+  /* Additional neutral colors */
+  --gray-550: #495057;
+  --gray-650: #6c757d;
+
+  /* Brand and info palettes */
+  --brand-400: #5b6de8;
+  --brand-500: #667eea;
+  --brand-700: #764ba2;
+  --info-400: #60a5fa;
+  --info-500: #3b82f6;
+  --info-600: #2563eb;
 
   /* Success, warning, error colors */
   --success-50: #f0fdf4;
@@ -552,8 +567,8 @@ a:hover {
 
 /* Info Toast - 青系の目立つ配色 */
 .p-toast .p-toast-message.p-toast-message-info {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-color: #60a5fa;
+  background: linear-gradient(135deg, var(--info-500) 0%, var(--info-600) 100%);
+  border-color: var(--info-400);
   color: white;
 }
 

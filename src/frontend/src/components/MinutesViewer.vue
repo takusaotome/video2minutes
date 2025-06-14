@@ -595,7 +595,7 @@ ${'-'.repeat(50)}
         // Create header for PDF
         const header = document.createElement('div')
         header.style.marginBottom = '30px'
-        header.style.borderBottom = '2px solid #e5e7eb'
+        header.style.borderBottom = '2px solid var(--gray-200)'
         header.style.paddingBottom = '20px'
         
         const meetingNameText = meetingName.value || '未設定'
@@ -603,8 +603,8 @@ ${'-'.repeat(50)}
         const meetingDateText = meetingDate.value ? formatDate(meetingDate.value) : '未設定'
         
         header.innerHTML = `
-          <h1 style="color: #374151; font-size: 24px; margin: 0 0 15px 0; font-weight: bold;">議事録</h1>
-          <div style="color: #6b7280; font-size: 12px;">
+          <h1 style="color: var(--gray-700); font-size: 24px; margin: 0 0 15px 0; font-weight: bold;">議事録</h1>
+          <div style="color: var(--gray-500); font-size: 12px;">
             <div style="margin-bottom: 5px;"><strong>ファイル名:</strong> ${minutes.value.video_filename}</div>
             <div style="margin-bottom: 5px;"><strong>作成日時:</strong> ${formatDate(minutes.value.created_at)}</div>
             <div style="margin-bottom: 5px;"><strong>会議名:</strong> ${meetingNameText}</div>
@@ -618,7 +618,7 @@ ${'-'.repeat(50)}
         
         // Apply PDF-specific styles to the cloned content
         const applyPDFStyles = (element) => {
-          element.style.color = '#374151'
+          element.style.color = 'var(--gray-700)'
           element.style.fontSize = '14px'
           element.style.lineHeight = '1.6'
           
@@ -627,10 +627,10 @@ ${'-'.repeat(50)}
           h1Elements.forEach(h1 => {
             h1.style.fontSize = '20px'
             h1.style.fontWeight = 'bold'
-            h1.style.color = '#1f2937'
+            h1.style.color = 'var(--gray-800)'
             h1.style.marginTop = '24px'
             h1.style.marginBottom = '16px'
-            h1.style.borderBottom = '2px solid #e5e7eb'
+            h1.style.borderBottom = '2px solid var(--gray-200)'
             h1.style.paddingBottom = '8px'
           })
 
@@ -638,7 +638,7 @@ ${'-'.repeat(50)}
           h2Elements.forEach(h2 => {
             h2.style.fontSize = '18px'
             h2.style.fontWeight = 'bold'
-            h2.style.color = '#1f2937'
+            h2.style.color = 'var(--gray-800)'
             h2.style.marginTop = '20px'
             h2.style.marginBottom = '12px'
           })
@@ -647,7 +647,7 @@ ${'-'.repeat(50)}
           h3Elements.forEach(h3 => {
             h3.style.fontSize = '16px'
             h3.style.fontWeight = 'bold'
-            h3.style.color = '#1f2937'
+            h3.style.color = 'var(--gray-800)'
             h3.style.marginTop = '16px'
             h3.style.marginBottom = '8px'
           })
@@ -656,7 +656,7 @@ ${'-'.repeat(50)}
           const pElements = element.querySelectorAll('p')
           pElements.forEach(p => {
             p.style.marginBottom = '12px'
-            p.style.color = '#374151'
+            p.style.color = 'var(--gray-700)'
           })
 
           // Style lists
@@ -675,26 +675,26 @@ ${'-'.repeat(50)}
           const liElements = element.querySelectorAll('li')
           liElements.forEach(li => {
             li.style.marginBottom = '4px'
-            li.style.color = '#374151'
+            li.style.color = 'var(--gray-700)'
           })
 
           // Style strong and em
           const strongElements = element.querySelectorAll('strong')
           strongElements.forEach(strong => {
             strong.style.fontWeight = 'bold'
-            strong.style.color = '#1f2937'
+            strong.style.color = 'var(--gray-800)'
           })
 
           const emElements = element.querySelectorAll('em')
           emElements.forEach(em => {
             em.style.fontStyle = 'italic'
-            em.style.color = '#4b5563'
+            em.style.color = 'var(--gray-600)'
           })
 
           // Style code blocks
           const codeElements = element.querySelectorAll('code')
           codeElements.forEach(code => {
-            code.style.backgroundColor = '#f3f4f6'
+            code.style.backgroundColor = 'var(--gray-100)'
             code.style.padding = '2px 4px'
             code.style.borderRadius = '4px'
             code.style.fontFamily = 'monospace'
@@ -703,7 +703,7 @@ ${'-'.repeat(50)}
 
           const preElements = element.querySelectorAll('pre')
           preElements.forEach(pre => {
-            pre.style.backgroundColor = '#f3f4f6'
+            pre.style.backgroundColor = 'var(--gray-100)'
             pre.style.padding = '12px'
             pre.style.borderRadius = '6px'
             pre.style.overflow = 'visible'
@@ -723,15 +723,15 @@ ${'-'.repeat(50)}
 
           const thElements = element.querySelectorAll('th')
           thElements.forEach(th => {
-            th.style.border = '1px solid #d1d5db'
+            th.style.border = '1px solid var(--gray-300)'
             th.style.padding = '8px'
-            th.style.backgroundColor = '#f9fafb'
+            th.style.backgroundColor = 'var(--gray-50)'
             th.style.fontWeight = 'bold'
           })
 
           const tdElements = element.querySelectorAll('td')
           tdElements.forEach(td => {
-            td.style.border = '1px solid #d1d5db'
+            td.style.border = '1px solid var(--gray-300)'
             td.style.padding = '8px'
           })
 
