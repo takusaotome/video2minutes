@@ -4,11 +4,13 @@ import time
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.endpoints import minutes
 from app.config import settings
 from app.services.task_queue import initialize_task_queue, shutdown_task_queue
 from app.store import tasks_store
+from app.store.session_store import session_task_store
 from app.utils.logger import setup_logging
 
 # ロギング初期化
@@ -28,6 +30,15 @@ def create_app() -> FastAPI:
         version="1.0.0",
         docs_url="/docs",
         redoc_url="/redoc",
+    )
+
+    # セッション管理ミドルウェア
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=settings.session_secret_key,  # 本番環境では環境変数から設定
+        max_age=settings.session_max_age,
+        same_site="lax",
+        https_only=not settings.debug,  # 本番環境ではHTTPS必須
     )
 
     # CORS設定
@@ -132,6 +143,7 @@ def create_app() -> FastAPI:
         return {
             "status": "healthy",
             "tasks_count": len(tasks_store),
+            "session_stats": session_task_store.get_session_stats(),
             "queue": queue_status,
         }
 

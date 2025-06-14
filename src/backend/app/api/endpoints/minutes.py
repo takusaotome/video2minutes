@@ -6,6 +6,7 @@ from fastapi import (
     APIRouter,
     File,
     HTTPException,
+    Request,
     UploadFile,
     WebSocket,
     WebSocketDisconnect,
@@ -27,21 +28,26 @@ from app.services.transcription import TranscriptionService
 from app.services.video_processor import VideoProcessor
 from app.utils.file_handler import FileHandler
 from app.store import tasks_store
+from app.store.session_store import session_task_store
+from app.utils.session_manager import SessionManager
 from app.utils.logger import get_logger
 
 router = APIRouter()
 logger = get_logger(__name__)
 
-# WebSocket接続管理
-websocket_connections: Dict[str, List[WebSocket]] = {}
+# WebSocket接続管理 (session_id -> {task_id -> [WebSocket]})
+websocket_connections: Dict[str, Dict[str, List[WebSocket]]] = {}
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_media(file: UploadFile = File(...)) -> UploadResponse:
+async def upload_media(request: Request, file: UploadFile = File(...)) -> UploadResponse:
     """動画・音声ファイルをアップロードして処理を開始"""
 
+    # セッションIDを取得
+    session_id = SessionManager.get_session_id(request)
+
     logger.info(
-        f"ファイルアップロード開始: {file.filename} (サイズ: {file.size} bytes)"
+        f"ファイルアップロード開始: {file.filename} (サイズ: {file.size} bytes) (セッション: {session_id[:8]}...)"
     )
 
     try:
@@ -72,10 +78,12 @@ async def upload_media(file: UploadFile = File(...)) -> UploadResponse:
             ProcessingStepName.UPLOAD, ProcessingStepStatus.COMPLETED, 100
         )
 
-        # タスクストアに保存
+        # セッションベースタスクストアに保存
+        session_task_store.add_task(session_id, task)
+        # 下位互換性のため従来のタスクストアにも保存
         tasks_store[task_id] = task
 
-        logger.info(f"タスク作成完了: {task_id} - {file.filename}")
+        logger.info(f"タスク作成完了: {task_id} - {file.filename} (セッション: {session_id[:8]}...)")
 
         # タスクキューに追加（ファイルタイプに応じた処理）
         from app.services.task_queue import get_task_queue
@@ -105,10 +113,13 @@ async def upload_media(file: UploadFile = File(...)) -> UploadResponse:
 
 
 @router.get("/tasks", response_model=TaskListResponse)
-async def get_all_tasks() -> TaskListResponse:
-    """全タスクの一覧を取得"""
-    logger.info(f"タスク一覧取得: {len(tasks_store)}件のタスク")
-    tasks = list(tasks_store.values())
+async def get_all_tasks(request: Request) -> TaskListResponse:
+    """現在のセッションのタスク一覧を取得"""
+    session_id = SessionManager.get_session_id(request)
+    tasks = session_task_store.get_tasks(session_id)
+    
+    logger.info(f"タスク一覧取得: {len(tasks)}件のタスク (セッション: {session_id[:8]}...)")
+    
     # 新しい順にソート
     tasks.sort(key=lambda x: x.upload_timestamp, reverse=True)
     return TaskListResponse(tasks=tasks)
@@ -124,15 +135,15 @@ async def get_queue_status():
 
 
 @router.get("/{task_id}/status", response_model=TaskStatusResponse)
-async def get_task_status(task_id: str) -> TaskStatusResponse:
+async def get_task_status(request: Request, task_id: str) -> TaskStatusResponse:
     """特定タスクのステータスを取得"""
-    logger.debug(f"タスクステータス取得: {task_id}")
+    session_id = SessionManager.get_session_id(request)
+    logger.debug(f"タスクステータス取得: {task_id} (セッション: {session_id[:8]}...)")
 
-    if task_id not in tasks_store:
-        logger.warning(f"タスクが見つかりません: {task_id}")
+    task = session_task_store.get_task(session_id, task_id)
+    if not task:
+        logger.warning(f"タスクが見つかりません: {task_id} (セッション: {session_id[:8]}...)")
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
-
-    task = tasks_store[task_id]
     return TaskStatusResponse(
         task_id=task.task_id,
         status=task.status,
@@ -146,12 +157,13 @@ async def get_task_status(task_id: str) -> TaskStatusResponse:
 
 
 @router.get("/{task_id}/result", response_model=TaskResultResponse)
-async def get_task_result(task_id: str) -> TaskResultResponse:
+async def get_task_result(request: Request, task_id: str) -> TaskResultResponse:
     """完了したタスクの結果を取得"""
-    if task_id not in tasks_store:
+    session_id = SessionManager.get_session_id(request)
+    task = session_task_store.get_task(session_id, task_id)
+    
+    if not task:
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
-
-    task = tasks_store[task_id]
 
     if task.status != TaskStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="タスクがまだ完了していません")
@@ -169,15 +181,15 @@ async def get_task_result(task_id: str) -> TaskResultResponse:
 
 
 @router.delete("/{task_id}")
-async def delete_task(task_id: str) -> JSONResponse:
+async def delete_task(request: Request, task_id: str) -> JSONResponse:
     """タスクを削除"""
-    logger.info(f"タスク削除要求: {task_id}")
+    session_id = SessionManager.get_session_id(request)
+    logger.info(f"タスク削除要求: {task_id} (セッション: {session_id[:8]}...)")
 
-    if task_id not in tasks_store:
-        logger.warning(f"削除対象のタスクが見つかりません: {task_id}")
+    task = session_task_store.get_task(session_id, task_id)
+    if not task:
+        logger.warning(f"削除対象のタスクが見つかりません: {task_id} (セッション: {session_id[:8]}...)")
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
-
-    task = tasks_store[task_id]
 
     # 処理中のタスクは削除できない
     if task.status == TaskStatus.PROCESSING:
@@ -189,14 +201,19 @@ async def delete_task(task_id: str) -> JSONResponse:
         FileHandler.cleanup_files(task_id)
         logger.info(f"ファイルクリーンアップ完了: {task_id}")
 
-        # タスクストアから削除
-        del tasks_store[task_id]
-        logger.info(f"タスク削除完了: {task_id}")
+        # セッションベースタスクストアから削除
+        session_task_store.delete_task(session_id, task_id)
+        # 下位互換性のため従来のタスクストアからも削除
+        if task_id in tasks_store:
+            del tasks_store[task_id]
+        logger.info(f"タスク削除完了: {task_id} (セッション: {session_id[:8]}...)")
 
         # WebSocket接続がある場合は削除
-        if task_id in websocket_connections:
-            del websocket_connections[task_id]
-            logger.info(f"WebSocket接続削除完了: {task_id}")
+        if session_id in websocket_connections and task_id in websocket_connections[session_id]:
+            del websocket_connections[session_id][task_id]
+            if not websocket_connections[session_id]:
+                del websocket_connections[session_id]
+            logger.info(f"WebSocket接続削除完了: {task_id} (セッション: {session_id[:8]}...)")
 
         return JSONResponse(
             status_code=200, content={"message": f"タスク {task_id} を削除しました"}
@@ -212,7 +229,16 @@ async def delete_task(task_id: str) -> JSONResponse:
 @router.websocket("/ws/{task_id}")
 async def websocket_endpoint(websocket: WebSocket, task_id: str):
     """WebSocket接続でリアルタイム進捗を配信"""
+    # セッション情報の取得にはWebSocketではRequestオブジェクトが使えないため、
+    # WebSocketのクエリパラメータまたはヘッダーからセッション情報を取得する必要がある
+    # 今回は簡略化のため、WebSocketでは従来の接続方式を維持し、
+    # 実際のタスクアクセス時にセッション制御を行う
     await websocket.accept()
+
+    # タスクが存在するかチェック（従来のタスクストアでチェック）
+    if task_id not in tasks_store:
+        await websocket.close(code=4004, reason="Task not found")
+        return
 
     # 接続を管理リストに追加
     if task_id not in websocket_connections:
@@ -238,15 +264,25 @@ async def process_video_task(task_id: str) -> None:
 
     task = tasks_store[task_id]
 
+    # セッションIDを見つける関数
+    def update_session_task():
+        for session_id, session_tasks in session_task_store._sessions.items():
+            if task_id in session_tasks:
+                session_task_store.update_task(session_id, task)
+                return True
+        return False
+
     try:
         # ステータスを処理中に変更
         task.status = TaskStatus.PROCESSING
+        update_session_task()
         await broadcast_progress_update(task_id, task)
 
         # 1. 音声抽出
         task.update_step_status(
             ProcessingStepName.AUDIO_EXTRACTION, ProcessingStepStatus.PROCESSING
         )
+        update_session_task()
         await broadcast_progress_update(task_id, task)
 
         video_processor = VideoProcessor()
@@ -255,12 +291,14 @@ async def process_video_task(task_id: str) -> None:
         task.update_step_status(
             ProcessingStepName.AUDIO_EXTRACTION, ProcessingStepStatus.COMPLETED, 100
         )
+        update_session_task()
         await broadcast_progress_update(task_id, task)
 
         # 2. 文字起こし
         task.update_step_status(
             ProcessingStepName.TRANSCRIPTION, ProcessingStepStatus.PROCESSING
         )
+        update_session_task()
         await broadcast_progress_update(task_id, task)
 
         transcription_service = TranscriptionService()
@@ -270,12 +308,14 @@ async def process_video_task(task_id: str) -> None:
         task.update_step_status(
             ProcessingStepName.TRANSCRIPTION, ProcessingStepStatus.COMPLETED, 100
         )
+        update_session_task()
         await broadcast_progress_update(task_id, task)
 
         # 3. 議事録生成
         task.update_step_status(
             ProcessingStepName.MINUTES_GENERATION, ProcessingStepStatus.PROCESSING
         )
+        update_session_task()
         await broadcast_progress_update(task_id, task)
 
         minutes_service = MinutesGeneratorService()
@@ -285,6 +325,7 @@ async def process_video_task(task_id: str) -> None:
         task.update_step_status(
             ProcessingStepName.MINUTES_GENERATION, ProcessingStepStatus.COMPLETED, 100
         )
+        update_session_task()
 
         # 最終的な進捗更新を送信
         await broadcast_progress_update(task_id, task)
@@ -306,6 +347,7 @@ async def process_video_task(task_id: str) -> None:
                 error_message=error_message,
             )
 
+        update_session_task()
         await broadcast_task_failed(task_id, task, error_message)
 
     finally:
@@ -320,9 +362,18 @@ async def process_audio_task(task_id: str) -> None:
 
     task = tasks_store[task_id]
 
+    # セッションIDを見つける関数
+    def update_session_task():
+        for session_id, session_tasks in session_task_store._sessions.items():
+            if task_id in session_tasks:
+                session_task_store.update_task(session_id, task)
+                return True
+        return False
+
     try:
         # ステータスを処理中に変更
         task.status = TaskStatus.PROCESSING
+        update_session_task()
         await broadcast_progress_update(task_id, task)
 
         # 音声ファイルの場合は音声抽出をスキップ
@@ -337,12 +388,14 @@ async def process_audio_task(task_id: str) -> None:
         task.update_step_status(
             ProcessingStepName.AUDIO_EXTRACTION, ProcessingStepStatus.COMPLETED, 100
         )
+        update_session_task()
         await broadcast_progress_update(task_id, task)
 
         # 文字起こし
         task.update_step_status(
             ProcessingStepName.TRANSCRIPTION, ProcessingStepStatus.PROCESSING
         )
+        update_session_task()
         await broadcast_progress_update(task_id, task)
 
         transcription_service = TranscriptionService()
@@ -352,12 +405,14 @@ async def process_audio_task(task_id: str) -> None:
         task.update_step_status(
             ProcessingStepName.TRANSCRIPTION, ProcessingStepStatus.COMPLETED, 100
         )
+        update_session_task()
         await broadcast_progress_update(task_id, task)
 
         # 議事録生成
         task.update_step_status(
             ProcessingStepName.MINUTES_GENERATION, ProcessingStepStatus.PROCESSING
         )
+        update_session_task()
         await broadcast_progress_update(task_id, task)
 
         minutes_service = MinutesGeneratorService()
@@ -367,6 +422,7 @@ async def process_audio_task(task_id: str) -> None:
         task.update_step_status(
             ProcessingStepName.MINUTES_GENERATION, ProcessingStepStatus.COMPLETED, 100
         )
+        update_session_task()
 
         # 最終的な進捗更新を送信
         await broadcast_progress_update(task_id, task)
@@ -388,6 +444,7 @@ async def process_audio_task(task_id: str) -> None:
                 error_message=error_message,
             )
 
+        update_session_task()
         await broadcast_task_failed(task_id, task, error_message)
 
     finally:

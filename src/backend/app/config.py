@@ -15,6 +15,16 @@ class Settings(BaseSettings):
     basic_auth_username: Optional[str] = None
     basic_auth_password: Optional[str] = None
 
+    # セッション設定
+    session_secret_key: str = Field(
+        default="your-secret-key-change-in-production",
+        description="セッション暗号化キー（本番環境では必ず変更すること）"
+    )
+    session_max_age: int = Field(
+        default=86400,  # 24時間
+        description="セッションの有効期限（秒）"
+    )
+
     # Server設定
     host: str = Field(
         default="127.0.0.1", description="本番環境では特定のIPアドレスを指定推奨"
