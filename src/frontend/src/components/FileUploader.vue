@@ -320,13 +320,6 @@ export default {
             progressItem.status = 'completed'
             progressItem.percent = 100
 
-            toast.add({
-              severity: 'success',
-              summary: 'アップロード完了',
-              detail: `${file.name} のアップロードが完了しました`,
-              life: 5000
-            })
-
             emit('upload-completed', { file, task })
           } catch (error) {
             progressItem.status = 'error'

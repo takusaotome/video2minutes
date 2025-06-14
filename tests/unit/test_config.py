@@ -19,8 +19,8 @@ class TestSettings:
         assert test_settings.openai_api_key == "test-openai-key"
         assert test_settings.anthropic_api_key == "test-anthropic-key"
 
-        # デフォルト値が正しく設定されることを確認
-        assert test_settings.host == "0.0.0.0"
+        # デフォルト値が正しく設定されることを確認（セキュリティ改善により127.0.0.1に変更）
+        assert test_settings.host == "127.0.0.1"
         assert test_settings.port == 8000
         assert test_settings.debug == False
         assert test_settings.max_file_size == 5 * 1024 * 1024 * 1024  # 5GB

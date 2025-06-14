@@ -89,10 +89,11 @@ class TestMinutesEndpoints:
 
     def test_get_all_tasks_with_data(self, client, sample_task):
         """タスク一覧取得（データ有り）テスト"""
-        # グローバルタスクストアに手動でタスクを追加
-        with patch(
-            "app.api.endpoints.minutes.tasks_store", {sample_task.task_id: sample_task}
-        ):
+        # セッションベースタスクストアをモック
+        mock_session_store = Mock()
+        mock_session_store.get_tasks.return_value = [sample_task]
+        
+        with patch("app.api.endpoints.minutes.session_task_store", mock_session_store):
             response = client.get("/api/v1/minutes/tasks")
 
             assert response.status_code == 200
@@ -106,9 +107,10 @@ class TestMinutesEndpoints:
 
     def test_get_task_status_success(self, client, sample_task):
         """タスクステータス取得成功テスト"""
-        with patch(
-            "app.api.endpoints.minutes.tasks_store", {sample_task.task_id: sample_task}
-        ):
+        mock_session_store = Mock()
+        mock_session_store.get_task.return_value = sample_task
+        
+        with patch("app.api.endpoints.minutes.session_task_store", mock_session_store):
             response = client.get(f"/api/v1/minutes/{sample_task.task_id}/status")
 
             assert response.status_code == 200
@@ -120,19 +122,24 @@ class TestMinutesEndpoints:
 
     def test_get_task_status_not_found(self, client):
         """タスクステータス取得（見つからない）テスト"""
-        response = client.get("/api/v1/minutes/non-existent-task/status")
+        mock_session_store = Mock()
+        mock_session_store.get_task.return_value = None
+        
+        with patch("app.api.endpoints.minutes.session_task_store", mock_session_store):
+            response = client.get("/api/v1/minutes/non-existent-task/status")
 
-        assert response.status_code == 404
-        assert "指定されたタスクが見つかりません" in response.json()["detail"]
+            assert response.status_code == 404
+            assert "指定されたタスクが見つかりません" in response.json()["detail"]
 
     def test_get_task_result_success(self, client, sample_task):
         """タスク結果取得成功テスト"""
         # タスクを完了状態に設定
         sample_task.status = TaskStatus.COMPLETED
 
-        with patch(
-            "app.api.endpoints.minutes.tasks_store", {sample_task.task_id: sample_task}
-        ):
+        mock_session_store = Mock()
+        mock_session_store.get_task.return_value = sample_task
+        
+        with patch("app.api.endpoints.minutes.session_task_store", mock_session_store):
             response = client.get(f"/api/v1/minutes/{sample_task.task_id}/result")
 
             assert response.status_code == 200
@@ -147,9 +154,10 @@ class TestMinutesEndpoints:
         # タスクを処理中状態に設定
         sample_task.status = TaskStatus.PROCESSING
 
-        with patch(
-            "app.api.endpoints.minutes.tasks_store", {sample_task.task_id: sample_task}
-        ):
+        mock_session_store = Mock()
+        mock_session_store.get_task.return_value = sample_task
+        
+        with patch("app.api.endpoints.minutes.session_task_store", mock_session_store):
             response = client.get(f"/api/v1/minutes/{sample_task.task_id}/result")
 
             assert response.status_code == 400
@@ -162,9 +170,10 @@ class TestMinutesEndpoints:
         sample_task.transcription = None
         sample_task.minutes = None
 
-        with patch(
-            "app.api.endpoints.minutes.tasks_store", {sample_task.task_id: sample_task}
-        ):
+        mock_session_store = Mock()
+        mock_session_store.get_task.return_value = sample_task
+        
+        with patch("app.api.endpoints.minutes.session_task_store", mock_session_store):
             response = client.get(f"/api/v1/minutes/{sample_task.task_id}/result")
 
             assert response.status_code == 500
@@ -225,26 +234,32 @@ class TestProcessVideoTask:
 
                                 # タスクストアをモック
                                 tasks_store = {sample_task.task_id: sample_task}
+                                mock_session_store = Mock()
+                                mock_session_store._sessions = {"test-session": {sample_task.task_id: sample_task}}
+                                mock_session_store.update_task = Mock()
 
                                 with patch(
                                     "app.api.endpoints.minutes.tasks_store", tasks_store
                                 ):
-                                    # 関数をインポートして実行
-                                    from app.api.endpoints.minutes import (
-                                        process_video_task,
-                                    )
+                                    with patch(
+                                        "app.api.endpoints.minutes.session_task_store", mock_session_store
+                                    ):
+                                        # 関数をインポートして実行
+                                        from app.api.endpoints.minutes import (
+                                            process_video_task,
+                                        )
 
-                                    await process_video_task(sample_task.task_id)
+                                        await process_video_task(sample_task.task_id)
 
-                                    # 処理が正しく実行されたことを確認
-                                    mock_video_instance.extract_audio.assert_called_once()
-                                    mock_transcription_instance.transcribe_audio.assert_called_once()
-                                    mock_minutes_instance.generate_minutes.assert_called_once()
-                                    mock_completed.assert_called_once()
+                                        # 処理が正しく実行されたことを確認
+                                        mock_video_instance.extract_audio.assert_called_once()
+                                        mock_transcription_instance.transcribe_audio.assert_called_once()
+                                        mock_minutes_instance.generate_minutes.assert_called_once()
+                                        mock_completed.assert_called_once()
 
-                                    # タスクの結果が設定されたことを確認
-                                    assert sample_task.transcription == "文字起こし結果"
-                                    assert sample_task.minutes == "議事録結果"
+                                        # タスクの結果が設定されたことを確認
+                                        assert sample_task.transcription == "文字起こし結果"
+                                        assert sample_task.minutes == "議事録結果"
 
     @pytest.mark.asyncio
     async def test_process_video_task_error(self, sample_task):
@@ -266,19 +281,25 @@ class TestProcessVideoTask:
 
                         # タスクストアをモック
                         tasks_store = {sample_task.task_id: sample_task}
+                        mock_session_store = Mock()
+                        mock_session_store._sessions = {"test-session": {sample_task.task_id: sample_task}}
+                        mock_session_store.update_task = Mock()
 
                         with patch(
                             "app.api.endpoints.minutes.tasks_store", tasks_store
                         ):
-                            from app.api.endpoints.minutes import process_video_task
+                            with patch(
+                                "app.api.endpoints.minutes.session_task_store", mock_session_store
+                            ):
+                                from app.api.endpoints.minutes import process_video_task
 
-                            await process_video_task(sample_task.task_id)
+                                await process_video_task(sample_task.task_id)
 
-                            # エラー処理が正しく実行されたことを確認
-                            assert sample_task.status == TaskStatus.FAILED
-                            assert "音声抽出エラー" in sample_task.error_message
-                            mock_failed.assert_called_once()
-                            mock_file_handler.cleanup_files.assert_called_once()
+                                # エラー処理が正しく実行されたことを確認
+                                assert sample_task.status == TaskStatus.FAILED
+                                assert "音声抽出エラー" in sample_task.error_message
+                                mock_failed.assert_called_once()
+                                mock_file_handler.cleanup_files.assert_called_once()
 
 
 class TestWebSocketEndpoints:

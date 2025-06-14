@@ -35,8 +35,8 @@ from app.utils.logger import get_logger
 router = APIRouter()
 logger = get_logger(__name__)
 
-# WebSocket接続管理 (session_id -> {task_id -> [WebSocket]})
-websocket_connections: Dict[str, Dict[str, List[WebSocket]]] = {}
+# WebSocket接続管理 (task_id -> [WebSocket]) - 従来の方式を維持
+websocket_connections: Dict[str, List[WebSocket]] = {}
 
 
 @router.post("/upload", response_model=UploadResponse)
@@ -118,6 +118,22 @@ async def get_all_tasks(request: Request) -> TaskListResponse:
     session_id = SessionManager.get_session_id(request)
     tasks = session_task_store.get_tasks(session_id)
     
+    # セッションにタスクがない場合、従来のタスクストアから移行を試みる
+    if not tasks and tasks_store:
+        logger.info(f"セッションにタスクがないため、従来のタスクストアから移行を試みます (セッション: {session_id[:8]}...)")
+        # 従来のタスクストアから最新のタスクを移行（最大10件）
+        legacy_tasks = list(tasks_store.values())
+        legacy_tasks.sort(key=lambda x: x.upload_timestamp, reverse=True)
+        
+        migrated_count = 0
+        for task in legacy_tasks[:10]:  # 最新10件のみ移行
+            session_task_store.add_task(session_id, task)
+            migrated_count += 1
+        
+        if migrated_count > 0:
+            logger.info(f"従来のタスクストアから{migrated_count}件のタスクを移行しました (セッション: {session_id[:8]}...)")
+            tasks = session_task_store.get_tasks(session_id)
+    
     logger.info(f"タスク一覧取得: {len(tasks)}件のタスク (セッション: {session_id[:8]}...)")
     
     # 新しい順にソート
@@ -140,10 +156,22 @@ async def get_task_status(request: Request, task_id: str) -> TaskStatusResponse:
     session_id = SessionManager.get_session_id(request)
     logger.debug(f"タスクステータス取得: {task_id} (セッション: {session_id[:8]}...)")
 
+    # まずセッションストアから検索
     task = session_task_store.get_task(session_id, task_id)
+    
+    # セッションストアで見つからない場合は、従来のタスクストアから検索（下位互換性）
+    if not task:
+        logger.debug(f"セッションストアで見つからないため、従来のタスクストアを検索: {task_id}")
+        task = tasks_store.get(task_id)
+        if task:
+            logger.info(f"従来のタスクストアからタスクを発見、セッションに移行: {task_id} -> セッション: {session_id[:8]}...")
+            # セッションストアに移行
+            session_task_store.add_task(session_id, task)
+    
     if not task:
         logger.warning(f"タスクが見つかりません: {task_id} (セッション: {session_id[:8]}...)")
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
+        
     return TaskStatusResponse(
         task_id=task.task_id,
         status=task.status,
@@ -160,7 +188,18 @@ async def get_task_status(request: Request, task_id: str) -> TaskStatusResponse:
 async def get_task_result(request: Request, task_id: str) -> TaskResultResponse:
     """完了したタスクの結果を取得"""
     session_id = SessionManager.get_session_id(request)
+    
+    # まずセッションストアから検索
     task = session_task_store.get_task(session_id, task_id)
+    
+    # セッションストアで見つからない場合は、従来のタスクストアから検索（下位互換性）
+    if not task:
+        logger.debug(f"セッションストアで見つからないため、従来のタスクストアを検索: {task_id}")
+        task = tasks_store.get(task_id)
+        if task:
+            logger.info(f"従来のタスクストアからタスクを発見、セッションに移行: {task_id} -> セッション: {session_id[:8]}...")
+            # セッションストアに移行
+            session_task_store.add_task(session_id, task)
     
     if not task:
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
@@ -186,7 +225,18 @@ async def delete_task(request: Request, task_id: str) -> JSONResponse:
     session_id = SessionManager.get_session_id(request)
     logger.info(f"タスク削除要求: {task_id} (セッション: {session_id[:8]}...)")
 
+    # まずセッションストアから検索
     task = session_task_store.get_task(session_id, task_id)
+    
+    # セッションストアで見つからない場合は、従来のタスクストアから検索（下位互換性）
+    if not task:
+        logger.debug(f"セッションストアで見つからないため、従来のタスクストアを検索: {task_id}")
+        task = tasks_store.get(task_id)
+        if task:
+            logger.info(f"従来のタスクストアからタスクを発見、セッションに移行: {task_id} -> セッション: {session_id[:8]}...")
+            # セッションストアに移行
+            session_task_store.add_task(session_id, task)
+    
     if not task:
         logger.warning(f"削除対象のタスクが見つかりません: {task_id} (セッション: {session_id[:8]}...)")
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
@@ -209,10 +259,8 @@ async def delete_task(request: Request, task_id: str) -> JSONResponse:
         logger.info(f"タスク削除完了: {task_id} (セッション: {session_id[:8]}...)")
 
         # WebSocket接続がある場合は削除
-        if session_id in websocket_connections and task_id in websocket_connections[session_id]:
-            del websocket_connections[session_id][task_id]
-            if not websocket_connections[session_id]:
-                del websocket_connections[session_id]
+        if task_id in websocket_connections:
+            del websocket_connections[task_id]
             logger.info(f"WebSocket接続削除完了: {task_id} (セッション: {session_id[:8]}...)")
 
         return JSONResponse(
@@ -229,18 +277,26 @@ async def delete_task(request: Request, task_id: str) -> JSONResponse:
 @router.websocket("/ws/{task_id}")
 async def websocket_endpoint(websocket: WebSocket, task_id: str):
     """WebSocket接続でリアルタイム進捗を配信"""
-    # セッション情報の取得にはWebSocketではRequestオブジェクトが使えないため、
-    # WebSocketのクエリパラメータまたはヘッダーからセッション情報を取得する必要がある
-    # 今回は簡略化のため、WebSocketでは従来の接続方式を維持し、
-    # 実際のタスクアクセス時にセッション制御を行う
     await websocket.accept()
 
-    # タスクが存在するかチェック（従来のタスクストアでチェック）
-    if task_id not in tasks_store:
+    # タスクが存在するかチェック（セッションストアと従来のタスクストア両方をチェック）
+    task_found = False
+    
+    # 従来のタスクストアでチェック
+    if task_id in tasks_store:
+        task_found = True
+    else:
+        # セッションストアでもチェック
+        for session_tasks in session_task_store._sessions.values():
+            if task_id in session_tasks:
+                task_found = True
+                break
+    
+    if not task_found:
         await websocket.close(code=4004, reason="Task not found")
         return
 
-    # 接続を管理リストに追加
+    # 接続を管理リストに追加（従来の方式を維持）
     if task_id not in websocket_connections:
         websocket_connections[task_id] = []
     websocket_connections[task_id].append(websocket)
@@ -259,18 +315,24 @@ async def websocket_endpoint(websocket: WebSocket, task_id: str):
 
 async def process_video_task(task_id: str) -> None:
     """動画処理のメインタスク"""
+    # タスクを取得（従来のタスクストアから）
     if task_id not in tasks_store:
+        logger.error(f"処理対象のタスクが見つかりません: {task_id}")
         return
 
     task = tasks_store[task_id]
 
-    # セッションIDを見つける関数
+    # セッションIDを見つけてタスクを更新する関数
     def update_session_task():
+        updated = False
         for session_id, session_tasks in session_task_store._sessions.items():
             if task_id in session_tasks:
                 session_task_store.update_task(session_id, task)
-                return True
-        return False
+                updated = True
+        
+        # セッションストアにない場合でも従来のタスクストアは更新
+        tasks_store[task_id] = task
+        return updated
 
     try:
         # ステータスを処理中に変更
@@ -357,18 +419,24 @@ async def process_video_task(task_id: str) -> None:
 
 async def process_audio_task(task_id: str) -> None:
     """音声処理のメインタスク"""
+    # タスクを取得（従来のタスクストアから）
     if task_id not in tasks_store:
+        logger.error(f"処理対象のタスクが見つかりません: {task_id}")
         return
 
     task = tasks_store[task_id]
 
-    # セッションIDを見つける関数
+    # セッションIDを見つけてタスクを更新する関数
     def update_session_task():
+        updated = False
         for session_id, session_tasks in session_task_store._sessions.items():
             if task_id in session_tasks:
                 session_task_store.update_task(session_id, task)
-                return True
-        return False
+                updated = True
+        
+        # セッションストアにない場合でも従来のタスクストアは更新
+        tasks_store[task_id] = task
+        return updated
 
     try:
         # ステータスを処理中に変更
@@ -453,100 +521,106 @@ async def process_audio_task(task_id: str) -> None:
 
 
 async def broadcast_progress_update(task_id: str, task: MinutesTask):
-    """進捗更新をWebSocketクライアントに配信"""
-    if task_id not in websocket_connections:
-        return
-
-    message = {
-        "type": "progress_update",
-        "task_id": task_id,
-        "data": {
-            "status": task.status,
-            "current_step": task.current_step,
+    """進捗更新をWebSocket接続に配信"""
+    if task_id in websocket_connections:
+        message = {
+            "type": "progress_update",
+            "task_id": task_id,
+            "status": task.status.value,
+            "current_step": task.current_step.value if task.current_step else None,
             "overall_progress": task.overall_progress,
-            "steps": [step.model_dump() for step in task.steps],
-        },
-    }
+            "steps": {
+                step_name.value: {
+                    "status": step_info.status.value,
+                    "progress": step_info.progress,
+                    "error_message": step_info.error_message,
+                }
+                for step_name, step_info in task.steps.items()
+            },
+        }
 
-    # 接続中の全クライアントに配信
-    disconnected = []
-    for websocket in websocket_connections[task_id]:
-        try:
-            await websocket.send_text(json.dumps(message))
-        except Exception:
-            disconnected.append(websocket)
+        # 切断された接続を追跡
+        disconnected_connections = []
 
-    # 切断されたWebSocketを削除
-    for ws in disconnected:
-        websocket_connections[task_id].remove(ws)
+        for websocket in websocket_connections[task_id]:
+            try:
+                await websocket.send_text(json.dumps(message))
+            except Exception as e:
+                logger.warning(f"WebSocket送信エラー: {e}")
+                disconnected_connections.append(websocket)
+
+        # 切断された接続を削除
+        for websocket in disconnected_connections:
+            websocket_connections[task_id].remove(websocket)
+
+        # 接続がなくなった場合はキーを削除
+        if not websocket_connections[task_id]:
+            del websocket_connections[task_id]
 
 
 async def broadcast_task_completed(task_id: str, task: MinutesTask):
-    """タスク完了をWebSocketクライアントに配信"""
-    if task_id not in websocket_connections:
-        logger.warning(f"WebSocket接続が見つかりません: {task_id}")
-        return
+    """タスク完了をWebSocket接続に配信"""
+    if task_id in websocket_connections:
+        message = {
+            "type": "task_completed",
+            "task_id": task_id,
+            "status": task.status.value,
+            "overall_progress": 100,
+            "transcription": task.transcription,
+            "minutes": task.minutes,
+        }
 
-    logger.info(f"タスク完了をWebSocketで配信: {task_id}")
+        # 切断された接続を追跡
+        disconnected_connections = []
 
-    message = {
-        "type": "task_completed",
-        "task_id": task_id,
-        "data": {
-            "status": task.status,
-            "video_filename": task.video_filename,
-            "overall_progress": task.overall_progress,
-            "steps": [step.model_dump() for step in task.steps],
-            "message": f"{task.video_filename}の議事録生成が完了しました",
-        },
-    }
+        for websocket in websocket_connections[task_id]:
+            try:
+                await websocket.send_text(json.dumps(message))
+            except Exception as e:
+                logger.warning(f"WebSocket送信エラー: {e}")
+                disconnected_connections.append(websocket)
 
-    disconnected = []
-    for websocket in websocket_connections[task_id]:
-        try:
-            await websocket.send_text(json.dumps(message))
-            logger.debug(f"WebSocketメッセージ送信成功: {task_id}")
-        except Exception as e:
-            logger.error(f"WebSocketメッセージ送信失敗: {task_id} - {str(e)}")
-            disconnected.append(websocket)
+        # 切断された接続を削除
+        for websocket in disconnected_connections:
+            websocket_connections[task_id].remove(websocket)
 
-    # 切断されたWebSocketを削除
-    for ws in disconnected:
-        websocket_connections[task_id].remove(ws)
-
-    logger.info(
-        f"WebSocket配信完了: {task_id} (接続数: {len(websocket_connections[task_id])})"
-    )
+        # 接続がなくなった場合はキーを削除
+        if not websocket_connections[task_id]:
+            del websocket_connections[task_id]
 
 
 async def broadcast_task_failed(task_id: str, task: MinutesTask, error_message: str):
-    """タスク失敗をWebSocketクライアントに配信"""
-    if task_id not in websocket_connections:
-        return
-
-    message = {
-        "type": "task_failed",
-        "task_id": task_id,
-        "data": {
-            "video_filename": task.video_filename,
+    """タスク失敗をWebSocket接続に配信"""
+    if task_id in websocket_connections:
+        message = {
+            "type": "task_failed",
+            "task_id": task_id,
+            "status": task.status.value,
             "error_message": error_message,
-            "message": f"{task.video_filename}の処理中にエラーが発生しました",
-        },
-    }
+            "steps": {
+                step_name.value: {
+                    "status": step_info.status.value,
+                    "progress": step_info.progress,
+                    "error_message": step_info.error_message,
+                }
+                for step_name, step_info in task.steps.items()
+            },
+        }
 
-    disconnected = []
-    for websocket in websocket_connections[task_id]:
-        try:
-            await websocket.send_text(json.dumps(message))
-            logger.debug(f"WebSocketメッセージ送信成功: {task_id}")
-        except Exception as e:
-            logger.error(f"WebSocketメッセージ送信失敗: {task_id} - {str(e)}")
-            disconnected.append(websocket)
+        # 切断された接続を追跡
+        disconnected_connections = []
 
-    # 切断されたWebSocketを削除
-    for ws in disconnected:
-        websocket_connections[task_id].remove(ws)
+        for websocket in websocket_connections[task_id]:
+            try:
+                await websocket.send_text(json.dumps(message))
+            except Exception as e:
+                logger.warning(f"WebSocket送信エラー: {e}")
+                disconnected_connections.append(websocket)
 
-    logger.info(
-        f"WebSocket配信完了: {task_id} (接続数: {len(websocket_connections[task_id])})"
-    )
+        # 切断された接続を削除
+        for websocket in disconnected_connections:
+            websocket_connections[task_id].remove(websocket)
+
+        # 接続がなくなった場合はキーを削除
+        if not websocket_connections[task_id]:
+            del websocket_connections[task_id]
