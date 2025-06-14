@@ -278,14 +278,28 @@ export default {
       
       // Remove common meeting detail patterns
       content = content.replace(/^#\s*議事録\s*\n/i, '')
+
+      // Lines with no bullet
       content = content.replace(/^\*\*開催日時?[:：].*\n/gm, '')
       content = content.replace(/^\*\*開催日[:：].*\n/gm, '')
       content = content.replace(/^\*\*出席者[:：].*\n/gm, '')
       content = content.replace(/^開催日時?[:：].*\n/gm, '')
       content = content.replace(/^開催日[:：].*\n/gm, '')
       content = content.replace(/^出席者[:：].*\n/gm, '')
-      content = content.replace(/^会議情報\s*\n/gm, '')
       content = content.replace(/^会議名[:：].*\n/gm, '')
+
+      // Bullet list lines
+      content = content.replace(/^\s*[-*]\s*\*\*開催日時?[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*\*\*開催日[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*\*\*出席者[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*開催日時?[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*開催日[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*出席者[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*会議名[:：].*\n/gm, '')
+
+      // Section headers
+      content = content.replace(/^会議情報\s*\n/gm, '')
+      content = content.replace(/^\s*\d+\.\s*会議情報.*\n/gm, '')
       content = content.replace(/^---+\s*\n/gm, '')
       
       // Clean up multiple newlines
@@ -699,9 +713,8 @@ ${cleanMinutesContent.value}`
       
       // Extract meeting date
       const datePatterns = [
-        /(?:開催日時?|会議日時?)[:：]\s*([^\n]+)/i,
-        /(?:開催日|会議日|日時)[:：]\s*([^\n]+)/i,
-        /\*\*(?:開催日時?|会議日時?)[:：]\*\*\s*([^\n]+)/i
+        /^(?:\s*[-*]\s*)?\*\*(?:開催日時?|会議日時?|開催日|会議日|日時)[:：]\*\*\s*([^\n]+)/m,
+        /^(?:\s*[-*]\s*)?(?:開催日時?|会議日時?|開催日|会議日|日時)[:：]\s*([^\n]+)/m
       ]
       
       let extractedDate = null
@@ -722,8 +735,8 @@ ${cleanMinutesContent.value}`
       
       // Extract attendees
       const attendeePatterns = [
-        /(?:出席者|参加者)[:：]\s*([^\n]+)/i,
-        /\*\*(?:出席者|参加者)[:：]\*\*\s*([^\n]+)/i
+        /^(?:\s*[-*]\s*)?\*\*(?:出席者|参加者)[:：]\*\*\s*([^\n]+)/m,
+        /^(?:\s*[-*]\s*)?(?:出席者|参加者)[:：]\s*([^\n]+)/m
       ]
       
       let extractedAttendees = []
