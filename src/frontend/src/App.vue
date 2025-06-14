@@ -2,7 +2,7 @@
   <div id="app">
     <header class="app-header">
       <h1 class="app-title">
-        <RouterLink :to="{ name: 'dashboard' }" class="home-link">
+        <RouterLink to="/" class="app-title-link">
           <i class="pi pi-video"></i>
           Video2Minutes
         </RouterLink>
@@ -106,6 +106,14 @@ export default {
 .home-link i {
   font-size: 3.5rem;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.app-title-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
 }
 
 .app-subtitle {
