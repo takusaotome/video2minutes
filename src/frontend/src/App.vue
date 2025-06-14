@@ -2,7 +2,7 @@
   <div id="app">
     <header class="app-header">
       <h1 class="app-title">
-        <RouterLink to="/" class="app-title-link">
+        <RouterLink :to="{ name: 'dashboard' }" class="home-link">
           <i class="pi pi-video"></i>
           Video2Minutes
         </RouterLink>
@@ -95,6 +95,12 @@ export default {
   gap: var(--space-4);
   cursor: pointer;
   transition: all 0.3s ease;
+  color: inherit;
+  text-decoration: none;
+}
+
+.home-link:visited {
+  color: inherit;
 }
 
 .home-link:hover {
