@@ -14,9 +14,9 @@
           <div class="upload-header">
             <div class="title-section">
               <i class="pi pi-cloud-upload title-icon"></i>
-              <h2 class="upload-title">動画ファイルをアップロード</h2>
+              <h2 class="upload-title">動画・音声ファイルをアップロード</h2>
             </div>
-            <p class="upload-description">動画から自動的に議事録を生成します</p>
+            <p class="upload-description">動画・音声から自動的に議事録を生成します</p>
           </div>
 
           <!-- Upload Area -->
@@ -25,7 +25,7 @@
               ref="fileUpload"
               mode="basic"
               :multiple="true"
-              accept="video/*"
+              accept="video/*,audio/*,.mp4,.avi,.mov,.mkv,.wmv,.flv,.webm,.mp3,.wav,.m4a,.aac,.flac,.ogg,.wma"
               :maxFileSize="5368709120"
               :customUpload="true"
               @uploader="onUpload"
@@ -63,13 +63,13 @@
                         {{
                           isDragOver
                             ? 'ファイルをここにドロップしてください！'
-                            : 'ここに動画ファイルをドラッグ&ドロップ'
+                            : 'ここに動画・音声ファイルをドラッグ&ドロップ'
                         }}
                       </h3>
                       <p class="upload-subtext">
                         {{
                           isDragOver
-                            ? '動画ファイルを離してアップロード開始'
+                            ? '動画・音声ファイルを離してアップロード開始'
                             : 'または下のボタンからファイルを選択してください'
                         }}
                       </p>
@@ -109,7 +109,8 @@
                         <i class="pi pi-info-circle"></i>
                         <div class="note-text">
                           <div class="supported-formats">
-                            対応形式: MP4, AVI, MOV, MKV, WMV, FLV, WebM
+                            動画形式: MP4, AVI, MOV, MKV, WMV, FLV, WebM<br>
+                            音声形式: MP3, WAV, M4A, AAC, FLAC, OGG, WMA
                           </div>
                           <div class="file-limit">最大ファイルサイズ: 5GB</div>
                         </div>
@@ -227,7 +228,7 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useTasksStore } from '@/stores/tasks'
 import Card from 'primevue/card'
@@ -481,6 +482,11 @@ export default {
             return true
           }
 
+          // Check if it's an audio file
+          if (fileType.startsWith('audio/')) {
+            return true
+          }
+
           // Check by file extension if MIME type is not reliable
           const supportedExtensions = [
             '.mp4',
@@ -489,7 +495,14 @@ export default {
             '.mkv',
             '.wmv',
             '.flv',
-            '.webm'
+            '.webm',
+            '.mp3',
+            '.wav',
+            '.m4a',
+            '.aac',
+            '.flac',
+            '.ogg',
+            '.wma'
           ]
           return supportedExtensions.some(ext => fileName.endsWith(ext))
         })
@@ -498,7 +511,7 @@ export default {
           toast.add({
             severity: 'warn',
             summary: '無効なファイル形式',
-            detail: '動画ファイルのみアップロード可能です',
+            detail: '動画・音声ファイルのみアップロード可能です',
             life: 3000
           })
           return
@@ -508,7 +521,7 @@ export default {
           toast.add({
             severity: 'warn',
             summary: '一部ファイルをスキップ',
-            detail: `${files.length - validFiles.length}個のファイルは動画ファイルではないためスキップされました`,
+            detail: `${files.length - validFiles.length}個のファイルは動画・音声ファイルではないためスキップされました`,
             life: 4000
           })
         }

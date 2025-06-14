@@ -28,6 +28,7 @@ class Settings(BaseSettings):
 
     # ファイル設定
     max_file_size: int = 5 * 1024 * 1024 * 1024  # 5GB
+    # 対応動画形式
     allowed_video_extensions: list[str] = [
         ".mp4",
         ".avi",
@@ -36,6 +37,17 @@ class Settings(BaseSettings):
         ".wmv",
         ".flv",
         ".webm",
+    ]
+    
+    # 対応音声形式
+    allowed_audio_extensions: list[str] = [
+        ".mp3",
+        ".wav",
+        ".m4a",
+        ".aac",
+        ".flac",
+        ".ogg",
+        ".wma",
     ]
     upload_dir: str = "uploads"
     temp_dir: str = "temp"

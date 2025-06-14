@@ -41,17 +41,17 @@ websocket_connections: Dict[str, List[WebSocket]] = {}
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_video(file: UploadFile = File(...)):
-    """動画ファイルをアップロードして処理を開始"""
+async def upload_media(file: UploadFile = File(...)):
+    """動画・音声ファイルをアップロードして処理を開始"""
 
     logger.info(
         f"ファイルアップロード開始: {file.filename} (サイズ: {file.size} bytes)"
     )
 
     try:
-        # ファイルバリデーション
-        FileHandler.validate_video_file(file)
-        logger.info(f"ファイルバリデーション成功: {file.filename}")
+        # ファイルバリデーション（動画・音声両方対応）
+        file_type = FileHandler.validate_media_file(file)
+        logger.info(f"ファイルバリデーション成功: {file.filename} (タイプ: {file_type})")
 
         # タスクIDを生成
         task_id = FileHandler.generate_task_id()
@@ -79,13 +79,16 @@ async def upload_video(file: UploadFile = File(...)):
 
         logger.info(f"タスク作成完了: {task_id} - {file.filename}")
 
-        # タスクキューに追加
+        # タスクキューに追加（ファイルタイプに応じた処理）
         from app.services.task_queue import get_task_queue
 
         queue = get_task_queue()
-        queue_id = await queue.add_task(task_id, process_video_task, task_id)
+        if file_type == "video":
+            queue_id = await queue.add_task(task_id, process_video_task, task_id)
+        else:  # audio
+            queue_id = await queue.add_task(task_id, process_audio_task, task_id)
 
-        logger.info(f"タスクをキューに追加: {task_id} (キューID: {queue_id})")
+        logger.info(f"タスクをキューに追加: {task_id} (キューID: {queue_id}, タイプ: {file_type})")
 
         return UploadResponse(task_id=task_id, status=TaskStatus.QUEUED)
 
@@ -294,6 +297,88 @@ async def process_video_task(task_id: str):
     except Exception as e:
         # エラー処理
         error_message = f"処理中にエラーが発生しました: {str(e)}"
+        task.status = TaskStatus.FAILED
+        task.error_message = error_message
+
+        # 現在のステップをエラーに設定
+        if task.current_step:
+            task.update_step_status(
+                task.current_step,
+                ProcessingStepStatus.FAILED,
+                error_message=error_message,
+            )
+
+        await broadcast_task_failed(task_id, task, error_message)
+
+    finally:
+        # ファイルクリーンアップ
+        FileHandler.cleanup_files(task_id)
+
+
+async def process_audio_task(task_id: str):
+    """音声処理のメインタスク"""
+    if task_id not in tasks_store:
+        return
+
+    task = tasks_store[task_id]
+
+    try:
+        # ステータスを処理中に変更
+        task.status = TaskStatus.PROCESSING
+        await broadcast_progress_update(task_id, task)
+
+        # 音声ファイルの場合は音声抽出をスキップ
+        logger.info(f"音声ファイル処理開始: {task_id}")
+
+        # 音声ファイルのパスを取得
+        audio_path = FileHandler.get_file_path(task_id)
+        if not audio_path:
+            raise Exception("音声ファイルが見つかりません")
+
+        # 音声抽出ステップをスキップしてCOMPLETEDに設定
+        task.update_step_status(
+            ProcessingStepName.AUDIO_EXTRACTION, ProcessingStepStatus.COMPLETED, 100
+        )
+        await broadcast_progress_update(task_id, task)
+
+        # 文字起こし
+        task.update_step_status(
+            ProcessingStepName.TRANSCRIPTION, ProcessingStepStatus.PROCESSING
+        )
+        await broadcast_progress_update(task_id, task)
+
+        transcription_service = TranscriptionService()
+        transcription = await transcription_service.transcribe_audio(audio_path)
+        task.transcription = transcription
+
+        task.update_step_status(
+            ProcessingStepName.TRANSCRIPTION, ProcessingStepStatus.COMPLETED, 100
+        )
+        await broadcast_progress_update(task_id, task)
+
+        # 議事録生成
+        task.update_step_status(
+            ProcessingStepName.MINUTES_GENERATION, ProcessingStepStatus.PROCESSING
+        )
+        await broadcast_progress_update(task_id, task)
+
+        minutes_service = MinutesGeneratorService()
+        minutes = await minutes_service.generate_minutes(transcription)
+        task.minutes = minutes
+
+        task.update_step_status(
+            ProcessingStepName.MINUTES_GENERATION, ProcessingStepStatus.COMPLETED, 100
+        )
+
+        # 最終的な進捗更新を送信
+        await broadcast_progress_update(task_id, task)
+
+        # 完了通知
+        await broadcast_task_completed(task_id, task)
+
+    except Exception as e:
+        # エラー処理
+        error_message = f"音声処理中にエラーが発生しました: {str(e)}"
         task.status = TaskStatus.FAILED
         task.error_message = error_message
 

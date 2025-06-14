@@ -32,7 +32,7 @@
             議事録
           </h1>
           <div class="file-info">
-            <span class="filename">{{ minutes.video_filename }}</span>
+            <span class="filename" :title="minutes.video_filename">{{ truncateFilename(minutes.video_filename) }}</span>
             <span class="date">{{ formatDate(minutes.created_at) }}</span>
           </div>
         </div>
@@ -268,7 +268,7 @@ export default {
     }
   },
   emits: ['back'],
-  setup(props, { emit }) {
+  setup(props) {
     const toast = useToast()
 
     const minutes = ref(null)
@@ -291,52 +291,21 @@ export default {
     const minutesWithUpdatedInfo = computed(() => {
       if (!minutes.value) return ''
       
-      let content = minutes.value.minutes
+      // Start with cleaned content (remove all existing meeting information)
+      let content = cleanMinutesContent.value
       
       // Prepare updated meeting information
       const meetingNameText = meetingName.value || '未設定'
       const meetingDateText = meetingDate.value ? formatDate(meetingDate.value) : '未設定'
       const attendeesText = attendees.value.length > 0 ? attendees.value.join('、') : '未設定'
       
-      // Find and replace existing meeting information section
-      const meetingInfoPattern = /(#+\s*(?:会議情報|Meeting Information|会議概要)[\s\S]*?)(?=\n#{1,6}\s+(?!.*(?:会議情報|Meeting Information|会議概要))|$)/i
+      // Increment all existing section numbers by 1 to make room for meeting info as section 1
+      content = content.replace(/^### (\d+)\. /gm, (match, number) => {
+        return `### ${parseInt(number) + 1}. `
+      })
       
-      if (meetingInfoPattern.test(content)) {
-        // Replace existing meeting info section
-        content = content.replace(meetingInfoPattern, (match) => {
-          return `#### 会議情報
-
-**会議名:** ${meetingNameText}  
-**開催日時:** ${meetingDateText}  
-**出席者:** ${attendeesText}
-
-`
-        })
-      } else {
-        // Look for individual meeting detail patterns and replace them
-        let hasReplacements = false
-        
-        // Replace meeting name
-        if (/(?:会議名|件名|タイトル)[:：]/i.test(content)) {
-          content = content.replace(/(\*\*)?(?:会議名|件名|タイトル)[:：](\*\*)?\s*[^\n]*/gi, `**会議名:** ${meetingNameText}`)
-          hasReplacements = true
-        }
-        
-        // Replace meeting date
-        if (/(?:開催日時?|会議日時?|開催日|会議日|日時)[:：]/i.test(content)) {
-          content = content.replace(/(\*\*)?(?:開催日時?|会議日時?|開催日|会議日|日時)[:：](\*\*)?\s*[^\n]*/gi, `**開催日時:** ${meetingDateText}`)
-          hasReplacements = true
-        }
-        
-        // Replace attendees
-        if (/(?:出席者|参加者)[:：]/i.test(content)) {
-          content = content.replace(/(\*\*)?(?:出席者|参加者)[:：](\*\*)?\s*[^\n]*/gi, `**出席者:** ${attendeesText}`)
-          hasReplacements = true
-        }
-        
-        // If no existing patterns found, add meeting info at the beginning
-        if (!hasReplacements) {
-          const meetingInfoHeader = `#### 会議情報
+      // Create the new meeting info section as section 1
+      const meetingInfoHeader = `### 1. 会議情報
 
 **会議名:** ${meetingNameText}  
 **開催日時:** ${meetingDateText}  
@@ -345,15 +314,20 @@ export default {
 ---
 
 `
-          // Check if content starts with a title
-          if (/^#/.test(content.trim())) {
-            // Insert after the first heading
-            content = content.replace(/^(#+[^\n]*\n)/i, `$1\n${meetingInfoHeader}`)
-          } else {
-            // Insert at the beginning
-            content = meetingInfoHeader + content
-          }
+      
+      // Insert at the beginning of the content
+      if (content.trim()) {
+        // Check if content starts with a main title (# or ##), not section headers (###)
+        if (/^#{1,2}\s/.test(content.trim())) {
+          // Insert after the main title only
+          content = content.replace(/^(#{1,2}[^\n]*\n)/i, `$1\n${meetingInfoHeader}`)
+        } else {
+          // Insert at the very beginning (before any section headers like ###)
+          content = meetingInfoHeader + content
         }
+      } else {
+        // If content is empty, just use the meeting info
+        content = meetingInfoHeader
       }
       
       // Clean up multiple newlines
@@ -373,31 +347,48 @@ export default {
       // Remove common meeting detail patterns
       content = content.replace(/^#\s*議事録\s*\n/i, '')
 
-      // Lines with no bullet
-      content = content.replace(/^\*\*開催日時?[:：].*\n/gm, '')
-      content = content.replace(/^\*\*開催日[:：].*\n/gm, '')
-      content = content.replace(/^\*\*出席者[:：].*\n/gm, '')
-      content = content.replace(/^開催日時?[:：].*\n/gm, '')
-      content = content.replace(/^開催日[:：].*\n/gm, '')
-      content = content.replace(/^出席者[:：].*\n/gm, '')
-      content = content.replace(/^会議名[:：].*\n/gm, '')
+      // Most aggressive: Remove any numbered section that contains "会議情報" and everything until the next numbered section
+      content = content.replace(/^\d+\.\s*会議情報[\s\S]*?(?=\d+\.|$)/gm, '')
+      
+      // Also handle with whitespace at the beginning
+      content = content.replace(/^\s*\d+\.\s*会議情報[\s\S]*?(?=^\s*\d+\.|$)/gm, '')
+      
+      // Remove entire numbered sections containing meeting info (with lookahead for next section or heading)
+      content = content.replace(/^\s*\d+\.\s*(?:会議情報|会議概要|基本情報)[\s\S]*?(?=^\s*\d+\.|^\s*#{1,6}\s+|$)/gmi, '')
+      
+      // Remove any remaining bullet points that mention meeting details
+      content = content.replace(/^\s*[-*]\s*\*\*(?:会議名|開催日時?|開催日|出席者|参加者)\*\*[:：].*$/gm, '')
+      content = content.replace(/^\s*[-*]\s*(?:会議名|開催日時?|開催日|出席者|参加者)[:：].*$/gm, '')
+      
+      // Remove meeting info section headers
+      content = content.replace(/^#{1,6}\s*(?:会議情報|会議概要|基本情報)\s*\n/gmi, '')
+      
+      // Lines with no bullet (standalone)
+      content = content.replace(/^\*\*(?:会議名|開催日時?|開催日|出席者|参加者)[:：].*\n/gm, '')
+      content = content.replace(/^(?:会議名|開催日時?|開催日|出席者|参加者)[:：].*\n/gm, '')
 
       // Bullet list lines
-      content = content.replace(/^\s*[-*]\s*\*\*開催日時?[:：].*\n/gm, '')
-      content = content.replace(/^\s*[-*]\s*\*\*開催日[:：].*\n/gm, '')
-      content = content.replace(/^\s*[-*]\s*\*\*出席者[:：].*\n/gm, '')
-      content = content.replace(/^\s*[-*]\s*開催日時?[:：].*\n/gm, '')
-      content = content.replace(/^\s*[-*]\s*開催日[:：].*\n/gm, '')
-      content = content.replace(/^\s*[-*]\s*出席者[:：].*\n/gm, '')
-      content = content.replace(/^\s*[-*]\s*会議名[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*\*\*(?:会議名|開催日時?|開催日|出席者|参加者)[:：].*\n/gm, '')
+      content = content.replace(/^\s*[-*]\s*(?:会議名|開催日時?|開催日|出席者|参加者)[:：].*\n/gm, '')
 
-      // Section headers
-      content = content.replace(/^会議情報\s*\n/gm, '')
-      content = content.replace(/^\s*\d+\.\s*会議情報.*\n/gm, '')
+      // Remove any remaining meeting detail lines within sections
+      content = content.replace(/^\s*[-*]\s*\*\*(?:会議名|開催日時?|開催日|出席者|参加者)\*\*[:：].*$/gm, '')
+      
+      // Remove horizontal rules that might be left over
       content = content.replace(/^---+\s*\n/gm, '')
       
-      // Clean up multiple newlines
+      // Clean up multiple newlines and empty sections
       content = content.replace(/\n{3,}/g, '\n\n')
+      
+      // Remove empty numbered list items
+      content = content.replace(/^\s*\d+\.\s*\n/gm, '')
+      
+      // Renumber remaining sections to maintain sequential order
+      let sectionNumber = 1
+      content = content.replace(/^###?\s*\d+\.\s*/gm, () => {
+        return `### ${sectionNumber++}. `
+      })
+      
       content = content.trim()
       
       return content
@@ -469,8 +460,9 @@ export default {
     }
 
     const formatDate = timestamp => {
-      if (!timestamp) return ''
+      if (!timestamp) return '作成日時未設定'
       const date = new Date(timestamp)
+      if (isNaN(date.getTime())) return '日時形式エラー'
       return date.toLocaleString('ja-JP', {
         year: 'numeric',
         month: 'long',
@@ -478,6 +470,17 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
+    }
+
+    const truncateFilename = (filename, maxLength = 50) => {
+      if (!filename) return '未設定'
+      if (filename.length <= maxLength) return filename
+      
+      const extension = filename.split('.').pop()
+      const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'))
+      const truncatedName = nameWithoutExt.substring(0, maxLength - extension.length - 4)
+      
+      return `${truncatedName}...${extension}`
     }
 
     const copyToClipboard = async () => {
@@ -535,9 +538,7 @@ export default {
       textContent = textContent.replace(/\*(.*?)\*/g, '$1') // Remove italic
       textContent = textContent.replace(/\[(.*?)\]\(.*?\)/g, '$1') // Remove links
       textContent = textContent.replace(/^-\s+/gm, '• ') // Convert bullets
-      textContent = textContent.replace(/^\d+\.\s+/gm, (match, offset, string) => {
-        const lineStart = string.lastIndexOf('\n', offset) + 1
-        const lineContent = string.substring(lineStart, offset)
+      textContent = textContent.replace(/^\d+\.\s+/gm, (match) => {
         return match
       })
       
@@ -1099,6 +1100,7 @@ ${'-'.repeat(50)}
       downloadOptions,
       loadMinutes,
       formatDate,
+      truncateFilename,
       copyToClipboard,
       downloadMarkdown,
       downloadText,

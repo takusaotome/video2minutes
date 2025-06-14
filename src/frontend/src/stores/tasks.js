@@ -77,10 +77,6 @@ export const useTasksStore = defineStore('tasks', {
       }
     },
 
-    async forceRefresh() {
-      // 手動更新（ローディング表示あり）
-      return await this.fetchTasks(true)
-    },
 
     async uploadFile(file, onProgress) {
       try {

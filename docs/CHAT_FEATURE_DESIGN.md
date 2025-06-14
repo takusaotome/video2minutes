@@ -7,17 +7,36 @@
 ## 機能要件
 
 ### 基本機能
+
+#### 質問応答機能
 - **文字起こし内容に基づく質問応答**: 会議内容に関する質問に対して文字起こし全文を参照して回答
 - **チャット履歴保存**: セッション中のやり取りを保持
 - **コンテキスト理解**: 前回の質問・回答を踏まえた継続的な対話
 - **引用表示**: 回答時に参照した文字起こしの該当箇所を表示
 
+#### 議事録編集機能
+- **誤字・脱字修正**: 間違った単語や表現の一括修正
+- **アクションアイテム追加・編集**: 漏れていたタスクの追加や詳細情報の更新
+- **内容補強**: 不足している情報の追記や詳細化
+- **構造化改善**: 議事録の構成や見出しの最適化
+- **リアルタイム反映**: 編集内容の即座画面更新
+
 ### 想定ユースケース
+
+#### 質問応答
 1. **決定事項の確認**: "この会議でXXについてどんな結論になりましたか？"
 2. **担当者の確認**: "タスクAの担当者は誰になりましたか？"
 3. **期限の確認**: "プロジェクトの納期はいつでしたっけ？"
 4. **詳細説明**: "XXについてもう少し詳しく教えてください"
 5. **要約**: "今日の会議のポイントを3つ教えてください"
+
+#### 議事録編集
+1. **誤字修正**: "議事録内の'プロジェクトX'を'プロジェクトAlpha'に修正して"
+2. **アクションアイテム追加**: "田中さんに資料作成のタスクを追加して、期限は来週金曜日"
+3. **担当者修正**: "タスクBの担当者を佐藤さんから山田さんに変更して"
+4. **期限更新**: "システム改修タスクの期限を2月末に延期して"
+5. **内容補強**: "決定事項に予算承認の件を追加して"
+6. **優先度設定**: "セキュリティ対応タスクを高優先度に変更して"
 
 ## システム設計
 
@@ -78,7 +97,8 @@ POST /api/v1/minutes/{task_id}/chat/sessions
 POST /api/v1/minutes/{task_id}/chat/sessions/{session_id}/messages
 {
   "message": "ユーザーの質問",
-  "message_type": "user"
+  "message_type": "user",
+  "intent": "question"  # "question" | "edit_request"
 }
 → {
   "message_id": "msg_uuid",
@@ -90,7 +110,50 @@ POST /api/v1/minutes/{task_id}/chat/sessions/{session_id}/messages
       "confidence": 0.95
     }
   ],
-  "tokens_used": 450
+  "tokens_used": 450,
+  "edit_actions": []  # 編集リクエストの場合のみ
+}
+
+# 議事録編集実行
+POST /api/v1/minutes/{task_id}/edit
+{
+  "session_id": "chat_session_uuid",
+  "message_id": "msg_uuid",
+  "edit_actions": [
+    {
+      "action_type": "replace_text",
+      "target": "プロジェクトX",
+      "replacement": "プロジェクトAlpha",
+      "scope": "all"  # "all" | "section" | "specific"
+    },
+    {
+      "action_type": "add_action_item",
+      "content": {
+        "task": "資料作成",
+        "assignee": "田中さん",
+        "due_date": "2024-01-26",
+        "priority": "medium"
+      }
+    },
+    {
+      "action_type": "update_action_item",
+      "item_id": "action_item_uuid",
+      "updates": {
+        "assignee": "山田さん",
+        "priority": "high"
+      }
+    }
+  ]
+}
+→ {
+  "edit_id": "edit_uuid",
+  "success": true,
+  "updated_minutes": "更新後の議事録全文",
+  "changes_summary": [
+    "プロジェクトX → プロジェクトAlpha (3箇所)",
+    "新規アクションアイテム追加: 資料作成",
+    "タスクBの担当者変更: 佐藤さん → 山田さん"
+  ]
 }
 
 # チャット履歴取得
@@ -129,10 +192,33 @@ class ChatMessage(BaseModel):
     message: str
     response: str
     message_type: str  # "user" | "assistant"
+    intent: str  # "question" | "edit_request"
     timestamp: datetime
     citations: List[Citation]
+    edit_actions: List[EditAction]  # 編集リクエストの場合のみ
     tokens_used: int
     processing_time: float
+
+class EditAction(BaseModel):
+    action_type: str  # "replace_text" | "add_action_item" | "update_action_item" | "add_content" | "restructure"
+    target: Optional[str]  # 対象テキスト（置換の場合）
+    replacement: Optional[str]  # 置換テキスト
+    scope: Optional[str]  # "all" | "section" | "specific"
+    content: Optional[Dict]  # 追加・更新内容
+    item_id: Optional[str]  # 更新対象のID
+    updates: Optional[Dict]  # 更新内容
+
+class EditHistory(BaseModel):
+    edit_id: str
+    task_id: str
+    session_id: str
+    message_id: str
+    edit_actions: List[EditAction]
+    changes_summary: List[str]
+    original_minutes: str
+    updated_minutes: str
+    timestamp: datetime
+    reverted: bool  # 取り消しフラグ
 
 class Citation(BaseModel):
     text: str
@@ -146,8 +232,10 @@ class Citation(BaseModel):
 ```python
 CHAT_SYSTEM_PROMPT = """
 あなたは会議の議事録と文字起こしの内容に詳しいアシスタントです。
+質問への回答と議事録の編集依頼の両方に対応できます。
 
-以下の会議内容に基づいて、ユーザーの質問に正確かつ有用な回答を提供してください。
+以下の会議内容に基づいて、ユーザーの質問に正確かつ有用な回答を提供するか、
+議事録の編集指示を解析して適切な編集アクションを提案してください。
 
 【会議の文字起こし】
 {transcription}
@@ -155,7 +243,7 @@ CHAT_SYSTEM_PROMPT = """
 【生成された議事録】
 {minutes}
 
-【回答時の注意点】
+【質問回答時の注意点】
 1. 文字起こしや議事録の内容に基づいて回答する
 2. 内容にない情報は推測しない
 3. 不明な点は「文字起こしからは確認できません」と正直に答える
@@ -163,9 +251,51 @@ CHAT_SYSTEM_PROMPT = """
 5. 日本語で分かりやすく回答する
 6. 前回の質問・回答の文脈も考慮する
 
-【回答フォーマット】
+【編集指示解析時の注意点】
+1. 編集の意図を正確に理解する
+2. 具体的な編集アクションを提案する
+3. 変更範囲を明確にする（全体／セクション／特定箇所）
+4. 元の文脈を壊さないよう配慮する
+5. アクションアイテムの追加・更新時は構造化されたデータで提案する
+
+【編集可能な操作】
+- replace_text: 文字・単語・フレーズの置換
+- add_action_item: 新しいアクションアイテムの追加
+- update_action_item: 既存アクションアイテムの更新
+- add_content: 内容の追記・補強
+- restructure: 構成・見出しの改善
+
+【回答フォーマット - 質問の場合】
 回答: [具体的な回答内容]
 引用: "[該当する文字起こしの部分]"
+
+【回答フォーマット - 編集指示の場合】
+編集内容: [編集の概要説明]
+提案アクション: [具体的な編集アクション]
+確認: この編集を実行してよろしいですか？
+"""
+
+EDIT_SYSTEM_PROMPT = """
+ユーザーからの編集指示を解析し、議事録に対する具体的な編集アクションを生成してください。
+
+【編集指示の例】
+- "プロジェクトXをプロジェクトAlphaに修正して"
+- "田中さんに資料作成のタスクを追加、期限は来週金曜日"
+- "タスクBの担当者を佐藤さんから山田さんに変更"
+
+【出力形式】
+JSON形式で編集アクションのリストを返してください。
+{
+  "edit_actions": [
+    {
+      "action_type": "replace_text",
+      "target": "プロジェクトX",
+      "replacement": "プロジェクトAlpha",
+      "scope": "all"
+    }
+  ],
+  "explanation": "編集内容の説明"
+}
 """
 
 CHAT_USER_PROMPT = """
@@ -239,17 +369,47 @@ MinutesView.vue
         
         <!-- 入力エリア -->
         <div class="chat-input-area">
+          <div class="input-mode-selector">
+            <ToggleButton 
+              v-model="isEditMode"
+              onLabel="編集モード"
+              offLabel="質問モード"
+              onIcon="pi pi-pencil"
+              offIcon="pi pi-question-circle"
+            />
+          </div>
           <ChatInput 
             @send-message="handleSendMessage"
             :disabled="isLoading"
-            placeholder="会議内容について質問してください..."
+            :placeholder="isEditMode ? '議事録の編集指示を入力してください...' : '会議内容について質問してください...'"
+            :edit-mode="isEditMode"
           />
+        </div>
+        
+        <!-- 編集履歴（編集モード時のみ） -->
+        <div v-if="isEditMode && editHistory.length > 0" class="edit-history">
+          <h5>編集履歴</h5>
+          <div 
+            v-for="edit in editHistory" 
+            :key="edit.edit_id"
+            class="edit-history-item"
+          >
+            <div class="edit-summary">{{ edit.changes_summary.join(', ') }}</div>
+            <div class="edit-actions">
+              <Button 
+                label="取り消し"
+                class="p-button-text p-button-sm"
+                @click="revertEdit(edit.edit_id)"
+                :disabled="edit.reverted"
+              />
+            </div>
+          </div>
         </div>
         
         <!-- 使用状況 -->
         <div class="chat-usage">
           <small>
-            質問数: {{ messages.length }} / トークン: {{ totalTokens }}
+            質問数: {{ questionCount }} / 編集数: {{ editCount }} / トークン: {{ totalTokens }}
           </small>
         </div>
       </div>
@@ -265,9 +425,20 @@ export default {
       chatHeight: '40%',
       chatCollapsed: false,
       messages: [],
+      editHistory: [],
       isLoading: false,
+      isEditMode: false,  // 質問モード/編集モード切り替え
       totalTokens: 0,
       highlightedText: null
+    }
+  },
+
+  computed: {
+    questionCount() {
+      return this.messages.filter(m => m.intent === 'question').length
+    },
+    editCount() {
+      return this.messages.filter(m => m.intent === 'edit_request').length
     }
   },
   
@@ -294,6 +465,101 @@ export default {
       setTimeout(() => {
         this.highlightedText = null
       }, 3000)
+    },
+
+    async handleSendMessage(message) {
+      const intent = this.isEditMode ? 'edit_request' : 'question'
+      
+      try {
+        this.isLoading = true
+        
+        // メッセージ送信
+        const response = await this.sendChatMessage(message, intent)
+        
+        if (intent === 'edit_request' && response.edit_actions.length > 0) {
+          // 編集確認ダイアログ表示
+          const confirmed = await this.confirmEdit(response.edit_actions)
+          if (confirmed) {
+            await this.executeEdit(response.message_id, response.edit_actions)
+          }
+        }
+      } catch (error) {
+        console.error('Chat message error:', error)
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async confirmEdit(editActions) {
+      return new Promise((resolve) => {
+        this.$confirm.require({
+          message: `以下の編集を実行しますか？\n${editActions.map(a => a.description).join('\n')}`,
+          header: '編集確認',
+          acceptLabel: '実行',
+          rejectLabel: 'キャンセル',
+          accept: () => resolve(true),
+          reject: () => resolve(false)
+        })
+      })
+    },
+
+    async executeEdit(messageId, editActions) {
+      try {
+        const response = await this.editMinutes(messageId, editActions)
+        
+        // 編集履歴に追加
+        this.editHistory.unshift({
+          edit_id: response.edit_id,
+          changes_summary: response.changes_summary,
+          timestamp: new Date(),
+          reverted: false
+        })
+        
+        // 議事録コンテンツを更新
+        this.$emit('minutes-updated', response.updated_minutes)
+        
+        this.$toast.add({
+          severity: 'success',
+          summary: '編集完了',
+          detail: `${response.changes_summary.length}件の変更を適用しました`,
+          life: 3000
+        })
+      } catch (error) {
+        this.$toast.add({
+          severity: 'error',
+          summary: '編集エラー',
+          detail: error.message,
+          life: 5000
+        })
+      }
+    },
+
+    async revertEdit(editId) {
+      try {
+        const response = await this.revertMinutesEdit(editId)
+        
+        // 編集履歴を更新
+        const editIndex = this.editHistory.findIndex(e => e.edit_id === editId)
+        if (editIndex !== -1) {
+          this.editHistory[editIndex].reverted = true
+        }
+        
+        // 議事録コンテンツを更新
+        this.$emit('minutes-updated', response.reverted_minutes)
+        
+        this.$toast.add({
+          severity: 'info',
+          summary: '編集を取り消しました',
+          life: 3000
+        })
+      } catch (error) {
+        this.$toast.add({
+          severity: 'error',
+          summary: '取り消しエラー',
+          detail: error.message,
+          life: 5000
+        })
+      }
     }
   }
 }
@@ -472,31 +738,63 @@ export default {
 ## 実装フェーズ
 
 ### フェーズ1: 基本機能（2週間）
+
 - [ ] バックエンドAPI実装
 - [ ] フロントエンドチャットUI
 - [ ] 基本的な質問応答機能
 
-### フェーズ2: 機能拡張（1週間）
+### フェーズ2: 編集機能実装（2週間）
+
+- [ ] 編集インテント解析機能
+- [ ] 議事録編集API実装
+- [ ] 編集モード切り替えUI
+- [ ] 編集確認ダイアログ
+- [ ] リアルタイム議事録更新
+
+### フェーズ3: 高度な編集機能（1週間）
+
+- [ ] 編集履歴管理
+- [ ] 編集取り消し機能
+- [ ] 複雑な編集パターン対応
+- [ ] アクションアイテム構造化編集
+
+### フェーズ4: 機能拡張（1週間）
+
 - [ ] 引用機能
 - [ ] チャット履歴保存
 - [ ] セッション管理
+- [ ] バッチ編集機能
 
-### フェーズ3: 改善・最適化（1週間）
+### フェーズ5: 改善・最適化（1週間）
+
 - [ ] UI/UX改善
 - [ ] パフォーマンス最適化
 - [ ] エラーハンドリング強化
+- [ ] 編集精度向上
 
-### フェーズ4: 監視・運用（継続）
+### フェーズ6: 監視・運用（継続）
+
 - [ ] ログ・監視体制
 - [ ] フィードバック収集
 - [ ] 継続改善
+- [ ] 編集パターン学習
 
 ## 成功指標
+
+### 質問応答機能
 
 1. **利用率**: 議事録閲覧者の30%以上がチャット機能を利用
 2. **満足度**: ユーザー評価4.0/5.0以上
 3. **効率性**: 平均応答時間3秒以下
 4. **精度**: 引用の関連性90%以上
+
+### 編集機能
+
+1. **編集利用率**: チャット利用者の50%以上が編集機能を使用
+2. **編集精度**: 編集インテント解析精度95%以上
+3. **編集完了率**: 提案された編集の80%以上が実行される
+4. **エラー率**: 編集実行時のエラー率5%以下
+5. **時間削減**: 手動編集と比較して70%の時間短縮
 
 ## リスク・課題
 
@@ -512,7 +810,23 @@ export default {
 
 ## 将来拡張
 
-1. **音声入力**: 音声での質問機能
-2. **多言語対応**: 英語議事録への対応
-3. **学習機能**: ユーザーフィードバックからの改善
-4. **統合**: 他のツール（Slack、Teams）との連携
+### 編集機能の高度化
+
+1. **音声入力編集**: 音声での編集指示機能
+2. **バッチ編集**: 複数の議事録への一括編集適用
+3. **テンプレート編集**: よく使う編集パターンのテンプレート化
+4. **AI学習**: ユーザーの編集パターン学習による提案精度向上
+
+### 他機能との連携
+
+1. **多言語対応**: 英語議事録への編集対応
+2. **バージョン管理**: Git風の編集履歴・ブランチ機能
+3. **協調編集**: 複数人での同時編集・コメント機能
+4. **統合**: 他のツール（Slack、Teams）との編集連携
+
+### 高度なAI機能
+
+1. **予測編集**: 内容から必要な編集を自動提案
+2. **品質チェック**: 編集後の議事録品質自動評価
+3. **カスタムルール**: 組織固有の編集ルール学習
+4. **自動リライト**: 読みやすさ向上のための自動文章改善

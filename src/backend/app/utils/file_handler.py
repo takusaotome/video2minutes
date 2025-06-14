@@ -24,8 +24,8 @@ class FileHandler:
         return task_id
 
     @staticmethod
-    def validate_video_file(file: UploadFile) -> None:
-        """動画ファイルのバリデーション"""
+    def validate_media_file(file: UploadFile) -> str:
+        """動画・音声ファイルのバリデーション"""
         logger = get_logger(__name__)
         logger.debug(f"ファイルバリデーション開始: {file.filename}")
 
@@ -37,15 +37,19 @@ class FileHandler:
 
         # ファイル拡張子チェック
         file_ext = Path(file.filename).suffix.lower()
-        if file_ext not in settings.allowed_video_extensions:
+        allowed_extensions = settings.allowed_video_extensions + settings.allowed_audio_extensions
+        
+        if file_ext not in allowed_extensions:
             logger.warning(
                 f"サポートされていないファイル形式: {file_ext} - {file.filename}"
             )
+            video_exts = ', '.join(settings.allowed_video_extensions)
+            audio_exts = ', '.join(settings.allowed_audio_extensions)
             raise HTTPException(
                 status_code=400,
-                detail=f"サポートされていないファイル形式です。対応形式: {', '.join(settings.allowed_video_extensions)}",
+                detail=f"サポートされていないファイル形式です。\n対応動画形式: {video_exts}\n対応音声形式: {audio_exts}",
             )
-
+        
         # ファイルサイズチェック（ここではContent-Lengthヘッダーをチェック）
         if hasattr(file, "size") and file.size and file.size > settings.max_file_size:
             file_size_gb = file.size / (1024 * 1024 * 1024)
@@ -57,6 +61,12 @@ class FileHandler:
                 status_code=413,
                 detail=f"ファイルサイズが上限（{max_size_gb:.1f}GB）を超えています。現在のファイルサイズ: {file_size_gb:.2f}GB",
             )
+        
+        # ファイルタイプを判定して返す
+        if file_ext in settings.allowed_video_extensions:
+            return "video"
+        else:
+            return "audio"
 
     @staticmethod
     async def save_uploaded_file(file: UploadFile, task_id: str) -> tuple[str, int]:
@@ -106,8 +116,9 @@ class FileHandler:
     @staticmethod
     def cleanup_files(task_id: str) -> None:
         """タスクに関連するファイルを削除"""
-        # アップロードファイル
-        for ext in settings.allowed_video_extensions:
+        # アップロードファイル（動画・音声両方）
+        all_extensions = settings.allowed_video_extensions + settings.allowed_audio_extensions
+        for ext in all_extensions:
             upload_path = os.path.join(settings.upload_dir, f"{task_id}{ext}")
             if os.path.exists(upload_path):
                 os.remove(upload_path)
@@ -124,10 +135,25 @@ class FileHandler:
     @staticmethod
     def get_file_path(task_id: str) -> Optional[str]:
         """タスクIDからファイルパスを取得"""
-        for ext in settings.allowed_video_extensions:
+        all_extensions = settings.allowed_video_extensions + settings.allowed_audio_extensions
+        for ext in all_extensions:
             file_path = os.path.join(settings.upload_dir, f"{task_id}{ext}")
             if os.path.exists(file_path):
                 return file_path
+        return None
+
+    @staticmethod
+    def get_file_type(task_id: str) -> Optional[str]:
+        """タスクIDからファイルタイプを取得"""
+        file_path = FileHandler.get_file_path(task_id)
+        if not file_path:
+            return None
+        
+        file_ext = Path(file_path).suffix.lower()
+        if file_ext in settings.allowed_video_extensions:
+            return "video"
+        elif file_ext in settings.allowed_audio_extensions:
+            return "audio"
         return None
 
     @staticmethod
