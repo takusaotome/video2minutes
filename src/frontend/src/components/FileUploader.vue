@@ -634,8 +634,8 @@ export default {
 
 /* Header Section */
 .upload-header {
-  padding: 16px 20px 12px 20px;
-  margin: -20px -20px 16px -20px;
+  padding: 20px 20px 16px 20px;
+  margin: 0 -20px 16px -20px;
   background: linear-gradient(
     135deg,
     var(--primary-700) 0%,
@@ -1659,6 +1659,10 @@ export default {
   border: 1px solid var(--gray-200);
   background: white;
   transition: all var(--transition-normal);
+}
+
+.file-uploader :deep(.p-card-body) {
+  padding: 0;
 }
 
 .file-uploader :deep(.p-card-title) {

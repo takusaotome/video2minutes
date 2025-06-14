@@ -1179,12 +1179,11 @@ ${'-'.repeat(50)}
   justify-content: space-between;
   align-items: flex-start;
   gap: 32px;
-  margin: 0 -24px 32px -24px;
+  margin: 0 24px 32px 24px;
   padding: 32px;
   background: linear-gradient(135deg, white 0%, var(--gray-50) 100%);
-  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  border-radius: var(--radius-xl);
   border: 2px solid var(--gray-200);
-  border-top: none;
   box-shadow: var(--shadow-lg);
   position: relative;
   overflow: hidden;
@@ -1270,7 +1269,7 @@ ${'-'.repeat(50)}
   grid-template-columns: 35% 65%;
   gap: 24px;
   position: relative;
-  padding: 0 24px;
+  padding: 0;
   align-items: start;
   width: 100%;
   max-width: 100%;
@@ -1284,6 +1283,19 @@ ${'-'.repeat(50)}
   height: fit-content;
   max-height: calc(100vh - 200px);
   width: 100%;
+  margin-top: 0;
+  padding-left: 24px;
+}
+
+.transcript-sidebar :deep(.p-card) {
+  margin-top: 0;
+}
+
+.transcript-sidebar :deep(.p-card-title) {
+  padding: 20px 24px;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
 }
 
 .mobile-overlay {
@@ -1310,6 +1322,7 @@ ${'-'.repeat(50)}
   width: 100%;
   height: fit-content;
   box-sizing: border-box;
+  margin-top: 0;
 }
 
 .transcript-card :deep(.p-card) {
@@ -1332,6 +1345,7 @@ ${'-'.repeat(50)}
   color: var(--gray-800);
   font-weight: 600;
   position: relative;
+  width: 100%;
 }
 
 .transcript-header i {
@@ -1373,6 +1387,8 @@ ${'-'.repeat(50)}
   display: flex;
   flex-direction: column;
   gap: 24px;
+  margin-top: 0;
+  padding-right: 24px;
 }
 
 /* 会議詳細カードと議事録カードの統一スタイル */
@@ -1407,6 +1423,14 @@ ${'-'.repeat(50)}
 .meeting-details-card :deep(.p-card) {
   background: #f0f7ff;
   border: 1px solid rgba(99, 102, 241, 0.1);
+  margin-top: 0;
+}
+
+.meeting-details-card :deep(.p-card-title) {
+  padding: 20px 24px;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
 }
 
 /* 議事録カード固有のスタイル */
@@ -1538,6 +1562,7 @@ ${'-'.repeat(50)}
   font-size: 1.2rem;
   color: var(--gray-800);
   font-weight: 600;
+  width: 100%;
 }
 
 .header-title {
@@ -1636,11 +1661,20 @@ ${'-'.repeat(50)}
   .content-layout {
     grid-template-columns: 40% 60%;
     gap: 20px;
-    padding: 0 16px;
+    padding: 0;
+  }
+  
+  .transcript-sidebar {
+    padding-left: 16px;
   }
   
   .minutes-main {
     gap: 20px;
+    padding-right: 16px;
+  }
+  
+  .minutes-header {
+    margin: 0 16px 32px 16px;
   }
 }
 
@@ -1650,12 +1684,21 @@ ${'-'.repeat(50)}
     gap: 16px;
   }
 
+  .transcript-sidebar {
+    padding-left: 16px;
+  }
+
   .transcript-scroll {
     height: 350px;
   }
   
   .minutes-main {
     gap: 16px;
+    padding-right: 16px;
+  }
+  
+  .minutes-header {
+    margin: 0 16px 32px 16px;
   }
 }
 
@@ -1665,7 +1708,7 @@ ${'-'.repeat(50)}
     align-items: stretch;
     gap: 1rem;
     padding: 20px;
-    margin-bottom: 20px;
+    margin: 0 16px 20px 16px;
   }
 
   .header-actions {
@@ -1674,13 +1717,20 @@ ${'-'.repeat(50)}
 
   .content-layout {
     display: block;
-    padding: 0 16px;
+    padding: 0;
   }
 
   .transcript-sidebar {
     position: static;
     max-height: none;
     margin-bottom: 20px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  .minutes-main {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .minutes-title {

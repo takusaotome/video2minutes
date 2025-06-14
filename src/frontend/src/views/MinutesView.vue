@@ -410,12 +410,11 @@ export default {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-5) 0;
+  padding: var(--space-6);
+  margin: 0 24px var(--space-6) 24px;
   border-bottom: 2px solid var(--gray-200);
-  margin-bottom: var(--space-6);
   background: white;
   border-radius: var(--radius-lg);
-  padding: var(--space-6);
   box-shadow: var(--shadow-sm);
 }
 
@@ -450,7 +449,7 @@ export default {
 }
 
 .task-banner {
-  margin-bottom: var(--space-6);
+  margin: 0 24px var(--space-6) 24px;
   animation: slideUp 0.6s ease-out 0.1s both;
 }
 
@@ -636,6 +635,11 @@ export default {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+    margin: 0 16px var(--space-6) 16px;
+  }
+
+  .task-banner {
+    margin: 0 16px var(--space-6) 16px;
   }
 
   .task-info {
