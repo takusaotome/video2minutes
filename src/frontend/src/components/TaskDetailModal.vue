@@ -535,23 +535,23 @@ export default {
 
 .filename {
   font-weight: 500;
-  color: #495057;
+  color: var(--gray-550);
   word-break: break-all;
 }
 
 .progress-section h3 {
   margin: 0 0 1.5rem 0;
-  color: #374151;
+  color: var(--gray-700);
   font-size: 1.2rem;
   font-weight: 600;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--gray-200);
   padding-bottom: 0.5rem;
 }
 
 .overall-progress {
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f4 100%);
+  background: linear-gradient(135deg, var(--gray-600-light) 0%, var(--gray-625-light) 100%);
   border-radius: 12px;
   border: 1px solid #e9ecef;
 }
@@ -643,7 +643,7 @@ export default {
 
 .step-header h4 {
   margin: 0;
-  color: #495057;
+  color: var(--gray-550);
   font-size: 1rem;
 }
 
@@ -673,12 +673,12 @@ export default {
 .eta {
   display: block;
   margin-top: 0.25rem;
-  color: #6c757d;
+  color: var(--gray-650);
 }
 
 .step-duration {
   font-size: 0.9rem;
-  color: #6c757d;
+  color: var(--gray-650);
   margin-top: 0.5rem;
 }
 
@@ -693,7 +693,7 @@ export default {
 
 .error-section h3 {
   margin: 0 0 1rem 0;
-  color: #495057;
+  color: var(--gray-550);
   font-size: 1.1rem;
 }
 
@@ -719,7 +719,7 @@ export default {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--gray-600-light);
   border-radius: 8px;
 }
 

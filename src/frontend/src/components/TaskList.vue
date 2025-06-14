@@ -457,7 +457,7 @@ export default {
   align-items: center;
   gap: 0.5rem;
   font-size: 1.25rem;
-  color: #495057;
+  color: var(--gray-550);
 }
 
 .refresh-btn {
@@ -475,7 +475,7 @@ export default {
   gap: 1rem;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--gray-600-light);
   border-radius: 8px;
 }
 
@@ -487,7 +487,7 @@ export default {
 
 .stat-count {
   font-weight: 600;
-  color: #495057;
+  color: var(--gray-550);
 }
 
 .loading-state {
@@ -504,13 +504,13 @@ export default {
   align-items: center;
   gap: 0.5rem;
   padding: 2rem;
-  color: #6c757d;
+  color: var(--gray-650);
 }
 
 .empty-state {
   text-align: center;
   padding: 3rem;
-  color: #6c757d;
+  color: var(--gray-650);
 }
 
 .empty-icon {
@@ -521,7 +521,7 @@ export default {
 
 .empty-state h3 {
   margin: 0 0 0.5rem 0;
-  color: #495057;
+  color: var(--gray-550);
 }
 
 .task-table {
@@ -536,7 +536,7 @@ export default {
 
 .file-icon {
   font-size: 1.5rem;
-  color: #6366f1;
+  color: var(--primary-500);
   flex-shrink: 0;
 }
 
@@ -549,7 +549,7 @@ export default {
 
 .filename {
   font-weight: 500;
-  color: #495057;
+  color: var(--gray-550);
   word-break: break-all;
 }
 
@@ -628,7 +628,7 @@ export default {
 
 :deep(.task-progress .p-progressbar) {
   border-radius: 4px;
-  background: #e5e7eb;
+  background: var(--gray-200);
 }
 
 .eta {
@@ -645,7 +645,7 @@ export default {
 
 .date {
   font-weight: 500;
-  color: #495057;
+  color: var(--gray-550);
 }
 
 .time {
@@ -759,19 +759,19 @@ export default {
   padding: 1rem 0.75rem;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #374151;
-  background: #f8f9fa;
-  border-bottom: 2px solid #e5e7eb;
+  color: var(--gray-700);
+  background: var(--gray-600-light);
+  border-bottom: 2px solid var(--gray-200);
 }
 
 :deep(.task-table .p-datatable-tbody > tr > td) {
   padding: 1rem 0.75rem;
   vertical-align: top;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--gray-200);
 }
 
 :deep(.task-table .p-datatable-tbody > tr:hover) {
-  background: #f8f9fa;
+  background: var(--gray-600-light);
 }
 
 /* Column widths */
