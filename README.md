@@ -104,7 +104,7 @@ npm run dev
 
 ## 📄 ライセンス
 
-MIT License
+MIT Licenseの下で配布されています。[LICENSE](LICENSE)をご確認ください.
 
 ## 📞 サポート・問い合わせ
 
