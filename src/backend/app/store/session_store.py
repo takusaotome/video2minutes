@@ -9,13 +9,28 @@ logger = get_logger(__name__)
 
 
 class SessionTaskStore:
-    """セッション単位でタスクを管理するストア"""
+    """セッション単位でタスクを管理するストア（永続化対応）"""
 
-    def __init__(self):
+    def __init__(self, enable_persistence: bool = True):
         # session_id -> {task_id -> MinutesTask}
         self._sessions: Dict[str, Dict[str, MinutesTask]] = {}
         # セッションの最終アクセス時刻を記録
         self._session_last_access: Dict[str, datetime] = {}
+        
+        # 永続化設定
+        self._enable_persistence = enable_persistence
+        self._persistent_store = None
+        
+        if enable_persistence:
+            try:
+                from app.store.persistent_store import persistent_store
+                self._persistent_store = persistent_store
+                # 起動時に永続化データを復元
+                self._restore_from_persistence()
+                logger.info("永続化ストアとの連携を開始")
+            except Exception as e:
+                logger.warning(f"永続化ストアの初期化に失敗（メモリモードで継続）: {e}")
+                self._enable_persistence = False
 
     def get_tasks(self, session_id: str) -> List[MinutesTask]:
         """
@@ -66,6 +81,13 @@ class SessionTaskStore:
         self._sessions[session_id][task.task_id] = task
         self._update_last_access(session_id)
         
+        # 永続化
+        if self._enable_persistence and self._persistent_store:
+            try:
+                self._persistent_store.add_task(session_id, task)
+            except Exception as e:
+                logger.warning(f"タスクの永続化に失敗: {e}")
+        
         logger.info(f"タスクを追加: {session_id[:8]}... -> {task.task_id[:8]}... ({task.video_filename})")
 
     def update_task(self, session_id: str, task: MinutesTask) -> None:
@@ -82,6 +104,13 @@ class SessionTaskStore:
 
         self._sessions[session_id][task.task_id] = task
         self._update_last_access(session_id)
+        
+        # 永続化
+        if self._enable_persistence and self._persistent_store:
+            try:
+                self._persistent_store.update_task(session_id, task)
+            except Exception as e:
+                logger.warning(f"タスクの永続化更新に失敗: {e}")
         
         logger.debug(f"タスクを更新: {session_id[:8]}... -> {task.task_id[:8]}... (status: {task.status})")
 
@@ -102,6 +131,13 @@ class SessionTaskStore:
 
         del self._sessions[session_id][task_id]
         self._update_last_access(session_id)
+        
+        # 永続化から削除
+        if self._enable_persistence and self._persistent_store:
+            try:
+                self._persistent_store.delete_task(session_id, task_id)
+            except Exception as e:
+                logger.warning(f"タスクの永続化削除に失敗: {e}")
         
         # セッションが空になった場合は削除
         if not self._sessions[session_id]:
@@ -202,6 +238,35 @@ class SessionTaskStore:
             })
         
         return stats
+
+    def _restore_from_persistence(self) -> None:
+        """永続化ストアからデータを復元"""
+        if not self._persistent_store:
+            return
+            
+        try:
+            # 全タスクを取得
+            all_tasks = self._persistent_store.get_all_tasks()
+            
+            # 各タスクをセッションごとに分類
+            restored_count = 0
+            for task_id, task in all_tasks.items():
+                # タスクに関連するセッションを見つける
+                for session_id in self._persistent_store._sessions_cache:
+                    if task_id in self._persistent_store._sessions_cache[session_id]:
+                        # メモリキャッシュに復元
+                        if session_id not in self._sessions:
+                            self._sessions[session_id] = {}
+                        self._sessions[session_id][task_id] = task
+                        self._update_last_access(session_id)
+                        restored_count += 1
+                        break
+                        
+            if restored_count > 0:
+                logger.info(f"永続化ストアから{restored_count}件のタスクを復元")
+                
+        except Exception as e:
+            logger.error(f"永続化データの復元に失敗: {e}", exc_info=True)
 
 
 # グローバルなセッションタスクストアインスタンス

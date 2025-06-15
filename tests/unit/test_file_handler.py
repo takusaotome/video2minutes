@@ -32,9 +32,10 @@ class TestFileHandler:
 
         # 例外が発生しないことを確認
         try:
-            FileHandler.validate_video_file(mock_file)
+            result = FileHandler.validate_media_file(mock_file)
+            assert result == "video"
         except HTTPException:
-            pytest.fail("validate_video_file raised HTTPException unexpectedly")
+            pytest.fail("validate_media_file raised HTTPException unexpectedly")
 
     def test_validate_video_file_no_filename(self):
         """ファイル名なしバリデーションテスト"""
@@ -42,7 +43,7 @@ class TestFileHandler:
         mock_file.filename = None
 
         with pytest.raises(HTTPException) as exc_info:
-            FileHandler.validate_video_file(mock_file)
+            FileHandler.validate_media_file(mock_file)
 
         assert exc_info.value.status_code == 400
         assert "ファイル名が指定されていません" in str(exc_info.value.detail)
@@ -53,7 +54,7 @@ class TestFileHandler:
         mock_file.filename = "test_file.txt"
 
         with pytest.raises(HTTPException) as exc_info:
-            FileHandler.validate_video_file(mock_file)
+            FileHandler.validate_media_file(mock_file)
 
         assert exc_info.value.status_code == 400
         assert "サポートされていないファイル形式" in str(exc_info.value.detail)
@@ -65,7 +66,7 @@ class TestFileHandler:
         mock_file.size = settings.max_file_size + 1
 
         with pytest.raises(HTTPException) as exc_info:
-            FileHandler.validate_video_file(mock_file)
+            FileHandler.validate_media_file(mock_file)
 
         assert exc_info.value.status_code == 413
         assert "ファイルサイズが上限" in str(exc_info.value.detail)

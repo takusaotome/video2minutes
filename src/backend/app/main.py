@@ -109,6 +109,7 @@ def create_app() -> FastAPI:
     # 必要なディレクトリを作成
     os.makedirs(settings.upload_dir, exist_ok=True)
     os.makedirs(settings.temp_dir, exist_ok=True)
+    os.makedirs("storage", exist_ok=True)  # 永続化ストレージ用
 
     logger.info("アプリケーション初期化完了")
     logger.info(f"アップロードディレクトリ: {settings.upload_dir}")

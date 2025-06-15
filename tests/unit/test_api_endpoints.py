@@ -66,7 +66,7 @@ class TestMinutesEndpoints:
             # バリデーションエラーを発生させる
             from fastapi import HTTPException
 
-            mock_file_handler.validate_video_file.side_effect = HTTPException(
+            mock_file_handler.validate_media_file.side_effect = HTTPException(
                 status_code=400, detail="サポートされていないファイル形式です"
             )
 
@@ -347,6 +347,8 @@ class TestBroadcastFunctions:
             message = json.loads(call_args)
             assert message["type"] == "progress_update"
             assert message["task_id"] == task_id
+            assert "steps" in message
+            assert isinstance(message["steps"], list)
 
     @pytest.mark.asyncio
     async def test_broadcast_task_completed(self, sample_task):
@@ -396,4 +398,6 @@ class TestBroadcastFunctions:
             message = json.loads(call_args)
             assert message["type"] == "task_failed"
             assert message["task_id"] == task_id
-            assert message["data"]["error_message"] == error_message
+            assert message["error_message"] == error_message
+            assert "steps" in message
+            assert isinstance(message["steps"], list)

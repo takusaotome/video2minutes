@@ -398,20 +398,24 @@ export default {
 
     const formatDate = timestamp => {
       if (!timestamp) return ''
+      // UTC文字列をローカルタイムゾーンに変換
       const date = new Date(timestamp)
       return date.toLocaleDateString('ja-JP', {
         year: 'numeric',
         month: '2-digit',
-        day: '2-digit'
+        day: '2-digit',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
       })
     }
 
     const formatTime = timestamp => {
       if (!timestamp) return ''
+      // UTC文字列をローカルタイムゾーンに変換
       const date = new Date(timestamp)
       return date.toLocaleTimeString('ja-JP', {
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
       })
     }
 

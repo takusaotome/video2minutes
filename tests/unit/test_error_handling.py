@@ -21,7 +21,7 @@ class TestErrorHandling:
         mock_file.size = 1024
 
         with pytest.raises(HTTPException) as exc_info:
-            FileHandler.validate_video_file(mock_file)
+            FileHandler.validate_media_file(mock_file)
 
         assert exc_info.value.status_code == 400
         assert "サポートされていないファイル形式" in str(exc_info.value.detail)
@@ -32,7 +32,7 @@ class TestErrorHandling:
         mock_file.filename = None
 
         with pytest.raises(HTTPException) as exc_info:
-            FileHandler.validate_video_file(mock_file)
+            FileHandler.validate_media_file(mock_file)
 
         assert exc_info.value.status_code == 400
         assert "ファイル名が指定されていません" in str(exc_info.value.detail)
@@ -44,7 +44,7 @@ class TestErrorHandling:
         mock_file.size = 6 * 1024 * 1024 * 1024  # 6GB (5GB上限超過)
 
         with pytest.raises(HTTPException) as exc_info:
-            FileHandler.validate_video_file(mock_file)
+            FileHandler.validate_media_file(mock_file)
 
         assert exc_info.value.status_code == 413
         assert "ファイルサイズが上限" in str(exc_info.value.detail)

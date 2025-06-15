@@ -29,6 +29,7 @@ from app.services.video_processor import VideoProcessor
 from app.utils.file_handler import FileHandler
 from app.store import tasks_store
 from app.store.session_store import session_task_store
+from app.store.persistent_store import persistent_store
 from app.utils.session_manager import SessionManager
 from app.utils.logger import get_logger
 
@@ -82,6 +83,12 @@ async def upload_media(request: Request, file: UploadFile = File(...)) -> Upload
         session_task_store.add_task(session_id, task)
         # 下位互換性のため従来のタスクストアにも保存
         tasks_store[task_id] = task
+        # 永続化ストアにも直接保存（二重保存防止のためtry-catchで囲む）
+        try:
+            if task_id not in persistent_store.get_all_tasks():
+                persistent_store.add_task(session_id, task)
+        except Exception as e:
+            logger.warning(f"従来タスクストアからの永続化追加に失敗: {e}")
 
         logger.info(f"タスク作成完了: {task_id} - {file.filename} (セッション: {session_id[:8]}...)")
 
@@ -274,6 +281,94 @@ async def delete_task(request: Request, task_id: str) -> JSONResponse:
         )
 
 
+@router.post("/{task_id}/retry")
+async def retry_task(request: Request, task_id: str) -> JSONResponse:
+    """失敗したタスクを再実行"""
+    session_id = SessionManager.get_session_id(request)
+    logger.info(f"タスク再実行要求: {task_id} (セッション: {session_id[:8]}...)")
+
+    # まずセッションストアから検索
+    task = session_task_store.get_task(session_id, task_id)
+    
+    # セッションストアで見つからない場合は、従来のタスクストアから検索（下位互換性）
+    if not task:
+        logger.debug(f"セッションストアで見つからないため、従来のタスクストアを検索: {task_id}")
+        task = tasks_store.get(task_id)
+        if task:
+            logger.info(f"従来のタスクストアからタスクを発見、セッションに移行: {task_id} -> セッション: {session_id[:8]}...")
+            # セッションストアに移行
+            session_task_store.add_task(session_id, task)
+    
+    if not task:
+        logger.warning(f"再実行対象のタスクが見つかりません: {task_id} (セッション: {session_id[:8]}...)")
+        raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
+
+    # 失敗したタスクのみ再実行可能
+    if task.status != TaskStatus.FAILED:
+        logger.warning(f"失敗していないタスクは再実行できません: {task_id} (現在のステータス: {task.status})")
+        raise HTTPException(status_code=400, detail="失敗したタスクのみ再実行できます")
+
+    try:
+        # タスクを初期状態にリセット
+        task.status = TaskStatus.QUEUED
+        task.error_message = None
+        task.current_step = None
+        task.overall_progress = 0
+        task.transcription = None
+        task.minutes = None
+        
+        # すべてのステップをリセット
+        task.steps = []
+        
+        # アップロード完了をマーク（ファイルは既に存在するため）
+        task.update_step_status(
+            ProcessingStepName.UPLOAD, ProcessingStepStatus.COMPLETED, 100
+        )
+
+        # セッションベースタスクストアを更新
+        session_task_store.update_task(session_id, task)
+        # 下位互換性のため従来のタスクストアも更新
+        tasks_store[task_id] = task
+
+        logger.info(f"タスクリセット完了: {task_id} (セッション: {session_id[:8]}...)")
+
+        # タスクキューに再追加
+        from app.services.task_queue import get_task_queue
+
+        queue = get_task_queue()
+        
+        # ファイルの種類を判定（ファイル名から）
+        if task.video_filename:
+            video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm']
+            is_video = any(task.video_filename.lower().endswith(ext) for ext in video_extensions)
+            
+            if is_video:
+                queue_id = await queue.add_task(task_id, process_video_task, task_id)
+                logger.info(f"動画タスクとしてキューに再追加: {task_id} (キューID: {queue_id})")
+            else:
+                queue_id = await queue.add_task(task_id, process_audio_task, task_id)
+                logger.info(f"音声タスクとしてキューに再追加: {task_id} (キューID: {queue_id})")
+        else:
+            # ファイル名が不明な場合はデフォルトで動画処理
+            queue_id = await queue.add_task(task_id, process_video_task, task_id)
+            logger.info(f"デフォルト（動画）タスクとしてキューに再追加: {task_id} (キューID: {queue_id})")
+
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "message": f"タスク {task_id} の再実行を開始しました",
+                "task_id": task_id,
+                "status": task.status.value
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"タスク再実行エラー: {task_id} - {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail=f"タスクの再実行中にエラーが発生しました: {str(e)}"
+        )
+
+
 @router.websocket("/ws/{task_id}")
 async def websocket_endpoint(websocket: WebSocket, task_id: str):
     """WebSocket接続でリアルタイム進捗を配信"""
@@ -332,6 +427,17 @@ async def process_video_task(task_id: str) -> None:
         
         # セッションストアにない場合でも従来のタスクストアは更新
         tasks_store[task_id] = task
+        
+        # 永続化ストアも更新
+        try:
+            # どのセッションにタスクが属するかを特定
+            for session_id in persistent_store._sessions_cache:
+                if task_id in persistent_store._sessions_cache[session_id]:
+                    persistent_store.update_task(session_id, task)
+                    break
+        except Exception as e:
+            logger.warning(f"プロセス中の永続化更新に失敗: {e}")
+        
         return updated
 
     try:
@@ -436,6 +542,17 @@ async def process_audio_task(task_id: str) -> None:
         
         # セッションストアにない場合でも従来のタスクストアは更新
         tasks_store[task_id] = task
+        
+        # 永続化ストアも更新
+        try:
+            # どのセッションにタスクが属するかを特定
+            for session_id in persistent_store._sessions_cache:
+                if task_id in persistent_store._sessions_cache[session_id]:
+                    persistent_store.update_task(session_id, task)
+                    break
+        except Exception as e:
+            logger.warning(f"プロセス中の永続化更新に失敗: {e}")
+        
         return updated
 
     try:
@@ -529,14 +646,15 @@ async def broadcast_progress_update(task_id: str, task: MinutesTask):
             "status": task.status.value,
             "current_step": task.current_step.value if task.current_step else None,
             "overall_progress": task.overall_progress,
-            "steps": {
-                step_name.value: {
-                    "status": step_info.status.value,
-                    "progress": step_info.progress,
-                    "error_message": step_info.error_message,
+            "steps": [
+                {
+                    "name": step.name.value,
+                    "status": step.status.value,
+                    "progress": step.progress,
+                    "error_message": step.error_message,
                 }
-                for step_name, step_info in task.steps.items()
-            },
+                for step in task.steps
+            ],
         }
 
         # 切断された接続を追跡
@@ -597,14 +715,15 @@ async def broadcast_task_failed(task_id: str, task: MinutesTask, error_message: 
             "task_id": task_id,
             "status": task.status.value,
             "error_message": error_message,
-            "steps": {
-                step_name.value: {
-                    "status": step_info.status.value,
-                    "progress": step_info.progress,
-                    "error_message": step_info.error_message,
+            "steps": [
+                {
+                    "name": step.name.value,
+                    "status": step.status.value,
+                    "progress": step.progress,
+                    "error_message": step.error_message,
                 }
-                for step_name, step_info in task.steps.items()
-            },
+                for step in task.steps
+            ],
         }
 
         # 切断された接続を追跡

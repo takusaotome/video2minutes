@@ -465,6 +465,7 @@ export default {
 
     const formatDate = timestamp => {
       if (!timestamp) return '作成日時未設定'
+      // UTC文字列をローカルタイムゾーンに変換
       const date = new Date(timestamp)
       if (isNaN(date.getTime())) return '日時形式エラー'
       return date.toLocaleString('ja-JP', {
@@ -472,7 +473,8 @@ export default {
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
       })
     }
 
