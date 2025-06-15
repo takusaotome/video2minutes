@@ -466,8 +466,8 @@ async def regenerate_minutes(request: Request, task_id: str) -> JSONResponse:
                 "video_filename": task.video_filename,
                 "transcription": task.transcription,
                 "minutes": task.minutes,
-                "created_at": task.created_at.isoformat(),
-                "updated_at": task.updated_at.isoformat()
+                "created_at": task.upload_timestamp.isoformat(),
+                "updated_at": TimezoneUtils.now().isoformat()
             }
         )
 
