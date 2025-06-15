@@ -454,7 +454,7 @@ async def regenerate_minutes(request: Request, task_id: str) -> JSONResponse:
         tasks_store[task_id] = task
         
         # 永続ストアも更新
-        await persistent_store.save_task(task)
+        persistent_store.update_task(session_id, task)
 
         logger.info(f"議事録再生成完了: {task_id} (セッション: {session_id[:8]}...)")
 
