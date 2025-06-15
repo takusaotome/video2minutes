@@ -145,10 +145,64 @@ class TestOpenAIService:
             result = await self.openai_service._process_edit_request(
                 self.sample_session, message, chat_history
             )
-            
+
             assert result["response"] == "編集分析結果"
             assert isinstance(result["edit_actions"], list)
             mock_analyze.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_process_question_processing_time(self):
+        """処理時間計測テスト（質問）"""
+        message = "進捗は？"
+        chat_history = []
+
+        mock_prompts = {
+            "get_chat_system_prompt": Mock(return_value="システムプロンプト"),
+            "build_chat_history_context": Mock(return_value="チャット履歴"),
+            "build_user_prompt": Mock(return_value="ユーザープロンプト"),
+        }
+        self.openai_service.prompt_manager = mock_prompts
+
+        with patch.object(self.openai_service, "_call_openai_api") as mock_api:
+            mock_api.return_value = ("回答", [])
+            with patch(
+                "app.services.openai_service.time.time", side_effect=[1.0, 2.0]
+            ):
+                result = await self.openai_service._process_question(
+                    self.sample_session,
+                    message,
+                    chat_history,
+                )
+
+                assert result["processing_time"] == 1.0
+                assert result["processing_time"] > 0
+
+    @pytest.mark.asyncio
+    async def test_process_edit_request_processing_time(self):
+        """処理時間計測テスト（編集）"""
+        message = "修正して"
+        chat_history = []
+
+        mock_prompts = {
+            "get_edit_analysis_prompt": Mock(return_value="編集プロンプト"),
+        }
+        self.openai_service.prompt_manager = mock_prompts
+
+        with patch.object(
+            self.openai_service, "_analyze_edit_intent"
+        ) as mock_analyze:
+            mock_analyze.return_value = ("編集結果", [])
+            with patch(
+                "app.services.openai_service.time.time", side_effect=[5.0, 6.5]
+            ):
+                result = await self.openai_service._process_edit_request(
+                    self.sample_session,
+                    message,
+                    chat_history,
+                )
+
+                assert result["processing_time"] == 1.5
+                assert result["processing_time"] > 0
 
     @pytest.mark.asyncio
     async def test_call_mock_api_question(self):
