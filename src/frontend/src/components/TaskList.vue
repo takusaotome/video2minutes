@@ -72,6 +72,8 @@
           responsiveLayout="scroll"
           class="task-table"
           :rowHover="true"
+          @row-click="handleRowClick"
+          :rowClass="getRowClass"
         >
           <Column
             field="video_filename"
@@ -359,6 +361,33 @@ export default {
       }
     }
 
+    const handleRowClick = (event) => {
+      const task = event.data
+      
+      // 処理中の場合はタスク詳細モーダルを表示
+      if (task.status === 'processing' || task.status === 'pending') {
+        viewDetails(task)
+      }
+      // 完了している場合は議事録詳細画面に遷移
+      else if (task.status === 'completed') {
+        viewMinutes(task)
+      }
+      // 失敗している場合はタスク詳細モーダルを表示
+      else if (task.status === 'failed') {
+        viewDetails(task)
+      }
+    }
+
+    const getRowClass = (data) => {
+      // 完了したタスクのみクリック可能であることを視覚的に示す
+      if (data.status === 'completed') {
+        return 'clickable-row completed-row'
+      } else if (data.status === 'processing' || data.status === 'pending' || data.status === 'failed') {
+        return 'clickable-row processing-row'
+      }
+      return ''
+    }
+
     const getStatusLabel = status => {
       const labels = {
         pending: '待機中',
@@ -416,6 +445,8 @@ export default {
       retryTask,
       deleteTask,
       refreshTasks,
+      handleRowClick,
+      getRowClass,
       getStatusLabel,
       getStatusSeverity,
       getStepLabel,
@@ -756,6 +787,52 @@ export default {
 
 :deep(.task-table .p-datatable-tbody > tr:hover) {
   background: var(--gray-600-light);
+}
+
+/* クリック可能な行のスタイル */
+:deep(.task-table .p-datatable-tbody > tr.clickable-row) {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+:deep(.task-table .p-datatable-tbody > tr.clickable-row:hover) {
+  background: var(--primary-50) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 完了したタスクの行 */
+:deep(.task-table .p-datatable-tbody > tr.completed-row:hover) {
+  background: var(--success-50) !important;
+  border-left: 4px solid var(--success-500);
+}
+
+/* 処理中・待機中・失敗タスクの行 */
+:deep(.task-table .p-datatable-tbody > tr.processing-row:hover) {
+  background: var(--primary-50) !important;
+  border-left: 4px solid var(--primary-500);
+}
+
+/* クリック可能であることを示すヒント */
+:deep(.task-table .p-datatable-tbody > tr.clickable-row::after) {
+  content: '📋';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+:deep(.task-table .p-datatable-tbody > tr.completed-row::after) {
+  content: '📄';
+}
+
+:deep(.task-table .p-datatable-tbody > tr.clickable-row:hover::after) {
+  opacity: 0.7;
 }
 
 /* Column widths */
