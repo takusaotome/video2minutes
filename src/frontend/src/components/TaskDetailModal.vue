@@ -184,6 +184,7 @@ import ProgressBar from 'primevue/progressbar'
 import Badge from 'primevue/badge'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
+import { formatDateTime, formatFileSize, formatDuration } from '@/utils/dateUtils.js'
 
 export default {
   name: 'TaskDetailModal',
@@ -319,27 +320,7 @@ export default {
       return `pi ${step.icon}`
     }
 
-    const formatFileSize = bytes => {
-      if (!bytes) return '0 Bytes'
-      const k = 1024
-      const sizes = ['Bytes', 'KB', 'MB', 'GB']
-      const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-    }
-
-    const formatDateTime = timestamp => {
-      if (!timestamp) return ''
-      // UTC文字列をローカルタイムゾーンに変換
-      const date = new Date(timestamp)
-      return date.toLocaleString('ja-JP', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      })
-    }
+    // 統一された日時フォーマット関数を使用（既にインポート済み）
 
     const calculateTotalDuration = task => {
       if (!task.processing_started || !task.processing_completed) {

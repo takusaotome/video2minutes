@@ -33,6 +33,7 @@ from app.store.session_store import session_task_store
 from app.store.persistent_store import persistent_store
 from app.utils.session_manager import SessionManager
 from app.utils.logger import get_logger
+from app.utils.timezone_utils import TimezoneUtils
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -72,7 +73,7 @@ async def upload_media(request: Request, file: UploadFile = File(...)) -> Upload
             task_id=task_id,
             video_filename=file.filename,
             video_size=file_size,
-            upload_timestamp=datetime.now(),
+            upload_timestamp=TimezoneUtils.now(),
         )
 
         # アップロード完了をマーク
@@ -417,7 +418,8 @@ async def regenerate_minutes(request: Request, task_id: str) -> JSONResponse:
         
         # タスクの議事録を更新
         task.minutes = new_minutes
-        task.updated_at = datetime.utcnow()
+        if hasattr(task, 'updated_at'):
+            task.updated_at = TimezoneUtils.now()
         
         # セッションベースタスクストアを更新
         session_task_store.update_task(session_id, task)

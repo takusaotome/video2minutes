@@ -101,6 +101,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_dir: str = "logs"
     log_format: str = "standard"  # standard, detailed, json
+    
+    # タイムゾーン設定
+    timezone: str = "Asia/Tokyo"  # 日本時間をデフォルトに
 
     class Config:
         env_file = ".env"

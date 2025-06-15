@@ -20,7 +20,7 @@
         <!-- Task Stats -->
         <div v-if="tasks.length > 0" class="task-stats">
           <div class="stat-item">
-            <Badge value="処理中" severity="info" />
+            <Badge value="処理中" severity="warning" />
             <span class="stat-count">{{ taskStats.processing }}</span>
           </div>
           <div class="stat-item">
@@ -250,6 +250,7 @@ import ProgressBar from 'primevue/progressbar'
 import ProgressSpinner from 'primevue/progressspinner'
 import ConfirmDialog from 'primevue/confirmdialog'
 import TaskDetailModal from './TaskDetailModal.vue'
+import { formatDate, formatTime, formatFileSize } from '@/utils/dateUtils.js'
 
 export default {
   name: 'TaskList',
@@ -388,36 +389,7 @@ export default {
       return labels[step] || step
     }
 
-    const formatFileSize = bytes => {
-      if (!bytes) return '0 Bytes'
-      const k = 1024
-      const sizes = ['Bytes', 'KB', 'MB', 'GB']
-      const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-    }
-
-    const formatDate = timestamp => {
-      if (!timestamp) return ''
-      // UTC文字列をローカルタイムゾーンに変換
-      const date = new Date(timestamp)
-      return date.toLocaleDateString('ja-JP', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      })
-    }
-
-    const formatTime = timestamp => {
-      if (!timestamp) return ''
-      // UTC文字列をローカルタイムゾーンに変換
-      const date = new Date(timestamp)
-      return date.toLocaleTimeString('ja-JP', {
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      })
-    }
+    // 統一された日時フォーマット関数は既にインポート済み
 
     // Lifecycle
     onMounted(async () => {
@@ -578,10 +550,18 @@ export default {
   margin-top: 0.25rem;
 }
 
-/* 完了ステータスの色修正 */
+/* ステータスバッジの色修正 */
 :deep(.p-badge.p-badge-success) {
   background-color: var(--success-500) !important;
   color: #ffffff !important;
+}
+
+/* 処理中ステータスを黄色系に統一 */
+:deep(.p-badge.p-badge-warning) {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  border-color: #fbbf24 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2) !important;
 }
 
 :deep(.status-cell .p-badge) {

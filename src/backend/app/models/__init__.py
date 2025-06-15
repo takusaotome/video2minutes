@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 # チャット機能関連のモデルをインポート
 from app.models.chat import (
@@ -108,13 +108,15 @@ class MinutesTask(BaseModel):
                 step.status = status
                 step.progress = progress
                 if status == ProcessingStepStatus.PROCESSING:
-                    step.started_at = datetime.now()
+                    from app.utils.timezone_utils import TimezoneUtils
+                    step.started_at = TimezoneUtils.now()
                     self.current_step = step_name
                 elif status in [
                     ProcessingStepStatus.COMPLETED,
                     ProcessingStepStatus.FAILED,
                 ]:
-                    step.completed_at = datetime.now()
+                    from app.utils.timezone_utils import TimezoneUtils
+                    step.completed_at = TimezoneUtils.now()
                     if status == ProcessingStepStatus.FAILED:
                         step.error_message = error_message
                         self.status = TaskStatus.FAILED

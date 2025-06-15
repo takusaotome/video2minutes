@@ -180,6 +180,7 @@ import Button from 'primevue/button'
 import Badge from 'primevue/badge'
 import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
+import { formatDateTime, formatFileSize } from '@/utils/dateUtils.js'
 
 export default {
   name: 'MinutesView',
@@ -338,27 +339,8 @@ export default {
       return labels[step] || step
     }
 
-    const formatFileSize = bytes => {
-      if (!bytes) return '0 Bytes'
-      const k = 1024
-      const sizes = ['Bytes', 'KB', 'MB', 'GB']
-      const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-    }
-
-    const formatDate = timestamp => {
-      if (!timestamp) return ''
-      // UTC文字列をローカルタイムゾーンに変換
-      const date = new Date(timestamp)
-      return date.toLocaleString('ja-JP', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      })
-    }
+    // 統一された日時フォーマット関数を使用（既にインポート済み）
+    const formatDate = timestamp => formatDateTime(timestamp)
 
     // Watch for task updates in the store
     watch(
