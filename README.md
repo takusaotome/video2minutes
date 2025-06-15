@@ -152,6 +152,17 @@ npm run static-analysis
 
 MIT Licenseの下で配布されています。[LICENSE](LICENSE)をご確認ください.
 
+## 📚 詳細ドキュメント
+- [ドキュメント総合案内](docs/README.md)
+- [セキュリティガイド](docs/SECURITY.md)
+- [デプロイメントセキュリティ設計](docs/DEPLOYMENT_SECURITY.md)
+- [基本設計書](docs/DESIGN.md)
+- [セッション管理設計書](docs/SESSION_MANAGEMENT_DESIGN.md)
+- [議事録チャット機能設計書](docs/CHAT_FEATURE_DESIGN.md)
+- [E2Eテストシナリオ](docs/E2E_TEST_SCENARIOS.md)
+- [Slackメッセージテンプレート](docs/slack-message-template.md)
+- [CONTRIBUTING ガイドライン](CONTRIBUTING.md)
+
 ## 📞 サポート・問い合わせ
 
 - **GitHub**: [takusaotome/video2minutes](https://github.com/takusaotome/video2minutes)
