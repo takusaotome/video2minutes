@@ -129,7 +129,10 @@ async def upload_media(
 
 
 @router.get("/tasks", response_model=TaskListResponse)
-async def get_all_tasks(request: Request) -> TaskListResponse:
+async def get_all_tasks(
+    request: Request,
+    api_key: str = Depends(get_api_key) if settings.auth_enabled else None
+) -> TaskListResponse:
     """現在のセッションのタスク一覧を取得"""
     session_id = SessionManager.get_session_id(request)
     tasks = session_task_store.get_tasks(session_id)
@@ -151,7 +154,11 @@ async def get_queue_status():
 
 
 @router.get("/{task_id}/status", response_model=TaskStatusResponse)
-async def get_task_status(request: Request, task_id: str) -> TaskStatusResponse:
+async def get_task_status(
+    request: Request, 
+    task_id: str,
+    api_key: str = Depends(get_api_key) if settings.auth_enabled else None
+) -> TaskStatusResponse:
     """特定タスクのステータスを取得"""
     session_id = SessionManager.get_session_id(request)
     logger.debug(f"タスクステータス取得: {task_id} (セッション: {session_id[:8]}...)")
@@ -196,7 +203,11 @@ async def get_task_status(request: Request, task_id: str) -> TaskStatusResponse:
 
 
 @router.get("/{task_id}/result", response_model=TaskResultResponse)
-async def get_task_result(request: Request, task_id: str) -> TaskResultResponse:
+async def get_task_result(
+    request: Request, 
+    task_id: str,
+    api_key: str = Depends(get_api_key) if settings.auth_enabled else None
+) -> TaskResultResponse:
     """完了したタスクの結果を取得"""
     session_id = SessionManager.get_session_id(request)
     
@@ -243,7 +254,11 @@ async def get_task_result(request: Request, task_id: str) -> TaskResultResponse:
 
 
 @router.delete("/{task_id}")
-async def delete_task(request: Request, task_id: str) -> JSONResponse:
+async def delete_task(
+    request: Request, 
+    task_id: str,
+    api_key: str = Depends(get_api_key) if settings.auth_enabled else None
+) -> JSONResponse:
     """タスクを削除"""
     session_id = SessionManager.get_session_id(request)
     logger.info(f"タスク削除要求: {task_id} (セッション: {session_id[:8]}...)")
