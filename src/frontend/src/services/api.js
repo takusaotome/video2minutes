@@ -11,10 +11,25 @@ const api = axios.create({
   }
 })
 
+// APIキー設定
+const API_KEY = import.meta.env.VITE_API_KEY
+
+// デバッグ用ログ
+console.log('API_KEY loaded:', API_KEY ? `${API_KEY.substring(0, 8)}...` : 'Not set')
+
+// APIキーが設定されている場合は認証ヘッダーを追加
+if (API_KEY) {
+  api.defaults.headers.common['Authorization'] = `Bearer ${API_KEY}`
+  console.log('Authorization header set')
+} else {
+  console.warn('API_KEY not found in environment variables')
+}
+
 // Request interceptor
 api.interceptors.request.use(
   config => {
     console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`)
+    console.log('Request headers:', config.headers)
     return config
   },
   error => {

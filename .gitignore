@@ -46,4 +46,6 @@ minutes/
 *.mkv
 
 # ログ
-*.log 
+*.log
+node_modules/
+playwright-report/

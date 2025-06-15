@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional, Dict
 
-from fastapi import APIRouter, HTTPException, Path, Request
+from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from fastapi.responses import JSONResponse
 
 from app.models.chat import (
@@ -24,6 +24,8 @@ from app.store.chat_store import chat_store
 from app.store.session_store import session_task_store
 from app.utils.logger import get_logger
 from app.utils.session_manager import SessionManager
+from app.auth.api_key import get_api_key
+from app.config import settings
 
 logger = get_logger(__name__)
 
@@ -34,7 +36,8 @@ router = APIRouter()
 async def create_chat_session(
     request: Request,
     task_id: str = Path(..., description="タスクID"),
-    session_request: CreateChatSessionRequest = None
+    session_request: CreateChatSessionRequest = None,
+    api_key: str = Depends(get_api_key) if settings.auth_enabled else None
 ) -> CreateChatSessionResponse:
     """
     新しいチャットセッションを作成

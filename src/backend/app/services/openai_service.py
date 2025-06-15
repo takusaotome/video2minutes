@@ -102,6 +102,7 @@ class OpenAIService:
         chat_history: List[ChatMessage]
     ) -> Dict:
         """質問を処理"""
+        start_time = time.time()
         # プロンプトを構築
         system_prompt = self.prompt_manager["get_chat_system_prompt"](
             transcription=session.transcription,
@@ -117,7 +118,7 @@ class OpenAIService:
             system_prompt, user_prompt, intent="question"
         )
         
-        processing_time = time.time() - time.time()
+        processing_time = time.time() - start_time
         tokens_used = self._estimate_tokens(system_prompt + user_prompt + response_text)
         
         return {
@@ -135,6 +136,7 @@ class OpenAIService:
         chat_history: List[ChatMessage]
     ) -> Dict:
         """編集リクエストを処理"""
+        start_time = time.time()
         # 編集インテント解析用のプロンプトを構築
         system_prompt = self.prompt_manager["get_edit_analysis_prompt"](
             current_minutes=session.minutes,
@@ -148,7 +150,7 @@ class OpenAIService:
             system_prompt, user_prompt, session.minutes
         )
         
-        processing_time = time.time() - time.time()
+        processing_time = time.time() - start_time
         tokens_used = self._estimate_tokens(system_prompt + user_prompt + response_text)
         
         return {
