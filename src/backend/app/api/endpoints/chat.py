@@ -51,7 +51,11 @@ async def create_chat_session(
         session_id = SessionManager.get_session_id(request)
         task = session_task_store.get_task(session_id, task_id)
         if not task:
-            raise HTTPException(status_code=404, detail="タスクが見つかりません")
+            # 従来のタスクストアからも取得を試行
+            from app.store import tasks_store
+            task = tasks_store.get(task_id)
+            if not task:
+                raise HTTPException(status_code=404, detail="タスクが見つかりません")
         
         if task.status.value != "completed":
             raise HTTPException(status_code=400, detail="タスクが完了していないため、チャットセッションを作成できません")
@@ -200,7 +204,11 @@ async def list_chat_sessions(
         session_id = SessionManager.get_session_id(request)
         task = session_task_store.get_task(session_id, task_id)
         if not task:
-            raise HTTPException(status_code=404, detail="タスクが見つかりません")
+            # 従来のタスクストアからも取得を試行
+            from app.store import tasks_store
+            task = tasks_store.get(task_id)
+            if not task:
+                raise HTTPException(status_code=404, detail="タスクが見つかりません")
         
         # タスクに関連するセッションを取得
         sessions = chat_store.get_sessions_by_task(task_id)
