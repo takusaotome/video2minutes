@@ -124,23 +124,7 @@ async def get_all_tasks(request: Request) -> TaskListResponse:
     """現在のセッションのタスク一覧を取得"""
     session_id = SessionManager.get_session_id(request)
     tasks = session_task_store.get_tasks(session_id)
-    
-    # セッションにタスクがない場合、従来のタスクストアから移行を試みる
-    if not tasks and tasks_store:
-        logger.info(f"セッションにタスクがないため、従来のタスクストアから移行を試みます (セッション: {session_id[:8]}...)")
-        # 従来のタスクストアから最新のタスクを移行（最大10件）
-        legacy_tasks = list(tasks_store.values())
-        legacy_tasks.sort(key=lambda x: x.upload_timestamp, reverse=True)
-        
-        migrated_count = 0
-        for task in legacy_tasks[:10]:  # 最新10件のみ移行
-            session_task_store.add_task(session_id, task)
-            migrated_count += 1
-        
-        if migrated_count > 0:
-            logger.info(f"従来のタスクストアから{migrated_count}件のタスクを移行しました (セッション: {session_id[:8]}...)")
-            tasks = session_task_store.get_tasks(session_id)
-    
+
     logger.info(f"タスク一覧取得: {len(tasks)}件のタスク (セッション: {session_id[:8]}...)")
     
     # 新しい順にソート
