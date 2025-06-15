@@ -9,5 +9,6 @@
 - [CHAT_FEATURE_DESIGN.md](CHAT_FEATURE_DESIGN.md) — 議事録画面にフローティングチャットを追加する新 UI の設計指針。
 - [SESSION_MANAGEMENT_DESIGN.md](SESSION_MANAGEMENT_DESIGN.md) — ユーザーごとのタスクを分離するセッション管理方式の設計案。
 - [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)
+- [APIリファレンス](API_REFERENCE.md)
 
 各ドキュメントには、より詳細な解説やコード例が記載されています。あわせてご参照ください。
