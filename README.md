@@ -87,16 +87,27 @@ video2minutes/
 
 #### バックエンド
 ```bash
-cd src/backend
 pip install -r requirements.txt
+cd src/backend
 uvicorn app.main:app --reload
 ```
+Render へのデプロイ時には `src/backend/requirements.txt` が読み込まれますが、この
+ファイルはルートの `requirements.txt` を参照するだけの薄いラッパーです。ローカル
+環境でも同じ依存関係を利用できます。
 
 #### フロントエンド
 ```bash
 cd src/frontend
 npm install
 npm run dev
+```
+
+### テストの実行
+依存関係をインストールしてからテストを実行します。
+```bash
+pip install -r requirements.txt
+npm run install:all
+npm run test:all
 ```
 
 ### CLI版ツール
