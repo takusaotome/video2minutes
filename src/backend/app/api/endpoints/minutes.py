@@ -377,6 +377,78 @@ async def retry_task(request: Request, task_id: str) -> JSONResponse:
         )
 
 
+@router.post("/{task_id}/regenerate")
+async def regenerate_minutes(request: Request, task_id: str) -> JSONResponse:
+    """文字起こしから議事録を再生成"""
+    session_id = SessionManager.get_session_id(request)
+    logger.info(f"議事録再生成要求: {task_id} (セッション: {session_id[:8]}...)")
+
+    # セッションストアから検索
+    task = session_task_store.get_task(session_id, task_id)
+    
+    # セッションストアで見つからない場合は、従来のタスクストアから検索
+    if not task:
+        logger.debug(f"セッションストアで見つからないため、従来のタスクストアを検索: {task_id}")
+        task = tasks_store.get(task_id)
+        if task:
+            logger.info(f"従来のタスクストアからタスクを発見、セッションに移行: {task_id} -> セッション: {session_id[:8]}...")
+            # セッションストアに移行
+            session_task_store.add_task(session_id, task)
+    
+    if not task:
+        logger.warning(f"再生成対象のタスクが見つかりません: {task_id} (セッション: {session_id[:8]}...)")
+        raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
+
+    # 完了したタスクで文字起こしが存在する場合のみ再生成可能
+    if task.status != TaskStatus.COMPLETED:
+        logger.warning(f"完了していないタスクは再生成できません: {task_id} (現在のステータス: {task.status})")
+        raise HTTPException(status_code=400, detail="完了したタスクのみ再生成できます")
+    
+    if not task.transcription:
+        logger.warning(f"文字起こしが存在しないため再生成できません: {task_id}")
+        raise HTTPException(status_code=400, detail="文字起こしが存在しないため再生成できません")
+
+    try:
+        logger.info(f"議事録再生成開始: {task_id} (セッション: {session_id[:8]}...)")
+        
+        # 議事録生成サービスを使用
+        minutes_generator = MinutesGeneratorService()
+        new_minutes = await minutes_generator.generate_minutes(task.transcription)
+        
+        # タスクの議事録を更新
+        task.minutes = new_minutes
+        task.updated_at = datetime.utcnow()
+        
+        # セッションベースタスクストアを更新
+        session_task_store.update_task(session_id, task)
+        # 下位互換性のため従来のタスクストアも更新
+        tasks_store[task_id] = task
+        
+        # 永続ストアも更新
+        await persistent_store.save_task(task)
+
+        logger.info(f"議事録再生成完了: {task_id} (セッション: {session_id[:8]}...)")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": f"議事録の再生成が完了しました",
+                "task_id": task_id,
+                "video_filename": task.video_filename,
+                "transcription": task.transcription,
+                "minutes": task.minutes,
+                "created_at": task.created_at.isoformat(),
+                "updated_at": task.updated_at.isoformat()
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"議事録再生成エラー: {task_id} - {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail=f"議事録の再生成中にエラーが発生しました: {str(e)}"
+        )
+
+
 @router.websocket("/ws/{task_id}")
 async def websocket_endpoint(websocket: WebSocket, task_id: str):
     """WebSocket接続でリアルタイム進捗を配信"""

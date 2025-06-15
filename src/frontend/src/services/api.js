@@ -72,6 +72,11 @@ export const minutesApi = {
   // Retry failed task
   retryTask: async taskId => {
     return api.post(`/minutes/${taskId}/retry`)
+  },
+
+  // Regenerate minutes from transcription
+  regenerateMinutes: async taskId => {
+    return api.post(`/minutes/${taskId}/regenerate`)
   }
 }
 

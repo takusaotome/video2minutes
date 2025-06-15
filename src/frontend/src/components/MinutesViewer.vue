@@ -39,6 +39,14 @@
 
         <div class="header-actions">
           <Button
+            label="再生成"
+            icon="pi pi-refresh"
+            @click="regenerateMinutes"
+            class="p-button-outlined p-button-warning"
+            v-tooltip="'文字起こしから議事録を再生成'"
+            :loading="isRegenerating"
+          />
+          <Button
             label="コピー"
             icon="pi pi-copy"
             @click="copyToClipboard"
@@ -55,36 +63,10 @@
         </div>
       </div>
 
-      <!-- Content Layout -->
-      <div class="content-layout">
-        <!-- Sidebar Toggle (Mobile) -->
-        <Button
-          v-if="isMobile"
-          :icon="showTranscript ? 'pi pi-times' : 'pi pi-align-left'"
-          :label="showTranscript ? '文字起こしを閉じる' : '文字起こしを表示'"
-          @click="toggleTranscript"
-          class="transcript-toggle p-button-outlined"
-        />
-
-        <!-- Left Column: Integrated Panel (Transcript + Chat) -->
-        <div class="left-column">
-          <div
-            v-show="!isMobile || showTranscript"
-            class="left-panel-container"
-            :class="{ 'mobile-overlay': isMobile && showTranscript }"
-          >
-            <LeftPanel
-              :transcription="minutes.transcription"
-              :minutes="minutes.minutes"
-              :task-id="taskId"
-              :panel-width="'100%'"
-              @minutes-updated="handleMinutesUpdate"
-            />
-          </div>
-        </div>
-
-        <!-- Right Column: Meeting Details and Minutes -->
-        <div class="right-column">
+      <!-- Main Content Area -->
+      <div class="main-content">
+        <!-- Meeting Details and Minutes -->
+        <div class="content-area">
           <div class="minutes-main">
             <!-- Meeting Details Card -->
             <Card class="meeting-details-card">
@@ -210,6 +192,34 @@
           </div>
         </div>
       </div>
+
+      <!-- Floating Chat Button -->
+      <Button
+        icon="pi pi-comments"
+        @click="toggleFloatingChat"
+        class="floating-chat-button"
+        v-tooltip="{
+          value: tooltipContent,
+          showDelay: 300,
+          hideDelay: 100,
+          position: 'left',
+          class: 'chat-tooltip'
+        }"
+      >
+        <Badge v-if="unreadMessages > 0" :value="unreadMessages" severity="danger" class="chat-badge" />
+      </Button>
+      
+      <!-- Floating Chat Panel -->
+      <FloatingChat
+        v-if="minutes"
+        :is-open="showFloatingChat"
+        :task-id="taskId"
+        :transcription="minutes.transcription || ''"
+        :minutes="minutes.minutes || ''"
+        @close="toggleFloatingChat"
+        @update-unread="updateUnreadMessages"
+        @highlight-citation="highlightCitation"
+      />
     </div>
 
     <!-- Copy Success Toast -->
@@ -231,8 +241,10 @@ import Toast from 'primevue/toast'
 import InputText from 'primevue/inputtext'
 import Calendar from 'primevue/calendar'
 import Chips from 'primevue/chips'
+import Badge from 'primevue/badge'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import LeftPanel from './LeftPanel.vue'
+import FloatingChat from './FloatingChat.vue'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
@@ -249,8 +261,10 @@ export default {
     InputText,
     Calendar,
     Chips,
+    Badge,
     MarkdownRenderer,
-    LeftPanel
+    LeftPanel,
+    FloatingChat
   },
   props: {
     taskId: {
@@ -280,6 +294,22 @@ export default {
     const attendees = ref([])
     const isEditing = ref(false)
     const hasUnsavedChanges = ref(false)
+    
+    // New layout states
+    const showSidebar = ref(false)
+    const showFloatingChat = ref(false)
+    const unreadMessages = ref(0)
+    
+    // Regeneration state
+    const isRegenerating = ref(false)
+    
+    // Tooltip content for chat button
+    const tooltipContent = computed(() => {
+      if (unreadMessages.value > 0) {
+        return `会議内容について質問\n${unreadMessages.value}件の未読メッセージがあります`
+      }
+      return '会議内容について質問\nAIに会議の詳細を聞いてみましょう'
+    })
 
     const isMobile = computed(() => windowWidth.value < 768)
 
@@ -432,6 +462,14 @@ export default {
         label: 'PDF',
         icon: 'pi pi-file-pdf',
         command: () => downloadPDF()
+      },
+      {
+        separator: true
+      },
+      {
+        label: '文字起こし全文 (.txt)',
+        icon: 'pi pi-file-text',
+        command: () => downloadTranscription()
       }
     ])
 
@@ -802,8 +840,148 @@ ${'-'.repeat(50)}
       }
     }
 
+    const downloadTranscription = () => {
+      if (!minutes.value?.transcription) return
+
+      try {
+        const content = minutes.value.transcription
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        const filename = minutes.value.video_filename.replace(/\.[^/.]+$/, '')
+        link.download = `文字起こし_${filename}.txt`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+
+        toast.add({
+          severity: 'success',
+          summary: 'ダウンロード完了',
+          detail: '文字起こし全文をダウンロードしました',
+          life: 3000
+        })
+      } catch (error) {
+        toast.add({
+          severity: 'error',
+          summary: 'ダウンロード失敗',
+          detail: '文字起こしのダウンロードに失敗しました',
+          life: 3000
+        })
+      }
+    }
+    
+    const regenerateMinutes = async () => {
+      if (!minutes.value || isRegenerating.value) return
+      
+      // 確認ダイアログを表示
+      const confirmed = window.confirm(
+        '現在の議事録を破棄して、文字起こしから再生成しますか？\n' +
+        'この操作は取り消せません。'
+      )
+      
+      if (!confirmed) return
+      
+      isRegenerating.value = true
+      
+      try {
+        toast.add({
+          severity: 'info',
+          summary: '再生成開始',
+          detail: '議事録を再生成しています...',
+          life: 5000
+        })
+        
+        // 再生成APIを呼び出し
+        const response = await minutesApi.regenerateMinutes(props.taskId)
+        
+        // タスクIDが返ってくる場合は、ステータスをポーリング
+        if (response.data.task_id) {
+          // 新しいタスクの完了を待つ
+          await pollTaskStatus(response.data.task_id)
+        } else {
+          // 直接結果が返ってくる場合
+          minutes.value = response.data
+          initializeMeetingDetails()
+        }
+        
+        toast.add({
+          severity: 'success',
+          summary: '再生成完了',
+          detail: '議事録が正常に再生成されました',
+          life: 3000
+        })
+        
+      } catch (error) {
+        console.error('再生成エラー:', error)
+        toast.add({
+          severity: 'error',
+          summary: '再生成エラー',
+          detail: error.response?.data?.detail || '議事録の再生成に失敗しました',
+          life: 5000
+        })
+      } finally {
+        isRegenerating.value = false
+      }
+    }
+    
+    // タスクステータスのポーリング
+    const pollTaskStatus = async (taskId) => {
+      const maxAttempts = 60 // 最大60回（5分）
+      let attempts = 0
+      
+      while (attempts < maxAttempts) {
+        try {
+          const statusResponse = await minutesApi.getTaskStatus(taskId)
+          const status = statusResponse.data.status
+          
+          if (status === 'completed') {
+            // 結果を取得
+            const resultResponse = await minutesApi.getTaskResult(taskId)
+            minutes.value = resultResponse.data
+            initializeMeetingDetails()
+            return
+          } else if (status === 'failed') {
+            throw new Error('タスクが失敗しました')
+          }
+          
+          // 5秒待つ
+          await new Promise(resolve => setTimeout(resolve, 5000))
+          attempts++
+          
+        } catch (error) {
+          console.error('ステータス確認エラー:', error)
+          throw error
+        }
+      }
+      
+      throw new Error('タスクがタイムアウトしました')
+    }
+
     const toggleTranscript = () => {
       showTranscript.value = !showTranscript.value
+    }
+    
+    const toggleSidebar = () => {
+      showSidebar.value = !showSidebar.value
+    }
+    
+    const toggleFloatingChat = () => {
+      showFloatingChat.value = !showFloatingChat.value
+      if (!showFloatingChat.value) {
+        unreadMessages.value = 0
+      }
+    }
+    
+    const updateUnreadMessages = (count) => {
+      unreadMessages.value = count
+    }
+    
+    const highlightCitation = (citation) => {
+      // サイドバーを開いて引用箇所をハイライト
+      showSidebar.value = true
+      // TODO: 実際のハイライト処理を実装
     }
 
     const updateWordCount = count => {
@@ -1110,6 +1288,9 @@ ${'-'.repeat(50)}
       downloadMarkdown,
       downloadText,
       downloadPDF,
+      downloadTranscription,
+      regenerateMinutes,
+      isRegenerating,
       toggleTranscript,
       updateWordCount,
       handleMinutesUpdate,
@@ -1122,7 +1303,16 @@ ${'-'.repeat(50)}
       startEditing,
       cancelEditing,
       saveMeetingDetails,
-      onMeetingDetailsChange
+      onMeetingDetailsChange,
+      // New layout methods
+      showSidebar,
+      showFloatingChat,
+      unreadMessages,
+      tooltipContent,
+      toggleSidebar,
+      toggleFloatingChat,
+      updateUnreadMessages,
+      highlightCitation
     }
   }
 }
@@ -1266,6 +1456,50 @@ ${'-'.repeat(50)}
   border-radius: var(--radius-lg);
 }
 
+/* 新しいレイアウトスタイル */
+.main-content {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+}
+
+/* サイドバー関連のスタイルは削除 */
+
+.content-area {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  min-height: calc(100vh - 300px);
+}
+
+.floating-chat-button {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  background: var(--primary-500);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  font-size: 1.5rem;
+}
+
+.floating-chat-button:hover {
+  background: var(--primary-600);
+  transform: scale(1.1);
+}
+
+.floating-chat-button .chat-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+}
+
+/* 旧レイアウトスタイル（非推奨） */
 .content-layout {
   display: grid;
   grid-template-columns: 45% 55%;
@@ -1838,7 +2072,115 @@ ${'-'.repeat(50)}
   min-width: 200px;
 }
 
-/* Responsive adjustments */
+/* フローティングチャットボタンのスタイル */
+.floating-chat-button {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.floating-chat-button:hover {
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2), 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+}
+
+.floating-chat-button:active {
+  transform: scale(1.05) translateY(-1px);
+}
+
+.chat-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* カスタムツールチップスタイル */
+:deep(.chat-tooltip) {
+  background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%) !important;
+  color: white !important;
+  border: 1px solid var(--gray-700) !important;
+  border-radius: 12px !important;
+  padding: 16px 20px !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  line-height: 1.6 !important;
+  white-space: pre-line !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+  max-width: 300px !important;
+  text-align: left !important;
+  backdrop-filter: blur(8px) !important;
+  letter-spacing: 0.02em !important;
+}
+
+:deep(.chat-tooltip .p-tooltip-arrow) {
+  border-left-color: var(--gray-800) !important;
+}
+
+:deep(.chat-tooltip.p-tooltip-right .p-tooltip-arrow) {
+  border-right-color: var(--gray-800) !important;
+}
+
+:deep(.chat-tooltip.p-tooltip-top .p-tooltip-arrow) {
+  border-top-color: var(--gray-800) !important;
+}
+
+:deep(.chat-tooltip.p-tooltip-bottom .p-tooltip-arrow) {
+  border-bottom-color: var(--gray-800) !important;
+}
+
+/* 新しいレイアウトのレスポンシブ対応 */
+@media (max-width: 768px) {
+  .floating-chat-button {
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    font-size: 1.3rem;
+  }
+  
+  .content-area {
+    padding: 0 16px;
+  }
+  
+  :deep(.chat-tooltip) {
+    max-width: 260px !important;
+    font-size: 0.85rem !important;
+    padding: 14px 18px !important;
+    line-height: 1.5 !important;
+  }
+}
+
+/* 旧レイアウトのレスポンシブ対応（後方互換性のため残す） */
 @media (max-width: 1200px) {
   .content-layout {
     grid-template-columns: 40% 60%;

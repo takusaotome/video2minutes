@@ -100,7 +100,11 @@
             <!-- AI回答 -->
             <div class="assistant-message">
               <div class="message-content">
-                {{ message.response }}
+                <MarkdownRenderer
+                  :content="message.response"
+                  :show-toc="false"
+                  class="chat-markdown"
+                />
                 
                 <!-- 引用箇所 -->
                 <div v-if="message.citations && message.citations.length > 0" class="citations">
@@ -152,7 +156,9 @@
               v-model="currentMessage"
               :placeholder="isEditMode ? '議事録の編集指示を入力してください...' : '会議内容について質問してください...'"
               class="chat-input"
-              @keyup.enter="handleSendMessage"
+              @keydown.enter="handleChatKeyDown"
+              @compositionstart="handleChatCompositionStart"
+              @compositionend="handleChatCompositionEnd"
               :disabled="isLoading"
             />
             <Button 
@@ -206,6 +212,7 @@ import ToggleButton from 'primevue/togglebutton'
 import InputText from 'primevue/inputtext'
 import Badge from 'primevue/badge'
 import ProgressSpinner from 'primevue/progressspinner'
+import MarkdownRenderer from './MarkdownRenderer.vue'
 import { chatApi } from '@/services/api'
 
 export default {
@@ -215,7 +222,8 @@ export default {
     ToggleButton,
     InputText,
     Badge,
-    ProgressSpinner
+    ProgressSpinner,
+    MarkdownRenderer
   },
   props: {
     transcription: {
@@ -253,6 +261,9 @@ export default {
     const totalTokens = ref(0)
     const currentSession = ref(null)
     const sessionInitialized = ref(false)
+    
+    // IME（日本語入力）の状態管理
+    const isChatComposing = ref(false)
     
     // ハイライト状態
     const highlightedText = ref(null)
@@ -448,7 +459,7 @@ export default {
           message: message,
           response: messageData.response,
           intent: intent,
-          timestamp: new Date(messageData.timestamp),
+          timestamp: messageData.timestamp ? new Date(messageData.timestamp) : new Date(),
           citations: messageData.citations || [],
           edit_actions: messageData.edit_actions || [],
           tokens_used: messageData.tokens_used || 0
@@ -481,10 +492,19 @@ export default {
     }
     
     const formatTime = (timestamp) => {
-      return new Date(timestamp).toLocaleTimeString('ja-JP', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      try {
+        const date = new Date(timestamp)
+        if (isNaN(date.getTime())) {
+          return '--:--'
+        }
+        return date.toLocaleTimeString('ja-JP', {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      } catch (error) {
+        console.warn('日付フォーマットエラー:', timestamp, error)
+        return '--:--'
+      }
     }
     
     const getEditActionDescription = (action) => {
@@ -517,6 +537,28 @@ export default {
     
     const handleTranscriptionScroll = () => {
       // TODO: スクロール位置の保存や連携機能
+    }
+    
+    // IME（日本語入力）のハンドリング
+    const handleChatCompositionStart = () => {
+      isChatComposing.value = true
+    }
+    
+    const handleChatCompositionEnd = () => {
+      isChatComposing.value = false
+    }
+    
+    const handleChatKeyDown = (event) => {
+      // IME変換中の場合は何もしない
+      if (isChatComposing.value) {
+        return
+      }
+      
+      // Enterキーが押された場合のみ送信
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault()
+        handleSendMessage()
+      }
     }
     
     // ウォッチャー
@@ -556,6 +598,9 @@ export default {
       startResize,
       highlightTranscription,
       handleSendMessage,
+      handleChatCompositionStart,
+      handleChatCompositionEnd,
+      handleChatKeyDown,
       formatTime,
       getEditActionDescription,
       revertEdit,
@@ -591,7 +636,7 @@ export default {
   background: var(--surface-ground);
   border-radius: 8px;
   border: 1px solid var(--surface-border);
-  margin-top: 8px; /* 文字起こしとの間に余白 */
+  margin-top: 16px; /* 文字起こしとの間に十分な余白 */
 }
 
 .section-header {
@@ -910,11 +955,76 @@ export default {
 .chat-input {
   flex: 1;
   min-height: 2.5rem;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* PrimeVueのInputTextコンポーネント用の詳細スタイル */
+.input-container :deep(.p-inputtext),
+.input-container :deep(input[type="text"]) {
+  padding: 12px 16px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--surface-border) !important;
+  font-size: 0.95rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  min-height: 2.5rem !important;
+  text-indent: 0 !important;
+  padding-left: 16px !important;
+}
+
+/* プレースホルダーのスタイリング - より具体的なセレクター */
+.input-container :deep(input::placeholder),
+.input-container :deep(.p-inputtext::placeholder) {
+  color: var(--text-color-secondary) !important;
+  padding-left: 0 !important;
+  text-indent: 0 !important;
+  opacity: 1 !important;
+}
+
+.input-container :deep(input::-webkit-input-placeholder) {
+  color: var(--text-color-secondary) !important;
+  padding-left: 0 !important;
+  text-indent: 0 !important;
+  opacity: 1 !important;
+}
+
+.input-container :deep(input::-moz-placeholder) {
+  color: var(--text-color-secondary) !important;
+  padding-left: 0 !important;
+  text-indent: 0 !important;
+  opacity: 1 !important;
+}
+
+.input-container :deep(input:-ms-input-placeholder) {
+  color: var(--text-color-secondary) !important;
+  padding-left: 0 !important;
+  text-indent: 0 !important;
+  opacity: 1 !important;
 }
 
 .send-button {
   min-width: 2.75rem;
   height: 2.5rem;
+}
+
+/* グローバルスタイルで確実に適用 */
+:global(.chat-input-area .p-inputtext) {
+  padding: 12px 16px !important;
+  text-indent: 0 !important;
+}
+
+:global(.chat-input-area .p-inputtext::placeholder) {
+  padding-left: 0 !important;
+  text-indent: 0 !important;
+  color: var(--text-color-secondary) !important;
+}
+
+:global(.chat-input-area input::placeholder) {
+  padding-left: 0 !important;
+  text-indent: 0 !important;
+  color: var(--text-color-secondary) !important;
 }
 
 .chat-usage {
@@ -994,5 +1104,130 @@ export default {
     padding: 0.5rem;
     max-width: 95%;
   }
+}
+
+/* Markdown renderer styling for chat messages */
+.chat-markdown :deep(.markdown-content) {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--gray-700);
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.chat-markdown :deep(.markdown-renderer) {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.chat-markdown :deep(.markdown-content-wrapper) {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.chat-markdown :deep(.p-card.markdown-card) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.chat-markdown :deep(.p-card-body) {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.chat-markdown :deep(.p-card-content) {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.chat-markdown :deep(.markdown-content h1),
+.chat-markdown :deep(.markdown-content h2),
+.chat-markdown :deep(.markdown-content h3),
+.chat-markdown :deep(.markdown-content h4),
+.chat-markdown :deep(.markdown-content h5),
+.chat-markdown :deep(.markdown-content h6) {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin: 0.5rem 0 0.25rem 0;
+  line-height: 1.3;
+}
+
+.chat-markdown :deep(.markdown-content p) {
+  margin: 0 0 0.5rem 0;
+  color: var(--gray-700);
+}
+
+.chat-markdown :deep(.markdown-content ul),
+.chat-markdown :deep(.markdown-content ol) {
+  margin: 0.25rem 0 0.5rem 1rem;
+  padding-left: 0.5rem;
+}
+
+.chat-markdown :deep(.markdown-content li) {
+  margin: 0.125rem 0;
+  color: var(--gray-700);
+}
+
+.chat-markdown :deep(.markdown-content strong) {
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.chat-markdown :deep(.markdown-content em) {
+  font-style: italic;
+  color: var(--gray-600);
+}
+
+.chat-markdown :deep(.markdown-content code) {
+  background: var(--gray-100);
+  padding: 0.125rem 0.25rem;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+}
+
+.chat-markdown :deep(.markdown-content pre) {
+  background: var(--gray-100);
+  padding: 0.5rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+}
+
+.chat-markdown :deep(.markdown-content blockquote) {
+  border-left: 3px solid var(--primary-300);
+  padding-left: 0.75rem;
+  margin: 0.5rem 0;
+  color: var(--gray-600);
+  font-style: italic;
+}
+
+.chat-markdown :deep(.markdown-content table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.chat-markdown :deep(.markdown-content th),
+.chat-markdown :deep(.markdown-content td) {
+  border: 1px solid var(--gray-300);
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+}
+
+.chat-markdown :deep(.markdown-content th) {
+  background: var(--gray-50);
+  font-weight: 600;
 }
 </style>

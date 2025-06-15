@@ -1,18 +1,42 @@
-# 議事録チャット機能 設計書
+# 議事録チャット機能 設計書 v2.0
 
 ## 概要
 
-議事録詳細画面に対話型チャット機能を追加し、文字起こし全文をコンテキストとして活用したAI質問応答システムを実装する。
+議事録詳細画面に**フローティングチャット機能**を追加し、文字起こし全文をコンテキストとして活用したAI質問応答システムを実装する。初期表示では全文文字起こしを非表示にし、会議情報と議事録を横幅いっぱいに表示する新しいレイアウトを採用する。
+
+## 新しいUI設計コンセプト
+
+### レイアウト変更
+- **初期状態**: 全文文字起こしは非表示、会議情報と議事録が横幅いっぱいに表示
+- **フローティングチャット**: 画面右下にFAB（Floating Action Button）として配置
+- **サイドパネル**: 全文文字起こしはメニューから呼び出し可能なサイドパネルとして表示
+
+### ユーザーエクスペリエンス
+1. **シンプルな初期表示**: 重要な情報（会議詳細・議事録）に集中
+2. **オンデマンドアクセス**: 必要な時だけ文字起こしやチャット機能を利用
+3. **非侵入的インターフェース**: メインコンテンツを邪魔しないフローティング設計
 
 ## 機能要件
 
 ### 基本機能
+
+#### フローティングチャット機能
+- **FABボタン**: 画面右下に固定配置されたチャットアイコンボタン
+- **チャット展開**: クリックでチャットパネルが展開（オーバーレイまたはサイドパネル形式）
+- **最小化・最大化**: チャット状態の切り替え機能
+- **通知バッジ**: 新しい回答や重要な情報の通知表示
 
 #### 質問応答機能
 - **文字起こし内容に基づく質問応答**: 会議内容に関する質問に対して文字起こし全文を参照して回答
 - **チャット履歴保存**: セッション中のやり取りを保持
 - **コンテキスト理解**: 前回の質問・回答を踏まえた継続的な対話
 - **引用表示**: 回答時に参照した文字起こしの該当箇所を表示
+
+#### サイドパネル機能（全文文字起こし）
+- **メニュートリガー**: ハンバーガーメニューまたは専用ボタンからアクセス
+- **スライドイン表示**: 左側からスライドインするサイドパネル
+- **検索・ハイライト**: 文字起こし内の検索とハイライト機能
+- **時間軸ナビゲーション**: タイムスタンプによる内容ジャンプ
 
 #### 議事録編集機能
 - **誤字・脱字修正**: 間違った単語や表現の一括修正
@@ -23,14 +47,14 @@
 
 ### 想定ユースケース
 
-#### 質問応答
+#### 質問応答（フローティングチャット）
 1. **決定事項の確認**: "この会議でXXについてどんな結論になりましたか？"
 2. **担当者の確認**: "タスクAの担当者は誰になりましたか？"
 3. **期限の確認**: "プロジェクトの納期はいつでしたっけ？"
 4. **詳細説明**: "XXについてもう少し詳しく教えてください"
 5. **要約**: "今日の会議のポイントを3つ教えてください"
 
-#### 議事録編集
+#### 議事録編集（チャット経由）
 1. **誤字修正**: "議事録内の'プロジェクトX'を'プロジェクトAlpha'に修正して"
 2. **アクションアイテム追加**: "田中さんに資料作成のタスクを追加して、期限は来週金曜日"
 3. **担当者修正**: "タスクBの担当者を佐藤さんから山田さんに変更して"
@@ -38,44 +62,421 @@
 5. **内容補強**: "決定事項に予算承認の件を追加して"
 6. **優先度設定**: "セキュリティ対応タスクを高優先度に変更して"
 
+#### サイドパネル利用
+1. **詳細確認**: 議事録で気になった点の元発言を確認
+2. **文脈理解**: 決定に至った議論の流れを把握
+3. **引用作成**: 特定の発言を引用して報告書作成
+
 ## システム設計
 
-### アーキテクチャ
+### 新しいアーキテクチャ
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   フロントエンド   │    │   バックエンド     │    │   OpenAI API    │
-│                 │    │                 │    │                 │
-│ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
-│ │チャットコンポ│ │◄──►│ │チャットAPI  │ │◄──►│ │ GPT-4       │ │
-│ │ーネント      │ │    │ │             │ │    │ │             │ │
-│ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │
-│                 │    │                 │    │                 │
-│ ┌─────────────┐ │    │ ┌─────────────┐ │    │                 │
-│ │議事録詳細    │ │    │ │セッション   │ │    │                 │
-│ │コンポーネント│ │    │ │ストレージ   │ │    │                 │
-│ └─────────────┘ │    │ └─────────────┘ │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    フロントエンド                              │
+│                                                             │
+│ ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
+│ │メインレイアウト│  │サイドパネル  │  │フローティングチャット │ │
+│ │             │  │(文字起こし)  │  │                     │ │
+│ │┌───────────┐│  │             │  │ ┌─────────────────┐ │ │
+│ ││会議詳細   ││  │┌───────────┐│  │ │ FABボタン       │ │ │
+│ │└───────────┘│  ││検索・ハイラ││  │ └─────────────────┘ │ │
+│ │┌───────────┐│  ││イト機能   ││  │ ┌─────────────────┐ │ │
+│ ││議事録     ││  │└───────────┘│  │ │ チャットパネル   │ │ │
+│ │└───────────┘│  │┌───────────┐│  │ │ (展開時)        │ │ │
+│ └─────────────┘  ││時間軸ナビ ││  │ └─────────────────┘ │ │
+│                  │└───────────┘│  └─────────────────────┘ │
+│                  └─────────────┘                          │
+└─────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    バックエンド                                │
+│                                                             │
+│ ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
+│ │チャットAPI  │  │セッション   │  │議事録編集API        │ │
+│ │             │  │ストレージ   │  │                     │ │
+│ └─────────────┘  └─────────────┘  └─────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   OpenAI API                               │
+│                                                             │
+│ ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
+│ │ GPT-4       │  │ 引用機能    │  │ 編集提案生成        │ │
+│ │ 質問応答    │  │             │  │                     │ │
+│ └─────────────┘  └─────────────┘  └─────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### データフロー
 
 1. **初期化**
    - 議事録詳細画面で文字起こし全文を取得
+   - メインレイアウト（会議詳細・議事録）を横幅いっぱいに表示
+   - フローティングチャットボタンを右下に配置
+
+2. **チャット開始**
+   - FABボタンクリックでチャットパネル展開
    - チャットセッションを初期化
    - 文字起こし内容をコンテキストとして設定
 
-2. **質問処理**
+3. **質問処理**
    - ユーザーの質問を受信
    - チャット履歴と文字起こし内容を組み合わせてプロンプト生成
    - OpenAI APIに送信
 
-3. **回答生成**
+4. **回答生成**
    - AI回答を受信
    - 引用箇所があれば該当部分をハイライト
    - チャット履歴に追加して表示
 
+5. **サイドパネル表示**
+   - メニューボタンクリックでサイドパネル展開
+   - 文字起こし全文を表示
+   - 検索・ハイライト機能を提供
+
 ## 実装仕様
+
+### フロントエンド
+
+#### コンポーネント構成
+
+```vue
+<!-- MinutesViewer.vue (メインコンポーネント) -->
+<template>
+  <div class="minutes-viewer">
+    <!-- メインコンテンツエリア -->
+    <div class="main-content" :class="{ 'sidebar-open': showSidebar }">
+      <!-- ヘッダー -->
+      <div class="header">
+        <button @click="toggleSidebar" class="sidebar-toggle">
+          <i class="pi pi-bars"></i>
+        </button>
+        <h1>議事録詳細</h1>
+      </div>
+      
+      <!-- 会議詳細・議事録エリア -->
+      <div class="content-grid">
+        <MeetingDetails :meeting="meeting" />
+        <GeneratedMinutes :minutes="minutes" />
+      </div>
+    </div>
+    
+    <!-- サイドパネル（文字起こし全文） -->
+    <TranscriptionSidebar 
+      :show="showSidebar"
+      :transcription="transcription"
+      @close="closeSidebar"
+    />
+    
+    <!-- フローティングチャット -->
+    <FloatingChat 
+      :task-id="taskId"
+      :transcription="transcription"
+      :minutes="minutes"
+    />
+  </div>
+</template>
+```
+
+```vue
+<!-- FloatingChat.vue -->
+<template>
+  <div class="floating-chat">
+    <!-- FABボタン -->
+    <button 
+      v-if="!isExpanded"
+      @click="expandChat"
+      class="fab-button"
+      :class="{ 'has-notification': hasNewMessage }"
+    >
+      <i class="pi pi-comments"></i>
+      <span v-if="hasNewMessage" class="notification-badge">!</span>
+    </button>
+    
+    <!-- チャットパネル -->
+    <div 
+      v-if="isExpanded"
+      class="chat-panel"
+      :class="{ 'minimized': isMinimized }"
+    >
+      <div class="chat-header">
+        <h3>議事録について質問</h3>
+        <div class="chat-controls">
+          <button @click="toggleMinimize" class="minimize-btn">
+            <i :class="isMinimized ? 'pi pi-window-maximize' : 'pi pi-window-minimize'"></i>
+          </button>
+          <button @click="closeChat" class="close-btn">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div v-if="!isMinimized" class="chat-content">
+        <ChatMessages :messages="messages" />
+        <ChatInput @send="sendMessage" :loading="isLoading" />
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+```vue
+<!-- TranscriptionSidebar.vue -->
+<template>
+  <div class="transcription-sidebar" :class="{ 'show': show }">
+    <div class="sidebar-header">
+      <h3>文字起こし全文</h3>
+      <button @click="$emit('close')" class="close-btn">
+        <i class="pi pi-times"></i>
+      </button>
+    </div>
+    
+    <div class="sidebar-content">
+      <!-- 検索機能 -->
+      <div class="search-section">
+        <input 
+          v-model="searchQuery"
+          placeholder="文字起こし内を検索..."
+          class="search-input"
+        />
+      </div>
+      
+      <!-- 文字起こし内容 -->
+      <div class="transcription-content">
+        <div 
+          v-for="(segment, index) in filteredSegments"
+          :key="index"
+          class="transcription-segment"
+          :class="{ 'highlighted': segment.highlighted }"
+        >
+          <span class="timestamp">{{ segment.timestamp }}</span>
+          <p class="text">{{ segment.text }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+```
+
+#### スタイリング
+
+```scss
+// フローティングチャット
+.floating-chat {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  
+  .fab-button {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+    
+    &.has-notification {
+      animation: pulse 2s infinite;
+    }
+    
+    .notification-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 20px;
+      height: 20px;
+      background: var(--red-500);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+  }
+  
+  .chat-panel {
+    width: 400px;
+    height: 600px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    
+    &.minimized {
+      height: 60px;
+      
+      .chat-content {
+        display: none;
+      }
+    }
+    
+    .chat-header {
+      padding: 16px;
+      background: var(--surface-100);
+      border-bottom: 1px solid var(--surface-200);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      
+      h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      
+      .chat-controls {
+        display: flex;
+        gap: 8px;
+        
+        button {
+          width: 32px;
+          height: 32px;
+          border: none;
+          background: transparent;
+          border-radius: 4px;
+          cursor: pointer;
+          
+          &:hover {
+            background: var(--surface-200);
+          }
+        }
+      }
+    }
+    
+    .chat-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+  }
+}
+
+// サイドパネル
+.transcription-sidebar {
+  position: fixed;
+  top: 0;
+  left: -400px;
+  width: 400px;
+  height: 100vh;
+  background: white;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  transition: left 0.3s ease;
+  z-index: 999;
+  
+  &.show {
+    left: 0;
+  }
+  
+  .sidebar-header {
+    padding: 16px;
+    background: var(--surface-100);
+    border-bottom: 1px solid var(--surface-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+  }
+  
+  .sidebar-content {
+    height: calc(100vh - 73px);
+    overflow-y: auto;
+    
+    .search-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--surface-200);
+      
+      .search-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--surface-300);
+        border-radius: 6px;
+        font-size: 14px;
+      }
+    }
+    
+    .transcription-content {
+      padding: 16px;
+      
+      .transcription-segment {
+        margin-bottom: 16px;
+        padding: 12px;
+        border-radius: 6px;
+        
+        &.highlighted {
+          background: var(--yellow-100);
+          border-left: 4px solid var(--yellow-500);
+        }
+        
+        .timestamp {
+          font-size: 12px;
+          color: var(--text-color-secondary);
+          font-weight: 500;
+        }
+        
+        .text {
+          margin: 4px 0 0 0;
+          line-height: 1.5;
+        }
+      }
+    }
+  }
+}
+
+// メインコンテンツの調整
+.main-content {
+  transition: margin-left 0.3s ease;
+  
+  &.sidebar-open {
+    margin-left: 400px;
+  }
+  
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    padding: 24px;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// アニメーション
+@keyframes pulse {
+  0% {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.4);
+  }
+  100% {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+```
 
 ### バックエンド
 
@@ -306,395 +707,6 @@ CHAT_USER_PROMPT = """
 {user_question}
 """
 ```
-
-### フロントエンド
-
-#### コンポーネント構成
-
-```
-MinutesView.vue
-├── LeftPanel.vue (新規 - 文字起こし+チャット統合パネル)
-│   ├── TranscriptionSection.vue (既存を改修)
-│   ├── ResizeHandle.vue (新規)
-│   └── ChatSection.vue (新規)
-│       ├── ChatMessages.vue
-│       ├── ChatInput.vue
-│       └── CitationHighlight.vue
-└── MinutesContent.vue (既存)
-```
-
-#### LeftPanel.vue 設計
-
-```vue
-<template>
-  <div class="left-panel">
-    <!-- 文字起こしセクション -->
-    <div class="transcription-section" :style="{ height: transcriptionHeight }">
-      <TranscriptionSection 
-        :transcription="transcription"
-        :highlighted-text="highlightedText"
-        @text-select="handleTextSelect"
-      />
-    </div>
-    
-    <!-- リサイズハンドル -->
-    <ResizeHandle 
-      @resize="handleResize"
-      :min-height="200"
-      :max-height="600"
-    />
-    
-    <!-- チャットセクション -->
-    <div class="chat-section" :style="{ height: chatHeight }">
-      <div class="chat-header" @click="toggleChatCollapse">
-        <h4>
-          <i class="pi pi-comments"></i>
-          会議内容について質問
-        </h4>
-        <Button 
-          :icon="chatCollapsed ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
-          class="p-button-text p-button-sm"
-        />
-      </div>
-      
-      <div v-if="!chatCollapsed" class="chat-content">
-        <!-- チャット履歴 -->
-        <div class="chat-messages" ref="messagesContainer">
-          <ChatMessages 
-            :messages="messages" 
-            :loading="isLoading"
-            @citation-click="highlightTranscription"
-          />
-        </div>
-        
-        <!-- 入力エリア -->
-        <div class="chat-input-area">
-          <div class="input-mode-selector">
-            <ToggleButton 
-              v-model="isEditMode"
-              onLabel="編集モード"
-              offLabel="質問モード"
-              onIcon="pi pi-pencil"
-              offIcon="pi pi-question-circle"
-            />
-          </div>
-          <ChatInput 
-            @send-message="handleSendMessage"
-            :disabled="isLoading"
-            :placeholder="isEditMode ? '議事録の編集指示を入力してください...' : '会議内容について質問してください...'"
-            :edit-mode="isEditMode"
-          />
-        </div>
-        
-        <!-- 編集履歴（編集モード時のみ） -->
-        <div v-if="isEditMode && editHistory.length > 0" class="edit-history">
-          <h5>編集履歴</h5>
-          <div 
-            v-for="edit in editHistory" 
-            :key="edit.edit_id"
-            class="edit-history-item"
-          >
-            <div class="edit-summary">{{ edit.changes_summary.join(', ') }}</div>
-            <div class="edit-actions">
-              <Button 
-                label="取り消し"
-                class="p-button-text p-button-sm"
-                @click="revertEdit(edit.edit_id)"
-                :disabled="edit.reverted"
-              />
-            </div>
-          </div>
-        </div>
-        
-        <!-- 使用状況 -->
-        <div class="chat-usage">
-          <small>
-            質問数: {{ questionCount }} / 編集数: {{ editCount }} / トークン: {{ totalTokens }}
-          </small>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script>
-export default {
-  data() {
-    return {
-      transcriptionHeight: '60%',
-      chatHeight: '40%',
-      chatCollapsed: false,
-      messages: [],
-      editHistory: [],
-      isLoading: false,
-      isEditMode: false,  // 質問モード/編集モード切り替え
-      totalTokens: 0,
-      highlightedText: null
-    }
-  },
-
-  computed: {
-    questionCount() {
-      return this.messages.filter(m => m.intent === 'question').length
-    },
-    editCount() {
-      return this.messages.filter(m => m.intent === 'edit_request').length
-    }
-  },
-  
-  methods: {
-    handleResize({ transcriptionRatio, chatRatio }) {
-      this.transcriptionHeight = `${transcriptionRatio * 100}%`
-      this.chatHeight = `${chatRatio * 100}%`
-    },
-    
-    toggleChatCollapse() {
-      this.chatCollapsed = !this.chatCollapsed
-      if (this.chatCollapsed) {
-        this.transcriptionHeight = '100%'
-        this.chatHeight = '40px'  // ヘッダーのみ
-      } else {
-        this.transcriptionHeight = '60%'
-        this.chatHeight = '40%'
-      }
-    },
-    
-    highlightTranscription(citation) {
-      this.highlightedText = citation.text
-      // 3秒後にハイライト解除
-      setTimeout(() => {
-        this.highlightedText = null
-      }, 3000)
-    },
-
-    async handleSendMessage(message) {
-      const intent = this.isEditMode ? 'edit_request' : 'question'
-      
-      try {
-        this.isLoading = true
-        
-        // メッセージ送信
-        const response = await this.sendChatMessage(message, intent)
-        
-        if (intent === 'edit_request' && response.edit_actions.length > 0) {
-          // 編集確認ダイアログ表示
-          const confirmed = await this.confirmEdit(response.edit_actions)
-          if (confirmed) {
-            await this.executeEdit(response.message_id, response.edit_actions)
-          }
-        }
-      } catch (error) {
-        console.error('Chat message error:', error)
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    async confirmEdit(editActions) {
-      return new Promise((resolve) => {
-        this.$confirm.require({
-          message: `以下の編集を実行しますか？\n${editActions.map(a => a.description).join('\n')}`,
-          header: '編集確認',
-          acceptLabel: '実行',
-          rejectLabel: 'キャンセル',
-          accept: () => resolve(true),
-          reject: () => resolve(false)
-        })
-      })
-    },
-
-    async executeEdit(messageId, editActions) {
-      try {
-        const response = await this.editMinutes(messageId, editActions)
-        
-        // 編集履歴に追加
-        this.editHistory.unshift({
-          edit_id: response.edit_id,
-          changes_summary: response.changes_summary,
-          timestamp: new Date(),
-          reverted: false
-        })
-        
-        // 議事録コンテンツを更新
-        this.$emit('minutes-updated', response.updated_minutes)
-        
-        this.$toast.add({
-          severity: 'success',
-          summary: '編集完了',
-          detail: `${response.changes_summary.length}件の変更を適用しました`,
-          life: 3000
-        })
-      } catch (error) {
-        this.$toast.add({
-          severity: 'error',
-          summary: '編集エラー',
-          detail: error.message,
-          life: 5000
-        })
-      }
-    },
-
-    async revertEdit(editId) {
-      try {
-        const response = await this.revertMinutesEdit(editId)
-        
-        // 編集履歴を更新
-        const editIndex = this.editHistory.findIndex(e => e.edit_id === editId)
-        if (editIndex !== -1) {
-          this.editHistory[editIndex].reverted = true
-        }
-        
-        // 議事録コンテンツを更新
-        this.$emit('minutes-updated', response.reverted_minutes)
-        
-        this.$toast.add({
-          severity: 'info',
-          summary: '編集を取り消しました',
-          life: 3000
-        })
-      } catch (error) {
-        this.$toast.add({
-          severity: 'error',
-          summary: '取り消しエラー',
-          detail: error.message,
-          life: 5000
-        })
-      }
-    }
-  }
-}
-</script>
-```
-
-#### ChatMessages.vue 設計
-
-```vue
-<template>
-  <div class="chat-messages-list">
-    <div 
-      v-for="message in messages" 
-      :key="message.message_id"
-      class="message-pair"
-    >
-      <!-- ユーザーメッセージ -->
-      <div class="user-message">
-        <div class="message-content">{{ message.message }}</div>
-        <div class="message-time">{{ formatTime(message.timestamp) }}</div>
-      </div>
-      
-      <!-- AI回答 -->
-      <div class="assistant-message">
-        <div class="message-content">
-          {{ message.response }}
-          
-          <!-- 引用箇所 -->
-          <div v-if="message.citations.length > 0" class="citations">
-            <h5>参照箇所:</h5>
-            <div 
-              v-for="citation in message.citations"
-              :key="citation.text"
-              class="citation-item"
-              @click="$emit('citation-click', citation)"
-            >
-              <blockquote>{{ citation.text }}</blockquote>
-              <small v-if="citation.start_time">
-                時刻: {{ citation.start_time }}
-              </small>
-            </div>
-          </div>
-        </div>
-        <div class="message-time">{{ formatTime(message.timestamp) }}</div>
-      </div>
-    </div>
-    
-    <!-- ローディング -->
-    <div v-if="loading" class="loading-message">
-      <ProgressSpinner size="small" />
-      <span>回答を生成中...</span>
-    </div>
-  </div>
-</template>
-```
-
-### UI/UX設計
-
-#### レイアウト
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     議事録詳細画面                            │
-├─────────────────┬───────────────────────────────────────────┤
-│                 │                                           │
-│  文字起こし      │              議事録内容                    │
-│  パネル(60%)    │                                           │
-│                 │  ┌───────────────────────────────────┐   │
-│ [文字起こし全文] │  │      構造化された議事録             │   │
-│                 │  │                                   │   │
-│ スクロール可能   │  │  1. 会議の目的                     │   │
-│                 │  │  2. 議論内容                       │   │
-├─────────────────┤  │  3. 決定事項                       │   │
-│                 │  │  4. アクションアイテム               │   │
-│ チャット機能     │  │                                   │   │
-│    (40%)       │  └───────────────────────────────────┘   │
-│                 │                                           │
-│ ┌─────────────┐ │  ┌───────────────────────────────────┐   │
-│ │Q: 結論は？   │ │  │  アクションアイテム一覧            │   │
-│ │A: プロジェクト│ │  │  □ タスクA (田中) - 1/20期限      │   │
-│ │  Aを...     │ │  │  □ タスクB (佐藤) - 1/25期限      │   │
-│ ├─────────────┤ │  └───────────────────────────────────┘   │
-│ │ [質問入力]   │ │                                           │
-│ └─────────────┘ │  [Markdownダウンロード] [PDFエクスポート]  │
-└─────────────────┴───────────────────────────────────────────┘
-```
-
-#### レイアウトの特徴
-
-1. **上下分割型レイアウト**
-   - 文字起こしパネルを上下に分割
-   - 上部60%: 文字起こし全文表示
-   - 下部40%: チャット機能
-   - 境界線はドラッグでリサイズ可能
-
-2. **文脈の連続性**
-   - 文字起こしを読む → 疑問が生じる → すぐ下で質問
-   - 自然な視線の流れを実現
-
-3. **効率的なスペース活用**
-   - 既存の空白スペースを有効活用
-   - 画面幅を広げることなく機能追加
-   - 2カラム構成を維持
-
-#### インタラクション設計
-
-1. **パネルリサイズ**
-   ```javascript
-   // ドラッグ可能な境界線
-   const resizeHandle = {
-     minChatHeight: 200,  // 最小200px
-     maxChatHeight: 600,  // 最大600px
-     defaultRatio: 0.4    // デフォルト40%
-   }
-   ```
-
-2. **チャット展開/折りたたみ**
-   - ヘッダーをクリックで折りたたみ可能
-   - 折りたたみ時はチャットアイコンのみ表示
-   - バッジで未読メッセージ数を表示
-
-3. **引用連携**
-   - チャット内の引用をクリック
-   - 文字起こしパネルの該当箇所へ自動スクロール
-   - ハイライト表示（3秒間）
-
-#### レスポンシブ対応
-
-- **デスクトップ（1200px以上）**: 2カラム＋上下分割レイアウト
-- **タブレット（768px-1199px）**: 
-  - 横向き: デスクトップと同じ
-  - 縦向き: 文字起こし/チャットをタブ切り替え
-- **スマホ（767px以下）**: 
-  - アコーディオン形式
-  - 議事録 → 文字起こし → チャットの順
 
 ## セキュリティ・パフォーマンス
 
