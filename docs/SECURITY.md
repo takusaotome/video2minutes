@@ -1,5 +1,7 @@
 # 🔒 Video2Minutes セキュリティガイド
 
+この資料を含む一覧は[README](README.md)にまとめています。
+
 ## 概要
 
 Video2Minutes APIのセキュリティ機能と設定方法について説明します。
