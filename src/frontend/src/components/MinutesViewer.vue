@@ -33,7 +33,7 @@
           </h1>
           <div class="file-info">
             <span class="filename" :title="minutes.video_filename">{{ truncateFilename(minutes.video_filename) }}</span>
-            <span class="date">{{ formatDate(minutes.created_at) }}</span>
+            <span class="date">{{ formatDate(getCreationTimestamp()) }}</span>
           </div>
         </div>
 
@@ -427,7 +427,7 @@ export default {
       
       // Add file info to the updated minutes content
       const fileInfo = `**ファイル名:** ${minutes.value.video_filename}  
-**作成日時:** ${formatDate(minutes.value.created_at)}  
+**作成日時:** ${formatDate(getCreationTimestamp())}  
 
 `
       
@@ -494,7 +494,10 @@ export default {
     }
 
     const formatDate = timestamp => {
-      if (!timestamp) return '作成日時未設定'
+      if (!timestamp) {
+        // If no timestamp provided, use current time as fallback
+        timestamp = new Date().toISOString()
+      }
       // UTC文字列をローカルタイムゾーンに変換
       const date = new Date(timestamp)
       if (isNaN(date.getTime())) return '日時形式エラー'
@@ -506,6 +509,16 @@ export default {
         minute: '2-digit',
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
       })
+    }
+
+    // Get the most appropriate creation timestamp
+    const getCreationTimestamp = () => {
+      if (!minutes.value) return new Date().toISOString()
+      
+      // Priority order: created_at > upload_timestamp > current time
+      return minutes.value.created_at || 
+             minutes.value.upload_timestamp || 
+             new Date().toISOString()
     }
 
     const truncateFilename = (filename, maxLength = 50) => {
@@ -545,7 +558,7 @@ export default {
 
       // Add file info to the complete content for download
       const fileInfo = `**ファイル名:** ${minutes.value.video_filename}  
-**作成日時:** ${formatDate(minutes.value.created_at)}  
+**作成日時:** ${formatDate(getCreationTimestamp())}  
 
 `
       
@@ -582,7 +595,7 @@ export default {
       const fileInfo = `議事録
 
 ファイル名: ${minutes.value.video_filename}
-作成日時: ${formatDate(minutes.value.created_at)}
+作成日時: ${formatDate(getCreationTimestamp())}
 
 ${'-'.repeat(50)}
 
@@ -629,29 +642,61 @@ ${'-'.repeat(50)}
         tempContainer.style.backgroundColor = 'white'
         tempContainer.style.fontFamily = '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif'
 
-        // Create header for PDF
+        // Create minimal header for PDF (only file info, not meeting info)
         const header = document.createElement('div')
         header.style.marginBottom = '30px'
         header.style.borderBottom = '2px solid var(--gray-200)'
         header.style.paddingBottom = '20px'
         
-        const meetingNameText = meetingName.value || '未設定'
-        const attendeesText = attendees.value.length > 0 ? attendees.value.join(', ') : '未設定'
-        const meetingDateText = meetingDate.value ? formatDate(meetingDate.value) : '未設定'
-        
         header.innerHTML = `
           <h1 style="color: var(--gray-700); font-size: 24px; margin: 0 0 15px 0; font-weight: bold;">議事録</h1>
           <div style="color: var(--gray-500); font-size: 12px;">
             <div style="margin-bottom: 5px;"><strong>ファイル名:</strong> ${minutes.value.video_filename}</div>
-            <div style="margin-bottom: 5px;"><strong>作成日時:</strong> ${formatDate(minutes.value.created_at)}</div>
-            <div style="margin-bottom: 5px;"><strong>会議名:</strong> ${meetingNameText}</div>
-            <div style="margin-bottom: 5px;"><strong>開催日時:</strong> ${meetingDateText}</div>
-            <div><strong>出席者:</strong> ${attendeesText}</div>
+            <div><strong>作成日時:</strong> ${formatDate(getCreationTimestamp())}</div>
           </div>
         `
 
         // Clone the rendered markdown content
         const markdownClone = markdownRenderer.cloneNode(true)
+        
+        // Remove only the duplicate title from markdown content
+        const removeDuplicateTitle = (element) => {
+          // Remove the first heading if it's just "議事録" (since we have it in PDF header)
+          const h1Elements = element.querySelectorAll('h1')
+          h1Elements.forEach(h1 => {
+            if (h1.textContent.trim() === '議事録') {
+              h1.remove()
+            }
+          })
+          
+          // Remove any standalone file info lines at the very beginning (but keep meeting info section)
+          const allElements = element.children
+          for (let i = 0; i < allElements.length; i++) {
+            const el = allElements[i]
+            const text = el.textContent || ''
+            
+            // Only remove standalone file info lines (not within a section)
+            if ((text.includes('ファイル名：') || text.includes('作成日時：')) && 
+                !text.includes('会議名：') && !text.includes('開催日時：') && !text.includes('出席者：')) {
+              el.remove()
+              i-- // Adjust index after removal
+            } else if (text.trim() === '' || text.trim() === '---') {
+              // Remove empty elements or dividers at the beginning
+              const nextEl = allElements[i + 1]
+              if (nextEl && !nextEl.textContent.includes('1. 会議情報')) {
+                el.remove()
+                i--
+              } else {
+                break
+              }
+            } else {
+              // Stop removing once we hit actual content
+              break
+            }
+          }
+        }
+        
+        removeDuplicateTitle(markdownClone)
         
         // Apply PDF-specific styles to the cloned content
         const applyPDFStyles = (element) => {
@@ -1283,6 +1328,7 @@ ${'-'.repeat(50)}
       downloadOptions,
       loadMinutes,
       formatDate,
+      getCreationTimestamp,
       truncateFilename,
       copyToClipboard,
       downloadMarkdown,
