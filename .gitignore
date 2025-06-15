@@ -49,3 +49,12 @@ minutes/
 *.log
 node_modules/
 playwright-report/
+
+# ストレージファイル（実行時データ）
+src/backend/storage/
+storage/
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!.vscode/settings.json
