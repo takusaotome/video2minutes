@@ -87,16 +87,27 @@ video2minutes/
 
 #### バックエンド
 ```bash
-cd src/backend
 pip install -r requirements.txt
+cd src/backend
 uvicorn app.main:app --reload
 ```
+Render へのデプロイ時には `src/backend/requirements.txt` が読み込まれますが、この
+ファイルはルートの `requirements.txt` を参照するだけの薄いラッパーです。ローカル
+環境でも同じ依存関係を利用できます。
 
 #### フロントエンド
 ```bash
 cd src/frontend
 npm install
 npm run dev
+```
+
+### テストの実行
+依存関係をインストールしてからテストを実行します。
+```bash
+pip install -r requirements.txt
+npm run install:all
+npm run test:all
 ```
 
 ### 依存関係のインストール
@@ -133,7 +144,6 @@ pip install black isort flake8 mypy pylint bandit safety autopep8
 # Node.js側ツールは依存関係インストール時に入ります
 npm run static-analysis
 ```
-
 
 ### CLI版ツール
 コマンドライン版も利用可能です。詳細は [src/cli/README.md](src/cli/README.md) を参照してください。
