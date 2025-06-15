@@ -109,10 +109,11 @@ class TestMainApplication:
         with patch("os.makedirs") as mock_makedirs:
             create_app()
 
-            # ディレクトリ作成が呼び出されることを確認
-            assert mock_makedirs.call_count == 2
+            # ディレクトリ作成が呼び出されることを確認（storageディレクトリが追加）
+            assert mock_makedirs.call_count == 3
             mock_makedirs.assert_any_call("test_uploads", exist_ok=True)
             mock_makedirs.assert_any_call("test_temp", exist_ok=True)
+            mock_makedirs.assert_any_call("storage", exist_ok=True)
 
 
 class TestGlobalExceptionHandler:

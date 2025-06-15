@@ -83,6 +83,20 @@ class Settings(BaseSettings):
     gpt_model: str = "o3"
     gpt_max_tokens: int = 4000
 
+    # チャット機能設定
+    chat_enabled: bool = True
+    chat_max_sessions_per_task: int = 5
+    chat_session_timeout_hours: int = 6
+    chat_max_messages_per_session: int = 100
+    chat_max_tokens_per_request: int = 8000
+    chat_rate_limit_per_minute: int = 10
+    
+    # OpenAI Chat設定  
+    openai_chat_model: str = "gpt-4.1"  # gpt-4.1, o3-mini, gpt-4o (課金後利用可能)
+    openai_chat_max_tokens: int = 4000
+    openai_chat_temperature: float = 0.3
+    openai_timeout_seconds: int = 60
+    
     # ロギング設定
     log_level: str = "INFO"
     log_dir: str = "logs"

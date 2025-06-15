@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.api.endpoints import minutes
+from app.api.endpoints import minutes, chat
 from app.config import settings
 from app.services.task_queue import initialize_task_queue, shutdown_task_queue
 from app.store import tasks_store
@@ -105,6 +105,7 @@ def create_app() -> FastAPI:
 
     # ルーターを追加
     app.include_router(minutes.router, prefix="/api/v1/minutes", tags=["minutes"])
+    app.include_router(chat.router, prefix="/api/v1/minutes/{task_id}/chat", tags=["chat"])
 
     # 必要なディレクトリを作成
     os.makedirs(settings.upload_dir, exist_ok=True)
@@ -137,14 +138,22 @@ def create_app() -> FastAPI:
     @app.get("/health")
     async def health_check():
         from app.services.task_queue import get_task_queue
+        from app.store.chat_store import chat_store
 
         queue = get_task_queue()
         queue_status = queue.get_queue_status()
+        chat_stats = chat_store.get_stats()
 
         return {
             "status": "healthy",
             "tasks_count": len(tasks_store),
             "session_stats": session_task_store.get_session_stats(),
+            "chat_stats": {
+                "total_sessions": chat_stats.total_sessions,
+                "active_sessions": chat_stats.active_sessions,
+                "total_messages": chat_stats.total_messages,
+                "total_tokens_used": chat_stats.total_tokens_used
+            },
             "queue": queue_status,
         }
 

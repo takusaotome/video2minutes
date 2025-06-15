@@ -32,7 +32,7 @@ class TestMainExtended:
 
     def test_health_check_endpoint(self, client):
         """ヘルスチェックエンドポイントテスト"""
-        with patch("app.main.get_task_queue") as mock_get_queue:
+        with patch("app.services.task_queue.get_task_queue") as mock_get_queue:
             # モックキューを作成
             mock_queue = Mock()
             mock_queue.get_queue_status.return_value = {

@@ -66,35 +66,20 @@
           class="transcript-toggle p-button-outlined"
         />
 
-        <!-- Left Column: Transcript -->
+        <!-- Left Column: Integrated Panel (Transcript + Chat) -->
         <div class="left-column">
           <div
             v-show="!isMobile || showTranscript"
-            class="transcript-sidebar"
+            class="left-panel-container"
             :class="{ 'mobile-overlay': isMobile && showTranscript }"
           >
-            <Card class="transcript-card">
-              <template #title>
-                <div class="transcript-header">
-                  <i class="pi pi-microphone"></i>
-                  文字起こし全文
-                  <Button
-                    v-if="isMobile"
-                    icon="pi pi-times"
-                    class="p-button-text p-button-sm close-transcript"
-                    @click="toggleTranscript"
-                  />
-                </div>
-              </template>
-
-              <template #content>
-                <ScrollPanel class="transcript-scroll">
-                  <div class="transcript-content">
-                    <pre class="transcript-text">{{ minutes.transcription }}</pre>
-                  </div>
-                </ScrollPanel>
-              </template>
-            </Card>
+            <LeftPanel
+              :transcription="minutes.transcription"
+              :minutes="minutes.minutes"
+              :task-id="taskId"
+              :panel-width="'100%'"
+              @minutes-updated="handleMinutesUpdate"
+            />
           </div>
         </div>
 
@@ -247,6 +232,7 @@ import InputText from 'primevue/inputtext'
 import Calendar from 'primevue/calendar'
 import Chips from 'primevue/chips'
 import MarkdownRenderer from './MarkdownRenderer.vue'
+import LeftPanel from './LeftPanel.vue'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
@@ -263,7 +249,8 @@ export default {
     InputText,
     Calendar,
     Chips,
-    MarkdownRenderer
+    MarkdownRenderer,
+    LeftPanel
   },
   props: {
     taskId: {
@@ -272,6 +259,11 @@ export default {
     }
   },
   emits: ['back'],
+  data() {
+    return {
+      currentMinutes: null
+    }
+  },
   setup(props) {
     const toast = useToast()
 
@@ -1082,6 +1074,13 @@ ${'-'.repeat(50)}
         hasUnsavedChanges.value = true
       }
     })
+    
+    // Handle minutes update from chat
+    const handleMinutesUpdate = (updatedMinutes) => {
+      if (minutes.value) {
+        minutes.value.minutes = updatedMinutes
+      }
+    }
 
     // Lifecycle
     onMounted(() => {
@@ -1113,6 +1112,7 @@ ${'-'.repeat(50)}
       downloadPDF,
       toggleTranscript,
       updateWordCount,
+      handleMinutesUpdate,
       // Meeting details editing
       meetingName,
       meetingDate,
@@ -1268,7 +1268,7 @@ ${'-'.repeat(50)}
 
 .content-layout {
   display: grid;
-  grid-template-columns: 35% 65%;
+  grid-template-columns: 45% 55%;
   gap: 24px;
   position: relative;
   padding: 0 24px;
@@ -1277,6 +1277,7 @@ ${'-'.repeat(50)}
   max-width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+  min-height: calc(100vh - 300px);
 }
 
 /* 新しいカラム構造 */
@@ -1296,6 +1297,7 @@ ${'-'.repeat(50)}
 
 .right-column {
   padding-right: 0;
+  height: auto;
 }
 
 /* 上端を確実に揃える */
@@ -1310,16 +1312,16 @@ ${'-'.repeat(50)}
   margin-top: 0 !important;
 }
 
-.transcript-sidebar {
+.left-panel-container {
   position: sticky;
   top: 32px;
-  height: fit-content;
-  max-height: calc(100vh - 200px);
+  height: calc(100vh - 200px);
   width: 100%;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .transcript-sidebar :deep(.p-card) {
@@ -1444,6 +1446,9 @@ ${'-'.repeat(50)}
   margin: 0 !important;
   padding: 0;
   align-self: start;
+  min-height: calc(100vh - 200px);
+  height: auto;
+  overflow-y: visible;
 }
 
 .minutes-main > * {
@@ -1459,6 +1464,23 @@ ${'-'.repeat(50)}
   max-width: 100%;
   overflow: hidden;
   align-self: flex-start;
+  flex-shrink: 0;
+}
+
+/* 会議詳細カードの高さ自動調整 */
+.meeting-details-card {
+  min-height: 280px;
+  height: auto;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+/* 議事録カードの可変高さ */
+.minutes-card {
+  flex: 1 1 auto;
+  min-height: 400px;
+  overflow: visible;
+  height: auto;
 }
 
 /* Debug: 上端位置を視覚的に確認するためのデバッグスタイル */
@@ -1486,14 +1508,15 @@ ${'-'.repeat(50)}
   overflow: hidden;
 }
 
-.meeting-details-card :deep(.p-card-content),
-.minutes-card :deep(.p-card-content) {
+.meeting-details-card :deep(.p-card-content) {
   padding: 20px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
+  height: auto;
 }
+
 
 /* 会議詳細カード固有のスタイル */
 .meeting-details-card :deep(.p-card) {
@@ -1530,11 +1553,17 @@ ${'-'.repeat(50)}
 .minutes-card :deep(.p-card) {
   background: white;
   border: 1px solid var(--gray-200);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .minutes-card :deep(.p-card-body) {
   padding: 0 !important;
   margin: 0 !important;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .minutes-card :deep(.p-card-caption) {
@@ -1554,12 +1583,47 @@ ${'-'.repeat(50)}
 .minutes-card :deep(.p-card-content) {
   padding: 20px !important;
   margin: 0 !important;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .minutes-card :deep(.markdown-renderer) {
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
+  height: auto;
+  min-height: 100%;
+}
+
+/* カスタムスクロールバー */
+.minutes-main,
+.minutes-card :deep(.p-card-content) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-400) var(--gray-100);
+}
+
+.minutes-main::-webkit-scrollbar,
+.minutes-card :deep(.p-card-content)::-webkit-scrollbar {
+  width: 8px;
+}
+
+.minutes-main::-webkit-scrollbar-track,
+.minutes-card :deep(.p-card-content)::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: 4px;
+}
+
+.minutes-main::-webkit-scrollbar-thumb,
+.minutes-card :deep(.p-card-content)::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.minutes-main::-webkit-scrollbar-thumb:hover,
+.minutes-card :deep(.p-card-content)::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-500);
 }
 
 /* 議事録内のテーブルとコンテンツの幅制限 */
@@ -1792,6 +1856,7 @@ ${'-'.repeat(50)}
   
   .minutes-main {
     gap: 18px;
+    height: calc(100vh - 250px);
   }
   
   .minutes-header {
@@ -1819,6 +1884,7 @@ ${'-'.repeat(50)}
   
   .minutes-main {
     gap: 16px;
+    height: calc(100vh - 250px);
   }
   
   .minutes-header {
@@ -1871,12 +1937,23 @@ ${'-'.repeat(50)}
   
   .minutes-main {
     gap: 16px;
+    height: auto;
   }
   
   .meeting-details-card,
   .minutes-card {
     margin-bottom: 0;
     width: 100%;
+    min-height: auto;
+    max-height: none;
+  }
+  
+  .meeting-details-card {
+    min-height: 200px;
+  }
+  
+  .minutes-card {
+    min-height: 300px;
   }
 }
 

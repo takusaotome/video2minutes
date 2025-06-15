@@ -75,4 +75,47 @@ export const minutesApi = {
   }
 }
 
+export const chatApi = {
+  // Create chat session
+  createSession: async (taskId, transcription, minutes) => {
+    return api.post(`/minutes/${taskId}/chat/sessions`, {
+      transcription,
+      minutes
+    })
+  },
+
+  // Get chat sessions
+  getSessions: async (taskId) => {
+    return api.get(`/minutes/${taskId}/chat/sessions`)
+  },
+
+  // Send message
+  sendMessage: async (taskId, sessionId, message, intent = 'question') => {
+    return api.post(`/minutes/${taskId}/chat/sessions/${sessionId}/messages`, {
+      message,
+      intent
+    })
+  },
+
+  // Get chat history
+  getChatHistory: async (taskId, sessionId) => {
+    return api.get(`/minutes/${taskId}/chat/sessions/${sessionId}/messages`)
+  },
+
+  // Execute edit
+  executeEdit: async (taskId, sessionId, messageId) => {
+    return api.post(`/minutes/${taskId}/chat/sessions/${sessionId}/messages/${messageId}/execute`)
+  },
+
+  // Get edit history
+  getEditHistory: async (taskId) => {
+    return api.get(`/minutes/${taskId}/chat/edit-history`)
+  },
+
+  // Undo edit
+  undoEdit: async (taskId, editId) => {
+    return api.post(`/minutes/${taskId}/chat/edit-history/${editId}/undo`)
+  }
+}
+
 export default api

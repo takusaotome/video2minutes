@@ -209,7 +209,7 @@ class TestFileValidation:
             ("VIDEO.MP4", True),  # 大文字
             ("video.txt", False),
             ("video.jpg", False),
-            ("video.mp3", False),
+            ("video.mp3", True),  # Now supported as audio format
             ("video", False),  # 拡張子なし
         ],
     )
@@ -221,9 +221,11 @@ class TestFileValidation:
 
         if should_pass:
             try:
-                FileHandler.validate_video_file(mock_file)
+                result = FileHandler.validate_media_file(mock_file)
+                # Video files should return "video" 
+                assert result in ["video", "audio"]
             except HTTPException:
-                pytest.fail(f"validate_video_file should pass for {filename}")
+                pytest.fail(f"validate_media_file should pass for {filename}")
         else:
             with pytest.raises(HTTPException):
-                FileHandler.validate_video_file(mock_file)
+                FileHandler.validate_media_file(mock_file)
