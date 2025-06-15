@@ -1,0 +1,1966 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Video2Minutes API",
+        "description": "\u52d5\u753b\u304b\u3089\u8b70\u4e8b\u9332\u3092\u751f\u6210\u3059\u308bAPI\u30b5\u30fc\u30d3\u30b9",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/v1/minutes/upload": {
+            "post": {
+                "tags": [
+                    "minutes"
+                ],
+                "summary": "Upload Media",
+                "description": "\u52d5\u753b\u30fb\u97f3\u58f0\u30d5\u30a1\u30a4\u30eb\u3092\u30a2\u30c3\u30d7\u30ed\u30fc\u30c9\u3057\u3066\u51e6\u7406\u3092\u958b\u59cb",
+                "operationId": "upload_media_api_v1_minutes_upload_post",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_upload_media_api_v1_minutes_upload_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UploadResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/tasks": {
+            "get": {
+                "tags": [
+                    "minutes"
+                ],
+                "summary": "Get All Tasks",
+                "description": "\u73fe\u5728\u306e\u30bb\u30c3\u30b7\u30e7\u30f3\u306e\u30bf\u30b9\u30af\u4e00\u89a7\u3092\u53d6\u5f97",
+                "operationId": "get_all_tasks_api_v1_minutes_tasks_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskListResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/queue/status": {
+            "get": {
+                "tags": [
+                    "minutes"
+                ],
+                "summary": "Get Queue Status",
+                "description": "\u30bf\u30b9\u30af\u30ad\u30e5\u30fc\u306e\u72b6\u614b\u3092\u53d6\u5f97",
+                "operationId": "get_queue_status_api_v1_minutes_queue_status_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/status": {
+            "get": {
+                "tags": [
+                    "minutes"
+                ],
+                "summary": "Get Task Status",
+                "description": "\u7279\u5b9a\u30bf\u30b9\u30af\u306e\u30b9\u30c6\u30fc\u30bf\u30b9\u3092\u53d6\u5f97",
+                "operationId": "get_task_status_api_v1_minutes__task_id__status_get",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Task Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskStatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/result": {
+            "get": {
+                "tags": [
+                    "minutes"
+                ],
+                "summary": "Get Task Result",
+                "description": "\u5b8c\u4e86\u3057\u305f\u30bf\u30b9\u30af\u306e\u7d50\u679c\u3092\u53d6\u5f97",
+                "operationId": "get_task_result_api_v1_minutes__task_id__result_get",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Task Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TaskResultResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}": {
+            "delete": {
+                "tags": [
+                    "minutes"
+                ],
+                "summary": "Delete Task",
+                "description": "\u30bf\u30b9\u30af\u3092\u524a\u9664",
+                "operationId": "delete_task_api_v1_minutes__task_id__delete",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Task Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/retry": {
+            "post": {
+                "tags": [
+                    "minutes"
+                ],
+                "summary": "Retry Task",
+                "description": "\u5931\u6557\u3057\u305f\u30bf\u30b9\u30af\u3092\u518d\u5b9f\u884c",
+                "operationId": "retry_task_api_v1_minutes__task_id__retry_post",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Task Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/regenerate": {
+            "post": {
+                "tags": [
+                    "minutes"
+                ],
+                "summary": "Regenerate Minutes",
+                "description": "\u6587\u5b57\u8d77\u3053\u3057\u304b\u3089\u8b70\u4e8b\u9332\u3092\u518d\u751f\u6210",
+                "operationId": "regenerate_minutes_api_v1_minutes__task_id__regenerate_post",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Task Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/edit": {
+            "post": {
+                "tags": [
+                    "minutes"
+                ],
+                "summary": "Edit Minutes",
+                "description": "\u8b70\u4e8b\u9332\u3092\u7de8\u96c6\n\nArgs:\n    task_id: \u30bf\u30b9\u30afID\n    edit_request: \u7de8\u96c6\u30ea\u30af\u30a8\u30b9\u30c8\n\nReturns:\n    EditMinutesResponse: \u7de8\u96c6\u7d50\u679c",
+                "operationId": "edit_minutes_api_v1_minutes__task_id__edit_post",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Task Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EditMinutesRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EditMinutesResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/chat/sessions": {
+            "post": {
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Create Chat Session",
+                "description": "\u65b0\u3057\u3044\u30c1\u30e3\u30c3\u30c8\u30bb\u30c3\u30b7\u30e7\u30f3\u3092\u4f5c\u6210\n\nArgs:\n    task_id: \u95a2\u9023\u3059\u308b\u30bf\u30b9\u30afID\n    session_request: \u30bb\u30c3\u30b7\u30e7\u30f3\u4f5c\u6210\u30ea\u30af\u30a8\u30b9\u30c8\n\nReturns:\n    CreateChatSessionResponse: \u30bb\u30c3\u30b7\u30e7\u30f3\u4f5c\u6210\u7d50\u679c",
+                "operationId": "create_chat_session_api_v1_minutes__task_id__chat_sessions_post",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bf\u30b9\u30afID",
+                            "title": "Task Id"
+                        },
+                        "description": "\u30bf\u30b9\u30afID"
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/CreateChatSessionRequest"
+                                    }
+                                ],
+                                "title": "Session Request"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CreateChatSessionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "chat"
+                ],
+                "summary": "List Chat Sessions",
+                "description": "\u30bf\u30b9\u30af\u306b\u95a2\u9023\u3059\u308b\u30c1\u30e3\u30c3\u30c8\u30bb\u30c3\u30b7\u30e7\u30f3\u4e00\u89a7\u3092\u53d6\u5f97\n\nArgs:\n    task_id: \u30bf\u30b9\u30afID\n\nReturns:\n    JSONResponse: \u30bb\u30c3\u30b7\u30e7\u30f3\u4e00\u89a7",
+                "operationId": "list_chat_sessions_api_v1_minutes__task_id__chat_sessions_get",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bf\u30b9\u30afID",
+                            "title": "Task Id"
+                        },
+                        "description": "\u30bf\u30b9\u30afID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/chat/sessions/{session_id}/messages": {
+            "get": {
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Get Chat History",
+                "description": "\u30c1\u30e3\u30c3\u30c8\u5c65\u6b74\u3092\u53d6\u5f97\n\nArgs:\n    task_id: \u30bf\u30b9\u30afID\n    session_id: \u30bb\u30c3\u30b7\u30e7\u30f3ID\n\nReturns:\n    ChatHistoryResponse: \u30c1\u30e3\u30c3\u30c8\u5c65\u6b74",
+                "operationId": "get_chat_history_api_v1_minutes__task_id__chat_sessions__session_id__messages_get",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bf\u30b9\u30afID",
+                            "title": "Task Id"
+                        },
+                        "description": "\u30bf\u30b9\u30afID"
+                    },
+                    {
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID",
+                            "title": "Session Id"
+                        },
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChatHistoryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Send Chat Message",
+                "description": "\u30c1\u30e3\u30c3\u30c8\u30e1\u30c3\u30bb\u30fc\u30b8\u3092\u9001\u4fe1\u3057\u3066AI\u56de\u7b54\u3092\u53d6\u5f97\n\nArgs:\n    task_id: \u30bf\u30b9\u30afID\n    session_id: \u30bb\u30c3\u30b7\u30e7\u30f3ID\n    message_request: \u30e1\u30c3\u30bb\u30fc\u30b8\u9001\u4fe1\u30ea\u30af\u30a8\u30b9\u30c8\n\nReturns:\n    SendMessageResponse: AI\u56de\u7b54",
+                "operationId": "send_chat_message_api_v1_minutes__task_id__chat_sessions__session_id__messages_post",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bf\u30b9\u30afID",
+                            "title": "Task Id"
+                        },
+                        "description": "\u30bf\u30b9\u30afID"
+                    },
+                    {
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID",
+                            "title": "Session Id"
+                        },
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID"
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/SendMessageRequest"
+                                    }
+                                ],
+                                "title": "Message Request"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SendMessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/chat/sessions/{session_id}": {
+            "delete": {
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Delete Chat Session",
+                "description": "\u30c1\u30e3\u30c3\u30c8\u30bb\u30c3\u30b7\u30e7\u30f3\u3092\u524a\u9664\n\nArgs:\n    task_id: \u30bf\u30b9\u30afID\n    session_id: \u30bb\u30c3\u30b7\u30e7\u30f3ID\n\nReturns:\n    JSONResponse: \u524a\u9664\u7d50\u679c",
+                "operationId": "delete_chat_session_api_v1_minutes__task_id__chat_sessions__session_id__delete",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bf\u30b9\u30afID",
+                            "title": "Task Id"
+                        },
+                        "description": "\u30bf\u30b9\u30afID"
+                    },
+                    {
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID",
+                            "title": "Session Id"
+                        },
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/chat/sessions/{session_id}/citations": {
+            "get": {
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Get Session Citations",
+                "description": "\u30bb\u30c3\u30b7\u30e7\u30f3\u307e\u305f\u306f\u7279\u5b9a\u30e1\u30c3\u30bb\u30fc\u30b8\u306e\u5f15\u7528\u4e00\u89a7\u3092\u53d6\u5f97\n\nArgs:\n    task_id: \u30bf\u30b9\u30afID\n    session_id: \u30bb\u30c3\u30b7\u30e7\u30f3ID\n    message_id: \u30e1\u30c3\u30bb\u30fc\u30b8ID\uff08\u6307\u5b9a\u6642\u306f\u8a72\u5f53\u30e1\u30c3\u30bb\u30fc\u30b8\u306e\u5f15\u7528\u306e\u307f\uff09\n\nReturns:\n    JSONResponse: \u5f15\u7528\u4e00\u89a7",
+                "operationId": "get_session_citations_api_v1_minutes__task_id__chat_sessions__session_id__citations_get",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bf\u30b9\u30afID",
+                            "title": "Task Id"
+                        },
+                        "description": "\u30bf\u30b9\u30afID"
+                    },
+                    {
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID",
+                            "title": "Session Id"
+                        },
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID"
+                    },
+                    {
+                        "name": "message_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "title": "Message Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/chat/sessions/{session_id}/highlights": {
+            "post": {
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Create Highlight",
+                "description": "\u65b0\u3057\u3044\u30cf\u30a4\u30e9\u30a4\u30c8\u3092\u4f5c\u6210\n\nArgs:\n    task_id: \u30bf\u30b9\u30afID\n    session_id: \u30bb\u30c3\u30b7\u30e7\u30f3ID\n    highlight_data: \u30cf\u30a4\u30e9\u30a4\u30c8\u60c5\u5831\n\nReturns:\n    JSONResponse: \u4f5c\u6210\u7d50\u679c",
+                "operationId": "create_highlight_api_v1_minutes__task_id__chat_sessions__session_id__highlights_post",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bf\u30b9\u30afID",
+                            "title": "Task Id"
+                        },
+                        "description": "\u30bf\u30b9\u30afID"
+                    },
+                    {
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID",
+                            "title": "Session Id"
+                        },
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID"
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "title": "Highlight Data"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/chat/sessions/{session_id}/analyze-edit": {
+            "post": {
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Analyze Edit Intent",
+                "description": "\u7de8\u96c6\u30a4\u30f3\u30c6\u30f3\u30c8\u89e3\u6790\u30c6\u30b9\u30c8\u7528\u30a8\u30f3\u30c9\u30dd\u30a4\u30f3\u30c8\n\nArgs:\n    task_id: \u30bf\u30b9\u30afID\n    session_id: \u30bb\u30c3\u30b7\u30e7\u30f3ID  \n    edit_instruction: \u7de8\u96c6\u6307\u793a\n\nReturns:\n    JSONResponse: \u89e3\u6790\u7d50\u679c",
+                "operationId": "analyze_edit_intent_api_v1_minutes__task_id__chat_sessions__session_id__analyze_edit_post",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bf\u30b9\u30afID",
+                            "title": "Task Id"
+                        },
+                        "description": "\u30bf\u30b9\u30afID"
+                    },
+                    {
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID",
+                            "title": "Session Id"
+                        },
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID"
+                    },
+                    {
+                        "name": "edit_instruction",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "title": "Edit Instruction"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/chat/sessions/{session_id}/edit-history": {
+            "get": {
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Get Edit History",
+                "description": "\u30bb\u30c3\u30b7\u30e7\u30f3\u306e\u7de8\u96c6\u5c65\u6b74\u3092\u53d6\u5f97\n\nArgs:\n    task_id: \u30bf\u30b9\u30afID\n    session_id: \u30bb\u30c3\u30b7\u30e7\u30f3ID\n    limit: \u53d6\u5f97\u4ef6\u6570\u5236\u9650\n    include_details: \u8a73\u7d30\u60c5\u5831\u3092\u542b\u3081\u308b\u304b\n\nReturns:\n    JSONResponse: \u7de8\u96c6\u5c65\u6b74",
+                "operationId": "get_edit_history_api_v1_minutes__task_id__chat_sessions__session_id__edit_history_get",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bf\u30b9\u30afID",
+                            "title": "Task Id"
+                        },
+                        "description": "\u30bf\u30b9\u30afID"
+                    },
+                    {
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID",
+                            "title": "Session Id"
+                        },
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID"
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20,
+                            "title": "Limit"
+                        }
+                    },
+                    {
+                        "name": "include_details",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "Include Details"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/minutes/{task_id}/chat/sessions/{session_id}/edit-history/{edit_id}/undo": {
+            "post": {
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Undo Edit",
+                "description": "\u6307\u5b9a\u3057\u305f\u7de8\u96c6\u3092\u53d6\u308a\u6d88\u3057\n\nArgs:\n    task_id: \u30bf\u30b9\u30afID\n    session_id: \u30bb\u30c3\u30b7\u30e7\u30f3ID\n    edit_id: \u53d6\u308a\u6d88\u3057\u5bfe\u8c61\u306e\u7de8\u96c6ID\n\nReturns:\n    JSONResponse: \u53d6\u308a\u6d88\u3057\u7d50\u679c",
+                "operationId": "undo_edit_api_v1_minutes__task_id__chat_sessions__session_id__edit_history__edit_id__undo_post",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bf\u30b9\u30afID",
+                            "title": "Task Id"
+                        },
+                        "description": "\u30bf\u30b9\u30afID"
+                    },
+                    {
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID",
+                            "title": "Session Id"
+                        },
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID"
+                    },
+                    {
+                        "name": "edit_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "\u7de8\u96c6ID",
+                            "title": "Edit Id"
+                        },
+                        "description": "\u7de8\u96c6ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/": {
+            "get": {
+                "summary": "Root",
+                "operationId": "root__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "summary": "Health Check",
+                "operationId": "health_check_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Body_upload_media_api_v1_minutes_upload_post": {
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "title": "File"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "file"
+                ],
+                "title": "Body_upload_media_api_v1_minutes_upload_post"
+            },
+            "ChatHistoryResponse": {
+                "properties": {
+                    "messages": {
+                        "items": {
+                            "$ref": "#/components/schemas/ChatMessage"
+                        },
+                        "type": "array",
+                        "title": "Messages",
+                        "description": "\u30e1\u30c3\u30bb\u30fc\u30b8\u30ea\u30b9\u30c8"
+                    },
+                    "total_tokens": {
+                        "type": "integer",
+                        "title": "Total Tokens",
+                        "description": "\u7dcf\u4f7f\u7528\u30c8\u30fc\u30af\u30f3\u6570",
+                        "default": 0
+                    },
+                    "session_info": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ChatSession"
+                            }
+                        ],
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3\u60c5\u5831"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "messages",
+                    "session_info"
+                ],
+                "title": "ChatHistoryResponse",
+                "description": "\u30c1\u30e3\u30c3\u30c8\u5c65\u6b74\u30ec\u30b9\u30dd\u30f3\u30b9"
+            },
+            "ChatMessage": {
+                "properties": {
+                    "message_id": {
+                        "type": "string",
+                        "title": "Message Id",
+                        "description": "\u30e1\u30c3\u30bb\u30fc\u30b8ID"
+                    },
+                    "session_id": {
+                        "type": "string",
+                        "title": "Session Id",
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID"
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message",
+                        "description": "\u30e6\u30fc\u30b6\u30fc\u30e1\u30c3\u30bb\u30fc\u30b8"
+                    },
+                    "response": {
+                        "type": "string",
+                        "title": "Response",
+                        "description": "AI\u306e\u56de\u7b54",
+                        "default": ""
+                    },
+                    "message_type": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MessageType"
+                            }
+                        ],
+                        "description": "\u30e1\u30c3\u30bb\u30fc\u30b8\u30bf\u30a4\u30d7",
+                        "default": "user"
+                    },
+                    "intent": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MessageIntent"
+                            }
+                        ],
+                        "description": "\u30e1\u30c3\u30bb\u30fc\u30b8\u306e\u610f\u56f3",
+                        "default": "question"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Timestamp",
+                        "description": "\u30bf\u30a4\u30e0\u30b9\u30bf\u30f3\u30d7"
+                    },
+                    "citations": {
+                        "items": {
+                            "$ref": "#/components/schemas/Citation"
+                        },
+                        "type": "array",
+                        "title": "Citations",
+                        "description": "\u5f15\u7528\u30ea\u30b9\u30c8"
+                    },
+                    "edit_actions": {
+                        "items": {
+                            "$ref": "#/components/schemas/EditAction"
+                        },
+                        "type": "array",
+                        "title": "Edit Actions",
+                        "description": "\u7de8\u96c6\u30a2\u30af\u30b7\u30e7\u30f3\uff08\u7de8\u96c6\u30ea\u30af\u30a8\u30b9\u30c8\u306e\u5834\u5408\uff09"
+                    },
+                    "tokens_used": {
+                        "type": "integer",
+                        "title": "Tokens Used",
+                        "description": "\u4f7f\u7528\u30c8\u30fc\u30af\u30f3\u6570",
+                        "default": 0
+                    },
+                    "processing_time": {
+                        "type": "number",
+                        "title": "Processing Time",
+                        "description": "\u51e6\u7406\u6642\u9593\uff08\u79d2\uff09",
+                        "default": 0.0
+                    },
+                    "error_message": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Error Message",
+                        "description": "\u30a8\u30e9\u30fc\u30e1\u30c3\u30bb\u30fc\u30b8"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "session_id",
+                    "message"
+                ],
+                "title": "ChatMessage",
+                "description": "\u30c1\u30e3\u30c3\u30c8\u30e1\u30c3\u30bb\u30fc\u30b8"
+            },
+            "ChatSession": {
+                "properties": {
+                    "session_id": {
+                        "type": "string",
+                        "title": "Session Id",
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID"
+                    },
+                    "task_id": {
+                        "type": "string",
+                        "title": "Task Id",
+                        "description": "\u95a2\u9023\u3059\u308b\u30bf\u30b9\u30afID"
+                    },
+                    "transcription": {
+                        "type": "string",
+                        "title": "Transcription",
+                        "description": "\u6587\u5b57\u8d77\u3053\u3057\u5168\u6587",
+                        "default": ""
+                    },
+                    "minutes": {
+                        "type": "string",
+                        "title": "Minutes",
+                        "description": "\u8b70\u4e8b\u9332\u5185\u5bb9",
+                        "default": ""
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At",
+                        "description": "\u4f5c\u6210\u65e5\u6642"
+                    },
+                    "last_activity": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Last Activity",
+                        "description": "\u6700\u7d42\u30a2\u30af\u30c6\u30a3\u30d3\u30c6\u30a3\u65e5\u6642"
+                    },
+                    "context_tokens": {
+                        "type": "integer",
+                        "title": "Context Tokens",
+                        "description": "\u30b3\u30f3\u30c6\u30ad\u30b9\u30c8\u30c8\u30fc\u30af\u30f3\u6570",
+                        "default": 0
+                    },
+                    "total_messages": {
+                        "type": "integer",
+                        "title": "Total Messages",
+                        "description": "\u7dcf\u30e1\u30c3\u30bb\u30fc\u30b8\u6570",
+                        "default": 0
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "title": "Is Active",
+                        "description": "\u30a2\u30af\u30c6\u30a3\u30d6\u72b6\u614b",
+                        "default": true
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "task_id"
+                ],
+                "title": "ChatSession",
+                "description": "\u30c1\u30e3\u30c3\u30c8\u30bb\u30c3\u30b7\u30e7\u30f3"
+            },
+            "Citation": {
+                "properties": {
+                    "citation_id": {
+                        "type": "string",
+                        "title": "Citation Id",
+                        "description": "\u5f15\u7528ID"
+                    },
+                    "text": {
+                        "type": "string",
+                        "title": "Text",
+                        "description": "\u5f15\u7528\u30c6\u30ad\u30b9\u30c8"
+                    },
+                    "start_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Start Time",
+                        "description": "\u30bf\u30a4\u30e0\u30b9\u30bf\u30f3\u30d7\uff08\u5f62\u5f0f: HH:MM:SS\uff09"
+                    },
+                    "confidence": {
+                        "type": "number",
+                        "maximum": 1.0,
+                        "minimum": 0.0,
+                        "title": "Confidence",
+                        "description": "\u4fe1\u983c\u5ea6\u30b9\u30b3\u30a2",
+                        "default": 0.0
+                    },
+                    "context": {
+                        "type": "string",
+                        "title": "Context",
+                        "description": "\u524d\u5f8c\u306e\u6587\u8108",
+                        "default": ""
+                    },
+                    "highlight_start": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Highlight Start",
+                        "description": "\u30cf\u30a4\u30e9\u30a4\u30c8\u958b\u59cb\u4f4d\u7f6e\uff08\u6587\u5b57\u30a4\u30f3\u30c7\u30c3\u30af\u30b9\uff09"
+                    },
+                    "highlight_end": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Highlight End",
+                        "description": "\u30cf\u30a4\u30e9\u30a4\u30c8\u7d42\u4e86\u4f4d\u7f6e\uff08\u6587\u5b57\u30a4\u30f3\u30c7\u30c3\u30af\u30b9\uff09"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "text"
+                ],
+                "title": "Citation",
+                "description": "\u5f15\u7528\u60c5\u5831"
+            },
+            "CreateChatSessionRequest": {
+                "properties": {
+                    "transcription": {
+                        "type": "string",
+                        "title": "Transcription",
+                        "description": "\u6587\u5b57\u8d77\u3053\u3057\u5168\u6587"
+                    },
+                    "minutes": {
+                        "type": "string",
+                        "title": "Minutes",
+                        "description": "\u8b70\u4e8b\u9332\u5185\u5bb9"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "transcription",
+                    "minutes"
+                ],
+                "title": "CreateChatSessionRequest",
+                "description": "\u30c1\u30e3\u30c3\u30c8\u30bb\u30c3\u30b7\u30e7\u30f3\u4f5c\u6210\u30ea\u30af\u30a8\u30b9\u30c8"
+            },
+            "CreateChatSessionResponse": {
+                "properties": {
+                    "session_id": {
+                        "type": "string",
+                        "title": "Session Id",
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID"
+                    },
+                    "context_tokens": {
+                        "type": "integer",
+                        "title": "Context Tokens",
+                        "description": "\u30b3\u30f3\u30c6\u30ad\u30b9\u30c8\u30c8\u30fc\u30af\u30f3\u6570"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "session_id",
+                    "context_tokens"
+                ],
+                "title": "CreateChatSessionResponse",
+                "description": "\u30c1\u30e3\u30c3\u30c8\u30bb\u30c3\u30b7\u30e7\u30f3\u4f5c\u6210\u30ec\u30b9\u30dd\u30f3\u30b9"
+            },
+            "EditAction": {
+                "properties": {
+                    "action_type": {
+                        "$ref": "#/components/schemas/EditActionType"
+                    },
+                    "target": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Target",
+                        "description": "\u5bfe\u8c61\u30c6\u30ad\u30b9\u30c8\uff08\u7f6e\u63db\u306e\u5834\u5408\uff09"
+                    },
+                    "replacement": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Replacement",
+                        "description": "\u7f6e\u63db\u30c6\u30ad\u30b9\u30c8"
+                    },
+                    "scope": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/EditScope"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "\u9069\u7528\u7bc4\u56f2"
+                    },
+                    "content": {
+                        "anyOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Content",
+                        "description": "\u8ffd\u52a0\u30fb\u66f4\u65b0\u5185\u5bb9"
+                    },
+                    "item_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Item Id",
+                        "description": "\u66f4\u65b0\u5bfe\u8c61\u306eID"
+                    },
+                    "updates": {
+                        "anyOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Updates",
+                        "description": "\u66f4\u65b0\u5185\u5bb9"
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description",
+                        "description": "\u7de8\u96c6\u5185\u5bb9\u306e\u8aac\u660e",
+                        "default": ""
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "action_type"
+                ],
+                "title": "EditAction",
+                "description": "\u7de8\u96c6\u30a2\u30af\u30b7\u30e7\u30f3"
+            },
+            "EditActionType": {
+                "type": "string",
+                "enum": [
+                    "replace_text",
+                    "add_action_item",
+                    "update_action_item",
+                    "add_content",
+                    "restructure"
+                ],
+                "title": "EditActionType",
+                "description": "\u7de8\u96c6\u30a2\u30af\u30b7\u30e7\u30f3\u306e\u30bf\u30a4\u30d7"
+            },
+            "EditMinutesRequest": {
+                "properties": {
+                    "session_id": {
+                        "type": "string",
+                        "title": "Session Id",
+                        "description": "\u30bb\u30c3\u30b7\u30e7\u30f3ID"
+                    },
+                    "message_id": {
+                        "type": "string",
+                        "title": "Message Id",
+                        "description": "\u30e1\u30c3\u30bb\u30fc\u30b8ID"
+                    },
+                    "edit_actions": {
+                        "items": {
+                            "$ref": "#/components/schemas/EditAction"
+                        },
+                        "type": "array",
+                        "title": "Edit Actions",
+                        "description": "\u7de8\u96c6\u30a2\u30af\u30b7\u30e7\u30f3"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "session_id",
+                    "message_id",
+                    "edit_actions"
+                ],
+                "title": "EditMinutesRequest",
+                "description": "\u8b70\u4e8b\u9332\u7de8\u96c6\u30ea\u30af\u30a8\u30b9\u30c8"
+            },
+            "EditMinutesResponse": {
+                "properties": {
+                    "edit_id": {
+                        "type": "string",
+                        "title": "Edit Id",
+                        "description": "\u7de8\u96c6ID"
+                    },
+                    "success": {
+                        "type": "boolean",
+                        "title": "Success",
+                        "description": "\u7de8\u96c6\u6210\u529f\u30d5\u30e9\u30b0"
+                    },
+                    "updated_minutes": {
+                        "type": "string",
+                        "title": "Updated Minutes",
+                        "description": "\u66f4\u65b0\u5f8c\u306e\u8b70\u4e8b\u9332\u5168\u6587"
+                    },
+                    "changes_summary": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Changes Summary",
+                        "description": "\u5909\u66f4\u5185\u5bb9\u306e\u8981\u7d04"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "edit_id",
+                    "success",
+                    "updated_minutes",
+                    "changes_summary"
+                ],
+                "title": "EditMinutesResponse",
+                "description": "\u8b70\u4e8b\u9332\u7de8\u96c6\u30ec\u30b9\u30dd\u30f3\u30b9"
+            },
+            "EditScope": {
+                "type": "string",
+                "enum": [
+                    "all",
+                    "section",
+                    "specific"
+                ],
+                "title": "EditScope",
+                "description": "\u7de8\u96c6\u306e\u9069\u7528\u7bc4\u56f2"
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "MessageIntent": {
+                "type": "string",
+                "enum": [
+                    "question",
+                    "edit_request"
+                ],
+                "title": "MessageIntent",
+                "description": "\u30e1\u30c3\u30bb\u30fc\u30b8\u306e\u610f\u56f3"
+            },
+            "MessageType": {
+                "type": "string",
+                "enum": [
+                    "user",
+                    "assistant"
+                ],
+                "title": "MessageType",
+                "description": "\u30e1\u30c3\u30bb\u30fc\u30b8\u30bf\u30a4\u30d7"
+            },
+            "MinutesTask": {
+                "properties": {
+                    "task_id": {
+                        "type": "string",
+                        "title": "Task Id"
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/TaskStatus"
+                            }
+                        ],
+                        "default": "queued"
+                    },
+                    "video_filename": {
+                        "type": "string",
+                        "title": "Video Filename"
+                    },
+                    "video_size": {
+                        "type": "integer",
+                        "title": "Video Size"
+                    },
+                    "upload_timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Upload Timestamp"
+                    },
+                    "current_step": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ProcessingStepName"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "overall_progress": {
+                        "type": "integer",
+                        "maximum": 100.0,
+                        "minimum": 0.0,
+                        "title": "Overall Progress",
+                        "default": 0
+                    },
+                    "steps": {
+                        "items": {
+                            "$ref": "#/components/schemas/ProcessingStep"
+                        },
+                        "type": "array",
+                        "title": "Steps"
+                    },
+                    "transcription": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Transcription"
+                    },
+                    "minutes": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Minutes"
+                    },
+                    "error_message": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Error Message"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "task_id",
+                    "video_filename",
+                    "video_size",
+                    "upload_timestamp"
+                ],
+                "title": "MinutesTask",
+                "description": "\u8b70\u4e8b\u9332\u751f\u6210\u30bf\u30b9\u30af"
+            },
+            "ProcessingStep": {
+                "properties": {
+                    "name": {
+                        "$ref": "#/components/schemas/ProcessingStepName"
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ProcessingStepStatus"
+                            }
+                        ],
+                        "default": "pending"
+                    },
+                    "progress": {
+                        "type": "integer",
+                        "maximum": 100.0,
+                        "minimum": 0.0,
+                        "title": "Progress",
+                        "default": 0
+                    },
+                    "started_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Started At"
+                    },
+                    "completed_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Completed At"
+                    },
+                    "error_message": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Error Message"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "title": "ProcessingStep",
+                "description": "\u51e6\u7406\u30b9\u30c6\u30c3\u30d7"
+            },
+            "ProcessingStepName": {
+                "type": "string",
+                "enum": [
+                    "upload",
+                    "audio_extraction",
+                    "transcription",
+                    "minutes_generation"
+                ],
+                "title": "ProcessingStepName",
+                "description": "\u51e6\u7406\u30b9\u30c6\u30c3\u30d7\u540d"
+            },
+            "ProcessingStepStatus": {
+                "type": "string",
+                "enum": [
+                    "pending",
+                    "processing",
+                    "completed",
+                    "failed"
+                ],
+                "title": "ProcessingStepStatus",
+                "description": "\u51e6\u7406\u30b9\u30c6\u30c3\u30d7\u30b9\u30c6\u30fc\u30bf\u30b9"
+            },
+            "SendMessageRequest": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "maxLength": 2000,
+                        "minLength": 1,
+                        "title": "Message",
+                        "description": "\u30e6\u30fc\u30b6\u30fc\u306e\u8cea\u554f"
+                    },
+                    "message_type": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MessageType"
+                            }
+                        ],
+                        "description": "\u30e1\u30c3\u30bb\u30fc\u30b8\u30bf\u30a4\u30d7",
+                        "default": "user"
+                    },
+                    "intent": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MessageIntent"
+                            }
+                        ],
+                        "description": "\u30e1\u30c3\u30bb\u30fc\u30b8\u306e\u610f\u56f3",
+                        "default": "question"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "message"
+                ],
+                "title": "SendMessageRequest",
+                "description": "\u30e1\u30c3\u30bb\u30fc\u30b8\u9001\u4fe1\u30ea\u30af\u30a8\u30b9\u30c8"
+            },
+            "SendMessageResponse": {
+                "properties": {
+                    "message_id": {
+                        "type": "string",
+                        "title": "Message Id",
+                        "description": "\u30e1\u30c3\u30bb\u30fc\u30b8ID"
+                    },
+                    "response": {
+                        "type": "string",
+                        "title": "Response",
+                        "description": "AI\u56de\u7b54"
+                    },
+                    "citations": {
+                        "items": {
+                            "$ref": "#/components/schemas/Citation"
+                        },
+                        "type": "array",
+                        "title": "Citations",
+                        "description": "\u5f15\u7528\u30ea\u30b9\u30c8"
+                    },
+                    "tokens_used": {
+                        "type": "integer",
+                        "title": "Tokens Used",
+                        "description": "\u4f7f\u7528\u30c8\u30fc\u30af\u30f3\u6570"
+                    },
+                    "edit_actions": {
+                        "items": {
+                            "$ref": "#/components/schemas/EditAction"
+                        },
+                        "type": "array",
+                        "title": "Edit Actions",
+                        "description": "\u7de8\u96c6\u30a2\u30af\u30b7\u30e7\u30f3\uff08\u7de8\u96c6\u30ea\u30af\u30a8\u30b9\u30c8\u306e\u5834\u5408\uff09"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "message_id",
+                    "response",
+                    "tokens_used"
+                ],
+                "title": "SendMessageResponse",
+                "description": "\u30e1\u30c3\u30bb\u30fc\u30b8\u9001\u4fe1\u30ec\u30b9\u30dd\u30f3\u30b9"
+            },
+            "TaskListResponse": {
+                "properties": {
+                    "tasks": {
+                        "items": {
+                            "$ref": "#/components/schemas/MinutesTask"
+                        },
+                        "type": "array",
+                        "title": "Tasks"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "tasks"
+                ],
+                "title": "TaskListResponse",
+                "description": "\u30bf\u30b9\u30af\u4e00\u89a7\u5fdc\u7b54"
+            },
+            "TaskResultResponse": {
+                "properties": {
+                    "task_id": {
+                        "type": "string",
+                        "title": "Task Id"
+                    },
+                    "video_filename": {
+                        "type": "string",
+                        "title": "Video Filename"
+                    },
+                    "transcription": {
+                        "type": "string",
+                        "title": "Transcription"
+                    },
+                    "minutes": {
+                        "type": "string",
+                        "title": "Minutes"
+                    },
+                    "upload_timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Upload Timestamp"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "task_id",
+                    "video_filename",
+                    "transcription",
+                    "minutes",
+                    "upload_timestamp"
+                ],
+                "title": "TaskResultResponse",
+                "description": "\u30bf\u30b9\u30af\u7d50\u679c\u5fdc\u7b54"
+            },
+            "TaskStatus": {
+                "type": "string",
+                "enum": [
+                    "queued",
+                    "processing",
+                    "completed",
+                    "failed"
+                ],
+                "title": "TaskStatus",
+                "description": "\u30bf\u30b9\u30af\u30b9\u30c6\u30fc\u30bf\u30b9"
+            },
+            "TaskStatusResponse": {
+                "properties": {
+                    "task_id": {
+                        "type": "string",
+                        "title": "Task Id"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/TaskStatus"
+                    },
+                    "current_step": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ProcessingStepName"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "overall_progress": {
+                        "type": "integer",
+                        "title": "Overall Progress"
+                    },
+                    "steps": {
+                        "items": {
+                            "$ref": "#/components/schemas/ProcessingStep"
+                        },
+                        "type": "array",
+                        "title": "Steps"
+                    },
+                    "video_filename": {
+                        "type": "string",
+                        "title": "Video Filename"
+                    },
+                    "upload_timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Upload Timestamp"
+                    },
+                    "error_message": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Error Message"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "task_id",
+                    "status",
+                    "current_step",
+                    "overall_progress",
+                    "steps",
+                    "video_filename",
+                    "upload_timestamp"
+                ],
+                "title": "TaskStatusResponse",
+                "description": "\u30bf\u30b9\u30af\u30b9\u30c6\u30fc\u30bf\u30b9\u5fdc\u7b54"
+            },
+            "UploadResponse": {
+                "properties": {
+                    "task_id": {
+                        "type": "string",
+                        "title": "Task Id"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/TaskStatus"
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message",
+                        "default": "\u30d5\u30a1\u30a4\u30eb\u306e\u30a2\u30c3\u30d7\u30ed\u30fc\u30c9\u304c\u5b8c\u4e86\u3057\u307e\u3057\u305f\u3002\u51e6\u7406\u3092\u958b\u59cb\u3057\u307e\u3059\u3002"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "task_id",
+                    "status"
+                ],
+                "title": "UploadResponse",
+                "description": "\u30a2\u30c3\u30d7\u30ed\u30fc\u30c9\u5fdc\u7b54"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        }
+    }
+}

@@ -11,6 +11,14 @@ const api = axios.create({
   }
 })
 
+// APIキー設定
+const API_KEY = import.meta.env.VITE_API_KEY
+
+// APIキーが設定されている場合は認証ヘッダーを追加
+if (API_KEY) {
+  api.defaults.headers.common['Authorization'] = `Bearer ${API_KEY}`
+}
+
 // Request interceptor
 api.interceptors.request.use(
   config => {

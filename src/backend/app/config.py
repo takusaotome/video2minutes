@@ -11,9 +11,23 @@ class Settings(BaseSettings):
     openai_api_key: str
     anthropic_api_key: Optional[str] = None
 
-    # Basic認証設定
+    # Basic認証設定（非推奨）
     basic_auth_username: Optional[str] = None
     basic_auth_password: Optional[str] = None
+    
+    # APIキー認証設定
+    api_keys: Optional[str] = Field(
+        default=None,
+        description="有効なAPIキーのカンマ区切りリスト"
+    )
+    master_api_key: Optional[str] = Field(
+        default=None,
+        description="マスターAPIキー（開発用）"
+    )
+    auth_enabled: bool = Field(
+        default=True,
+        description="認証機能の有効/無効"
+    )
 
     # セッション設定
     session_secret_key: str = Field(

@@ -4,6 +4,7 @@ from typing import Dict, List
 
 from fastapi import (
     APIRouter,
+    Depends,
     File,
     HTTPException,
     Request,
@@ -34,6 +35,8 @@ from app.store.persistent_store import persistent_store
 from app.utils.session_manager import SessionManager
 from app.utils.logger import get_logger
 from app.utils.timezone_utils import TimezoneUtils
+from app.auth.api_key import get_api_key, get_optional_api_key
+from app.config import settings
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -43,7 +46,11 @@ websocket_connections: Dict[str, List[WebSocket]] = {}
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_media(request: Request, file: UploadFile = File(...)) -> UploadResponse:
+async def upload_media(
+    request: Request, 
+    file: UploadFile = File(...),
+    api_key: str = Depends(get_api_key) if settings.auth_enabled else None
+) -> UploadResponse:
     """動画・音声ファイルをアップロードして処理を開始"""
 
     # セッションIDを取得

@@ -18,9 +18,6 @@ logger = setup_logging(
     log_level=settings.log_level, log_dir=settings.log_dir, app_name="video2minutes"
 )
 
-# Basic認証は無効
-
-
 def create_app() -> FastAPI:
     """FastAPIアプリケーションを作成"""
 
@@ -133,7 +130,12 @@ def create_app() -> FastAPI:
 
     @app.get("/")
     async def root():
-        return {"message": "Video2Minutes API", "version": "1.0.0"}
+        return {
+            "message": "Video2Minutes API", 
+            "version": "1.0.0",
+            "auth_enabled": settings.auth_enabled,
+            "docs_url": "/docs" if not settings.auth_enabled else "認証が必要です"
+        }
 
     @app.get("/health")
     async def health_check():
@@ -157,7 +159,10 @@ def create_app() -> FastAPI:
             "queue": queue_status,
         }
 
-    logger.info("Basic認証は無効です")
+    if settings.auth_enabled:
+        logger.info("APIキー認証が有効です")
+    else:
+        logger.warning("認証機能が無効です - 本番環境では有効にしてください")
 
     # グローバル例外ハンドラー
     @app.exception_handler(Exception)
