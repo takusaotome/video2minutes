@@ -148,6 +148,9 @@ npm run static-analysis
 ### CLI版ツール
 コマンドライン版も利用可能です。詳細は [src/cli/README.md](src/cli/README.md) を参照してください。
 
+### APIリファレンス
+主要エンドポイントの仕様は [docs/API_REFERENCE.md](docs/API_REFERENCE.md) を参照してください。
+
 ## 📄 ライセンス
 
 MIT Licenseの下で配布されています。[LICENSE](LICENSE)をご確認ください.
