@@ -90,7 +90,7 @@ class PersistentTaskStore:
             "transcription": task.transcription,
             "minutes": task.minutes,
             "error_message": task.error_message,
-            "processing_duration": task.processing_duration,
+            "processing_duration": getattr(task, 'processing_duration', None),
             "steps": [
                 {
                     "name": step.name.value,

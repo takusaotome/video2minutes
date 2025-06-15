@@ -23,6 +23,7 @@ from app.models import (
     TaskStatusResponse,
     UploadResponse,
 )
+from app.models.chat import EditMinutesRequest, EditMinutesResponse, EditHistory
 from app.services.minutes_generator import MinutesGeneratorService
 from app.services.transcription import TranscriptionService
 from app.services.video_processor import VideoProcessor
@@ -175,6 +176,17 @@ async def get_task_status(request: Request, task_id: str) -> TaskStatusResponse:
             # セッションストアに移行
             session_task_store.add_task(session_id, task)
     
+    # 他のセッションでタスクが見つからない場合、全セッションを検索
+    if not task:
+        logger.debug(f"全セッションを検索してタスクを探します: {task_id}")
+        for other_session_id, session_tasks in session_task_store._sessions.items():
+            if task_id in session_tasks:
+                task = session_tasks[task_id]
+                logger.info(f"他のセッションでタスクを発見、現在のセッションに移行: {task_id} from {other_session_id[:8]}... to {session_id[:8]}...")
+                # 現在のセッションに移行
+                session_task_store.add_task(session_id, task)
+                break
+    
     if not task:
         logger.warning(f"タスクが見つかりません: {task_id} (セッション: {session_id[:8]}...)")
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
@@ -208,7 +220,19 @@ async def get_task_result(request: Request, task_id: str) -> TaskResultResponse:
             # セッションストアに移行
             session_task_store.add_task(session_id, task)
     
+    # 他のセッションでタスクが見つからない場合、全セッションを検索
     if not task:
+        logger.debug(f"全セッションを検索してタスクを探します: {task_id}")
+        for other_session_id, session_tasks in session_task_store._sessions.items():
+            if task_id in session_tasks:
+                task = session_tasks[task_id]
+                logger.info(f"他のセッションでタスクを発見、現在のセッションに移行: {task_id} from {other_session_id[:8]}... to {session_id[:8]}...")
+                # 現在のセッションに移行
+                session_task_store.add_task(session_id, task)
+                break
+    
+    if not task:
+        logger.warning(f"タスクが見つかりません: {session_id[:8]}... -> {task_id}")
         raise HTTPException(status_code=404, detail="指定されたタスクが見つかりません")
 
     if task.status != TaskStatus.COMPLETED:
@@ -743,3 +767,100 @@ async def broadcast_task_failed(task_id: str, task: MinutesTask, error_message: 
         # 接続がなくなった場合はキーを削除
         if not websocket_connections[task_id]:
             del websocket_connections[task_id]
+
+
+@router.post("/{task_id}/edit", response_model=EditMinutesResponse)
+async def edit_minutes(
+    request: Request,
+    task_id: str,
+    edit_request: EditMinutesRequest
+) -> EditMinutesResponse:
+    """
+    議事録を編集
+    
+    Args:
+        task_id: タスクID
+        edit_request: 編集リクエスト
+    
+    Returns:
+        EditMinutesResponse: 編集結果
+    """
+    try:
+        from app.store.chat_store import chat_store
+        
+        session_id = SessionManager.get_session_id(request)
+        logger.info(f"議事録編集要求: {task_id} (セッション: {session_id[:8]}...)")
+        
+        # セッションを取得
+        session = chat_store.get_session(edit_request.session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="セッションが見つかりません")
+        
+        if session.task_id != task_id:
+            raise HTTPException(status_code=403, detail="セッションへのアクセス権限がありません")
+        
+        # メッセージを取得
+        message = chat_store.get_message(edit_request.session_id, edit_request.message_id)
+        if not message:
+            raise HTTPException(status_code=404, detail="メッセージが見つかりません")
+        
+        # 現在の議事録を取得
+        task = session_task_store.get_task(session_id, task_id)
+        if not task:
+            # 従来のタスクストアからも検索
+            task = tasks_store.get(task_id)
+            if not task:
+                raise HTTPException(status_code=404, detail="タスクが見つかりません")
+        
+        original_minutes = task.minutes or ""
+        
+        # 高度な編集実行エンジンを使用
+        from app.services.edit_executor import edit_executor
+        
+        updated_minutes, changes_summary = edit_executor.execute_edit_actions(
+            original_minutes, edit_request.edit_actions
+        )
+        
+        # 編集履歴を作成
+        edit_history = EditHistory(
+            task_id=task_id,
+            session_id=edit_request.session_id,
+            message_id=edit_request.message_id,
+            edit_actions=edit_request.edit_actions,
+            changes_summary=changes_summary,
+            original_minutes=original_minutes,
+            updated_minutes=updated_minutes
+        )
+        
+        # 編集履歴を保存
+        chat_store.add_edit_history(edit_history)
+        
+        # タスクの議事録を更新
+        task.minutes = updated_minutes
+        
+        # セッションストアを更新
+        session_task_store.update_task(session_id, task)
+        # 従来のタスクストアも更新（下位互換性）
+        if task_id in tasks_store:
+            tasks_store[task_id] = task
+        
+        # セッションの議事録も更新
+        session.minutes = updated_minutes
+        chat_store.update_session(session)
+        
+        logger.info(f"議事録を編集しました: {edit_history.edit_id[:8]}... ({len(changes_summary)}件の変更)")
+        
+        return EditMinutesResponse(
+            edit_id=edit_history.edit_id,
+            success=True,
+            updated_minutes=updated_minutes,
+            changes_summary=changes_summary
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"議事録編集エラー: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="議事録の編集に失敗しました")
+
+
