@@ -5,15 +5,15 @@ import hashlib
 import secrets
 from typing import Optional
 
-from fastapi import HTTPException, Security, status
+from fastapi import HTTPException, Request, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config import settings
 from app.utils.logger import setup_logging
 
 logger = setup_logging()
 
-# HTTPBearer認証スキーム
-security = HTTPBearer()
+# HTTPBearer認証スキーム（OPTIONSリクエストでは自動認証しない）
+security = HTTPBearer(auto_error=False)
 
 class APIKeyAuth:
     """APIキー認証クラス"""
@@ -60,7 +60,7 @@ class APIKeyAuth:
 # グローバルインスタンス
 api_key_auth = APIKeyAuth()
 
-async def get_api_key(credentials: HTTPAuthorizationCredentials = Security(security)) -> str:
+async def get_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Security(security)) -> str:
     """
     APIキー認証依存関数
     

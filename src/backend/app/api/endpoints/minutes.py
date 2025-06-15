@@ -128,6 +128,11 @@ async def upload_media(
         )
 
 
+@router.options("/tasks")
+async def options_tasks():
+    """CORS preflight request handler for tasks endpoint"""
+    return {"message": "OK"}
+
 @router.get("/tasks", response_model=TaskListResponse)
 async def get_all_tasks(
     request: Request,
