@@ -117,7 +117,7 @@ class PersistentTaskStore:
         task.transcription = data.get("transcription")
         task.minutes = data.get("minutes")
         task.error_message = data.get("error_message")
-        task.processing_duration = data.get("processing_duration")
+        # processing_duration field doesn't exist in MinutesTask model - skip it
         
         # ステップの復元
         task.steps = []
