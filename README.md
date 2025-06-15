@@ -99,6 +99,42 @@ npm install
 npm run dev
 ```
 
+### 依存関係のインストール
+
+#### Python
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r src/backend/requirements.txt
+```
+
+#### Node.js
+```bash
+npm run install:all
+```
+
+### テスト実行
+```bash
+# Python単体テスト
+npm run test:unit-python
+# JavaScript単体テスト
+npm run test:unit-js
+# E2Eテスト
+npm run test:e2e
+```
+
+### 静的解析
+開発用ツールをインストールした上で `static-analysis.sh` を実行できます。
+
+```bash
+# Python側ツールの例
+pip install black isort flake8 mypy pylint bandit safety autopep8
+
+# Node.js側ツールは依存関係インストール時に入ります
+npm run static-analysis
+```
+
+
 ### CLI版ツール
 コマンドライン版も利用可能です。詳細は [src/cli/README.md](src/cli/README.md) を参照してください。
 
