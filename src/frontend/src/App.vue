@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <header class="app-header">
+  <header class="app-header" data-testid="main-header">
       <h1 class="app-title">
         <RouterLink :to="{ name: 'dashboard' }" class="home-link">
           <i class="pi pi-video"></i>

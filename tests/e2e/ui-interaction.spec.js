@@ -9,9 +9,9 @@ test.describe('UIインタラクション・レスポンシブテスト', () => 
     await page.goto('/');
     
     // ダッシュボードの表示確認
-    await expect(page.getByTestId('main-header')).toBeVisible();
-    await expect(page.getByTestId('file-upload-area')).toBeVisible();
-    await expect(page.getByTestId('task-list')).toBeVisible();
+    await expect(page.locator('header.app-header')).toBeVisible();
+    await expect(page.locator('button.upload-button-primary')).toBeVisible();
+    await expect(page.locator('div.task-list')).toBeVisible();
   });
 
   test('シナリオ8: レスポンシブデザイン @responsive', async ({ page }) => {
@@ -47,22 +47,22 @@ test.describe('UIインタラクション・レスポンシブテスト', () => 
     console.log('タッチデバイス操作テスト開始');
     
     // タッチジェスチャーでのファイルアップロード
-    const uploadArea = page.getByTestId('file-upload-area');
+    const uploadArea = page.locator('button.upload-button-primary');
     await expect(uploadArea).toBeVisible();
     
     // タップ操作の確認
     await uploadArea.tap();
     
     // スワイプ操作でタスクリストを操作
-    const taskList = page.getByTestId('task-list');
+    const taskList = page.locator('div.task-list');
     await expect(taskList).toBeVisible();
     
     // モバイルメニューの表示確認
-    const mobileMenuButton = page.getByTestId('mobile-menu-button');
+    const mobileMenuButton = page.locator('[data-testid="mobile-menu-button"]');
     if (await mobileMenuButton.isVisible()) {
       await mobileMenuButton.tap();
       
-      const mobileMenu = page.getByTestId('mobile-menu');
+      const mobileMenu = page.locator('[data-testid="mobile-menu"]');
       await expect(mobileMenu).toBeVisible();
       
       // メニューを閉じる
@@ -77,8 +77,8 @@ test.describe('UIインタラクション・レスポンシブテスト', () => 
     console.log(`ブラウザ互換性テスト開始: ${browserName}`);
     
     // 基本機能の動作確認
-    await expect(page.getByTestId('file-upload-area')).toBeVisible();
-    await expect(page.getByTestId('task-list')).toBeVisible();
+    await expect(page.locator('button.upload-button-primary')).toBeVisible();
+    await expect(page.locator('div.task-list')).toBeVisible();
     
     // CSS Grid/Flexboxサポート確認
     const layoutElements = await page.locator('[data-testid*="layout"]').all();
@@ -143,7 +143,7 @@ test.describe('UIインタラクション・レスポンシブテスト', () => 
     await page.keyboard.press('Enter');
     
     // Escape キーでモーダル閉じる操作
-    const modal = page.getByTestId('file-chooser-modal');
+    const modal = page.locator('[data-testid="file-chooser-modal"]');
     if (await modal.isVisible()) {
       await page.keyboard.press('Escape');
       await expect(modal).not.toBeVisible();
@@ -204,7 +204,7 @@ test.describe('UIインタラクション・レスポンシブテスト', () => 
     console.log('テーマ切り替えテスト開始');
     
     // ライトモードの確認
-    const themeToggle = page.getByTestId('theme-toggle');
+    const themeToggle = page.locator('[data-testid="theme-toggle"]');
     if (await themeToggle.isVisible()) {
       // 現在のテーマを確認
       const currentTheme = await page.getAttribute('html', 'data-theme');
@@ -237,7 +237,7 @@ test.describe('UIインタラクション・レスポンシブテスト', () => 
   test('言語切り替え @ui @i18n', async ({ page }) => {
     console.log('言語切り替えテスト開始');
     
-    const languageSelector = page.getByTestId('language-selector');
+    const languageSelector = page.locator('[data-testid="language-selector"]');
     if (await languageSelector.isVisible()) {
       // 現在の言語を確認
       const currentLang = await page.getAttribute('html', 'lang');
@@ -264,7 +264,7 @@ test.describe('UIインタラクション・レスポンシブテスト', () => 
           expect(newLang).not.toBe(currentLang);
           
           // UI テキストが変更されたことを確認
-          const headerText = await page.getByTestId('main-header').textContent();
+          const headerText = await page.locator('header.app-header').textContent();
           console.log('Header text after language change:', headerText);
         }
       }
@@ -300,7 +300,7 @@ test.describe('UIインタラクション・レスポンシブテスト', () => 
     // ローディングアニメーションの確認
     await helpers.uploadFile('test-video-small.mp4');
     
-    const loadingSpinner = page.getByTestId('loading-spinner');
+    const loadingSpinner = page.locator('[data-testid="loading-spinner"]');
     if (await loadingSpinner.isVisible()) {
       // スピナーアニメーションの確認
       const spinnerStyles = await loadingSpinner.evaluate(el => {
@@ -325,24 +325,24 @@ async function testMainFunctionsAtViewport(page, viewport) {
   console.log(`  Testing main functions at ${viewport.name}`);
   
   // ファイルアップロードエリアの表示・操作確認
-  const uploadArea = page.getByTestId('file-upload-area');
+  const uploadArea = page.locator('button.upload-button-primary');
   await expect(uploadArea).toBeVisible();
   
   // タスクリストの表示確認
-  const taskList = page.getByTestId('task-list');
+  const taskList = page.locator('div.task-list');
   await expect(taskList).toBeVisible();
   
   // モバイルサイズの場合、ハンバーガーメニューの確認
   if (viewport.width < 768) {
-    const mobileMenu = page.getByTestId('mobile-menu-button');
+    const mobileMenu = page.locator('[data-testid="mobile-menu-button"]');
     if (await mobileMenu.isVisible()) {
       await mobileMenu.click();
       
-      const menuPanel = page.getByTestId('mobile-menu-panel');
+      const menuPanel = page.locator('[data-testid="mobile-menu-panel"]');
       await expect(menuPanel).toBeVisible();
       
       // メニューを閉じる
-      await page.getByTestId('mobile-menu-close').click();
+      await page.locator('[data-testid="mobile-menu-close"]').click();
       await expect(menuPanel).not.toBeVisible();
     }
   }

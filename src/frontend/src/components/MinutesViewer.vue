@@ -23,7 +23,7 @@
       />
     </div>
 
-    <div v-else-if="minutes" class="minutes-content">
+    <div v-else-if="minutes" class="minutes-content" data-testid="minutes-content">
       <!-- Header -->
       <div class="minutes-header">
         <div class="header-info">
@@ -59,6 +59,7 @@
             :model="downloadOptions"
             @click="downloadMarkdown"
             class="download-button"
+            data-testid="download-button"
           />
         </div>
       </div>

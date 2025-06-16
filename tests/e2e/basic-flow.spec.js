@@ -9,9 +9,9 @@ test.describe('基本的なファイルアップロード・処理フロー', ()
     await page.goto('/');
     
     // ダッシュボードの基本要素が表示されることを確認
-    await expect(page.getByTestId('main-header')).toBeVisible();
-    await expect(page.getByTestId('file-upload-area')).toBeVisible();
-    await expect(page.getByTestId('task-list')).toBeVisible();
+    await expect(page.locator('header.app-header')).toBeVisible();
+    await expect(page.locator('button.upload-button-primary')).toBeVisible();
+    await expect(page.locator('div.task-list')).toBeVisible();
   });
 
   test('シナリオ1: 単一動画ファイルの正常処理 @basic', async ({ page }) => {
@@ -24,12 +24,13 @@ test.describe('基本的なファイルアップロード・処理フロー', ()
     
     // Step 4: タスク一覧に新しいタスクが追加されることを確認
     console.log('Step 4: タスク追加確認');
-    const taskRows = page.getByTestId(/^task-row-/);
+    const taskRows = page.locator('tr[class*="task-row-"]');
     await expect(taskRows.first()).toBeVisible();
     
     // タスクIDを取得
     const firstTaskRow = taskRows.first();
-    const taskId = await firstTaskRow.getAttribute('data-testid').then(id => id.replace('task-row-', ''));
+    const classAttr = await firstTaskRow.getAttribute('class');
+    const taskId = classAttr.match(/task-row-([\w-]+)/)[1];
     
     // Step 5: タスクステータスが「processing」に変更されることを確認
     console.log('Step 5: 処理開始確認');
@@ -53,7 +54,7 @@ test.describe('基本的なファイルアップロード・処理フロー', ()
     ]);
     
     // モーダルを閉じる
-    await page.getByTestId('modal-close').click();
+    await page.locator('[data-testid="modal-close"]').click();
     await expect(modal).not.toBeVisible();
     
     // Step 8-9: 処理完了まで待機
@@ -65,13 +66,13 @@ test.describe('基本的なファイルアップロード・処理フロー', ()
     
     // Step 10-11: 議事録画面への遷移
     console.log('Step 10-11: 議事録表示確認');
-    const viewButton = page.getByTestId(`view-minutes-${taskId}`);
+    const viewButton = page.locator(`[data-testid="view-minutes-${taskId}"]`);
     await expect(viewButton).toBeVisible();
     await viewButton.click();
     
     // 議事録画面の表示確認
-    await expect(page.getByTestId('minutes-content')).toBeVisible();
-    await expect(page.getByTestId('transcript-content')).toBeVisible();
+    await expect(page.locator('[data-testid="minutes-content"]')).toBeVisible();
+    await expect(page.locator('.transcription-content')).toBeVisible();
     
     // Step 12: ダウンロード機能の確認
     console.log('Step 12: ダウンロード機能確認');
@@ -95,10 +96,10 @@ test.describe('基本的なファイルアップロード・処理フロー', ()
       await helpers.testResponsiveLayout(viewport);
       
       // ファイルアップロード機能が動作することを確認
-      await expect(page.getByTestId('file-upload-area')).toBeVisible();
+      await expect(page.locator('button.upload-button-primary')).toBeVisible();
       
       // タスクリストが適切に表示されることを確認
-      await expect(page.getByTestId('task-list')).toBeVisible();
+      await expect(page.locator('div.task-list')).toBeVisible();
     }
   });
 

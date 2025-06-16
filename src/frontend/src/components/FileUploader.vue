@@ -80,6 +80,7 @@
                         label="ファイルを選択"
                         icon="pi pi-folder-open"
                         class="upload-button-primary"
+                        data-testid="file-upload-area"
                         :loading="loading"
                         @click="triggerFileSelect"
                       />

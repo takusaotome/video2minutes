@@ -9,9 +9,9 @@ test.describe('エラーハンドリングテスト', () => {
     await page.goto('/');
     
     // ダッシュボードの表示確認
-    await expect(page.getByTestId('main-header')).toBeVisible();
-    await expect(page.getByTestId('file-upload-area')).toBeVisible();
-    await expect(page.getByTestId('task-list')).toBeVisible();
+    await expect(page.locator('header.app-header')).toBeVisible();
+    await expect(page.locator('button.upload-button-primary')).toBeVisible();
+    await expect(page.locator('div.task-list')).toBeVisible();
   });
 
   test('シナリオ4: 無効なファイル形式のアップロード @error', async ({ page }) => {
@@ -28,7 +28,7 @@ test.describe('エラーハンドリングテスト', () => {
     await helpers.checkToastNotification('サポートされていないファイル形式です', 'error');
     
     // Step 3: タスクが作成されないことを確認
-    const taskRows = page.getByTestId(/^task-row-/);
+    const taskRows = page.locator('tr[class*="task-row-"]');
     const taskCount = await taskRows.count();
     expect(taskCount).toBe(0);
     
@@ -121,10 +121,11 @@ test.describe('エラーハンドリングテスト', () => {
     await page.waitForTimeout(5000); // 処理開始を待機
     
     // タスクリストでエラー状態を確認
-    const taskRows = page.getByTestId(/^task-row-/);
+    const taskRows = page.locator('tr[class*="task-row-"]');
     await expect(taskRows.first()).toBeVisible();
     
-    const taskId = await taskRows.first().getAttribute('data-testId').then(id => id.replace('task-row-', ''));
+    const classAttr = await taskRows.first().getAttribute('class');
+    const taskId = classAttr.match(/task-row-([\w-]+)/)[1];
     
     // Step 4: エラー状態がUIに適切に反映されることを確認
     await page.waitForTimeout(10000); // エラー状態への遷移を待機
@@ -134,20 +135,20 @@ test.describe('エラーハンドリングテスト', () => {
     
     if (status === 'failed') {
       // エラーバッジの表示確認
-      const errorBadge = page.getByTestId(`status-badge-${taskId}`);
+      const errorBadge = page.locator(`tr.task-row-${taskId} [data-testid="status-badge"]`);
       await expect(errorBadge).toHaveClass(/error|failed|danger/);
       
       // Step 5: 再試行ボタンが表示されることを確認
       const modal = await helpers.openTaskDetailModal(taskId);
-      const retryButton = modal.getByTestId('retry-button');
+      const retryButton = modal.locator('[data-testid="retry-button"]');
       await expect(retryButton).toBeVisible();
       
       // エラーメッセージの表示確認
-      const errorMessage = modal.getByTestId('error-message');
+      const errorMessage = modal.locator('[data-testid="error-message"]');
       await expect(errorMessage).toBeVisible();
       await expect(errorMessage).toContainText('API rate limit');
       
-      await page.getByTestId('modal-close').click();
+      await page.locator('[data-testid="modal-close"]').click();
     }
     
     console.log('API制限エラーテスト完了');
@@ -295,7 +296,7 @@ test.describe('エラーハンドリングテスト', () => {
     await page.waitForTimeout(10000);
     
     // ポーリングベースの更新にフォールバックすることを確認
-    const taskRows = page.getByTestId(/^task-row-/);
+    const taskRows = page.locator('tr[class*="task-row-"]');
     if (await taskRows.count() > 0) {
       // タスクが表示されている場合、ポーリングで更新されることを確認
       await page.waitForTimeout(5000);
