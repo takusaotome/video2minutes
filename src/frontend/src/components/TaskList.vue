@@ -1,5 +1,5 @@
 <template>
-  <div class="task-list">
+  <div class="task-list" data-testid="task-list">
     <Card>
       <template #title>
         <div class="title-section">
@@ -36,6 +36,7 @@
         <!-- Loading State - 初期化されていない場合のみ表示 -->
         <div v-if="loading && !initialized" class="loading-state">
           <ProgressSpinner
+            data-testid="loading-spinner"
             strokeWidth="4"
             fill="transparent"
             animationDuration="1s"
@@ -53,6 +54,7 @@
         <!-- Loading overlay for manual refresh - 手動更新時のみ表示 -->
         <div v-else-if="loading && initialized && tasks.length === 0" class="refresh-loading">
           <ProgressSpinner
+            data-testid="loading-spinner"
             strokeWidth="3"
             fill="transparent"
             animationDuration="1s"
@@ -103,6 +105,7 @@
             <template #body="{ data }">
               <div class="status-cell">
                 <Badge
+                  data-testid="status-badge"
                   :value="getStatusLabel(data.status)"
                   :severity="getStatusSeverity(data.status)"
                 />
@@ -133,6 +136,7 @@
                   :value="data.overall_progress || 0"
                   :showValue="false"
                   class="task-progress"
+                  :data-testid="`progress-bar-${data.task_id}`"
                 />
                 <small
                   v-if="data.status === 'processing' && data.estimated_time"
@@ -187,6 +191,7 @@
                     showDelay: 300,
                     hideDelay: 100
                   }"
+                  :data-testid="`view-minutes-${data.task_id}`"
                   @click="viewMinutes(data)"
                 />
 
@@ -379,13 +384,13 @@ export default {
     }
 
     const getRowClass = (data) => {
-      // 完了したタスクのみクリック可能であることを視覚的に示す
+      const base = `task-row-${data.task_id}`
       if (data.status === 'completed') {
-        return 'clickable-row completed-row'
-      } else if (data.status === 'processing' || data.status === 'pending' || data.status === 'failed') {
-        return 'clickable-row processing-row'
+        return `${base} clickable-row completed-row`
+      } else if (['processing', 'pending', 'failed'].includes(data.status)) {
+        return `${base} clickable-row processing-row`
       }
-      return ''
+      return base
     }
 
     const getStatusLabel = status => {

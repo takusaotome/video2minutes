@@ -9,9 +9,9 @@ test.describe('複数ファイル並行処理テスト', () => {
     await page.goto('/');
     
     // ダッシュボードの表示確認
-    await expect(page.getByTestId('main-header')).toBeVisible();
-    await expect(page.getByTestId('file-upload-area')).toBeVisible();
-    await expect(page.getByTestId('task-list')).toBeVisible();
+    await expect(page.locator('header.app-header')).toBeVisible();
+    await expect(page.locator('button.upload-button-primary')).toBeVisible();
+    await expect(page.locator('div.task-list')).toBeVisible();
   });
 
   test('シナリオ2: 複数ファイルの並行処理 @parallel', async ({ page }) => {
@@ -35,14 +35,15 @@ test.describe('複数ファイル並行処理テスト', () => {
     
     // Step 2: 3つのタスクが並行して処理されることを確認
     console.log('Step 2: 並行処理の確認');
-    const taskRows = page.getByTestId(/^task-row-/);
+    const taskRows = page.locator('tr[class*="task-row-"]');
     await expect(taskRows).toHaveCount(3);
     
     // 各タスクのIDを取得
     const taskIds = [];
     for (let i = 0; i < 3; i++) {
       const taskRow = taskRows.nth(i);
-      const taskId = await taskRow.getAttribute('data-testid').then(id => id.replace('task-row-', ''));
+      const classAttr = await taskRow.getAttribute('class');
+      const taskId = classAttr.match(/task-row-([\w-]+)/)[1];
       taskIds.push(taskId);
     }
     
@@ -64,7 +65,7 @@ test.describe('複数ファイル並行処理テスト', () => {
     for (const taskId of taskIds) {
       try {
         await helpers.waitForProgress(taskId, 5); // 最低5%の進捗を待機
-        const progressBar = page.getByTestId(`progress-bar-${taskId}`);
+        const progressBar = page.locator(`[data-testid="progress-bar-${taskId}"]`);
         const progressValue = await progressBar.getAttribute('aria-valuenow');
         progressValues.push(parseInt(progressValue) || 0);
         console.log(`Task ${taskId} progress: ${progressValue}%`);
@@ -159,10 +160,10 @@ test.describe('複数ファイル並行処理テスト', () => {
       const currentPage = pages[i];
       
       // 各ページでタスクリストが表示されることを確認
-      await expect(currentPage.getByTestId('task-list')).toBeVisible();
+      await expect(currentPage.locator('div.task-list')).toBeVisible();
       
       // 各ページで独立したタスクが存在することを確認
-      const taskRows = currentPage.getByTestId(/^task-row-/);
+      const taskRows = currentPage.locator('tr[class*="task-row-"]');
       const taskCount = await taskRows.count();
       console.log(`Page ${i + 1}: ${taskCount} tasks found`);
       
@@ -204,8 +205,8 @@ test.describe('複数ファイル並行処理テスト', () => {
     console.log('Performance metrics during load:', performanceMetrics);
     
     // UI の応答性確認
-    await expect(page.getByTestId('file-upload-area')).toBeVisible();
-    await expect(page.getByTestId('task-list')).toBeVisible();
+    await expect(page.locator('button.upload-button-primary')).toBeVisible();
+    await expect(page.locator('div.task-list')).toBeVisible();
     
     // 追加ファイルのアップロードが可能であることを確認
     try {

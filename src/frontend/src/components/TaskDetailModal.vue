@@ -6,6 +6,7 @@
     :closable="true"
     :draggable="false"
     class="task-detail-modal"
+    data-testid="task-detail-modal"
     :style="{ width: '90vw', maxWidth: '800px' }"
   >
     <div v-if="task" class="task-detail-content">
@@ -56,7 +57,7 @@
         </div>
 
         <!-- Step Timeline -->
-        <Timeline :value="processSteps" layout="vertical" class="step-timeline">
+        <Timeline :value="processSteps" layout="vertical" class="step-timeline" data-testid="processing-timeline">
           <template #marker="{ item }">
             <div class="step-marker" :class="getStepMarkerClass(item)">
               <i :class="getStepIcon(item)"></i>
@@ -64,12 +65,13 @@
           </template>
 
           <template #content="{ item }">
-            <div class="step-content">
+            <div class="step-content" :data-testid="`step-${item.name}`">
               <div class="step-header">
                 <h4>{{ item.label }}</h4>
                 <Badge
                   :value="getStepStatusLabel(item.status)"
                   :severity="getStepStatusSeverity(item.status)"
+                  data-testid="step-status"
                 />
               </div>
 
@@ -105,7 +107,7 @@
         class="error-section"
       >
         <h3>エラー詳細</h3>
-        <Message severity="error" :closable="false" class="error-message">
+        <Message severity="error" :closable="false" class="error-message" data-testid="error-message">
           <div class="error-content">
             <strong>エラーメッセージ:</strong>
             <pre>{{ task.error_message }}</pre>
@@ -141,6 +143,7 @@
           label="再実行"
           icon="pi pi-refresh"
           class="p-button-warning"
+          data-testid="retry-button"
           @click="handleRetry"
           :loading="retrying"
         />
@@ -169,6 +172,7 @@
           label="閉じる"
           icon="pi pi-times"
           class="p-button-secondary"
+          data-testid="modal-close"
           @click="close"
         />
       </div>

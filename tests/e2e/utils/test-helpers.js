@@ -25,7 +25,7 @@ class TestHelpers {
     
     // ファイルアップロード
     const fileChooserPromise = this.page.waitForEvent('filechooser');
-    await this.page.getByTestId('file-upload-area').click();
+    await this.page.locator('button.upload-button-primary').click();
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(filePath);
 
@@ -72,8 +72,8 @@ class TestHelpers {
    * @param {string} taskId - タスクID
    */
   async getTaskStatus(taskId) {
-    const taskRow = this.page.getByTestId(`task-row-${taskId}`);
-    const statusBadge = taskRow.getByTestId('status-badge');
+    const taskRow = this.page.locator(`tr.task-row-${taskId}`);
+    const statusBadge = taskRow.locator('[data-testid="status-badge"]');
     const statusText = await statusBadge.textContent();
     return statusText.toLowerCase();
   }
@@ -84,7 +84,7 @@ class TestHelpers {
    * @param {number} minProgress - 最小進捗パーセンテージ
    */
   async waitForProgress(taskId, minProgress = 10) {
-    const progressBar = this.page.getByTestId(`progress-bar-${taskId}`);
+    const progressBar = this.page.locator(`tr.task-row-${taskId} [data-testid="progress-bar-${taskId}"]`);
     
     await expect(progressBar).toBeVisible();
     
@@ -154,9 +154,9 @@ class TestHelpers {
     await this.page.waitForTimeout(1000); // レイアウト調整を待機
     
     // 主要要素の表示確認
-    await expect(this.page.getByTestId('main-header')).toBeVisible();
-    await expect(this.page.getByTestId('file-upload-area')).toBeVisible();
-    await expect(this.page.getByTestId('task-list')).toBeVisible();
+    await expect(this.page.locator('header.app-header')).toBeVisible();
+    await expect(this.page.locator('button.upload-button-primary')).toBeVisible();
+    await expect(this.page.locator('div.task-list')).toBeVisible();
   }
 
   /**
@@ -191,7 +191,7 @@ class TestHelpers {
     const downloadPromise = this.page.waitForEvent('download');
     
     // ダウンロードボタンをクリック
-    await this.page.getByTestId('download-button').click();
+    await this.page.locator('[data-testid="download-button"]').click();
     
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toBe(expectedFileName);
@@ -208,14 +208,14 @@ class TestHelpers {
    * @param {string} expectedError - 期待するエラーメッセージ
    */
   async checkErrorMessage(expectedError) {
-    const errorDialog = this.page.getByTestId('error-dialog');
+    const errorDialog = this.page.locator('[data-testid="error-dialog"]');
     await expect(errorDialog).toBeVisible();
     
     const errorText = await errorDialog.locator('.error-message').textContent();
     expect(errorText).toContain(expectedError);
     
     // エラーダイアログを閉じる
-    await this.page.getByTestId('error-dialog-close').click();
+    await this.page.locator('[data-testid="error-dialog-close"]').click();
     await expect(errorDialog).not.toBeVisible();
   }
 
@@ -224,10 +224,10 @@ class TestHelpers {
    * @param {string} taskId - タスクID
    */
   async openTaskDetailModal(taskId) {
-    const taskRow = this.page.getByTestId(`task-row-${taskId}`);
+    const taskRow = this.page.locator(`tr.task-row-${taskId}`);
     await taskRow.click();
-    
-    const modal = this.page.getByTestId('task-detail-modal');
+
+    const modal = this.page.locator('[data-testid="task-detail-modal"]');
     await expect(modal).toBeVisible();
     
     return modal;
@@ -238,15 +238,15 @@ class TestHelpers {
    * @param {Array} expectedSteps - 期待する処理ステップ
    */
   async checkProcessingSteps(expectedSteps) {
-    const timeline = this.page.getByTestId('processing-timeline');
+    const timeline = this.page.locator('[data-testid="processing-timeline"]');
     await expect(timeline).toBeVisible();
     
     for (const step of expectedSteps) {
-      const stepElement = this.page.getByTestId(`step-${step.name}`);
+      const stepElement = this.page.locator(`[data-testid="step-${step.name}"]`);
       await expect(stepElement).toBeVisible();
       
       if (step.status) {
-        const statusElement = stepElement.getByTestId('step-status');
+        const statusElement = stepElement.locator('[data-testid="step-status"]');
         await expect(statusElement).toHaveAttribute('data-status', step.status);
       }
     }
@@ -262,7 +262,7 @@ class TestHelpers {
     );
     
     const fileChooserPromise = this.page.waitForEvent('filechooser');
-    await this.page.getByTestId('file-upload-area').click();
+    await this.page.locator('button.upload-button-primary').click();
     const fileChooser = await fileChooserPromise;
     await fileChooser.setFiles(filePaths);
     
