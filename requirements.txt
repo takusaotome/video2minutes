@@ -16,3 +16,14 @@ pyyaml==5.4.1
 itsdangerous==2.2.0
 pytz==2024.1
 typing-extensions>=4.0.0
+
+# Development and analysis tools
+black==25.1.0
+isort==6.0.1
+flake8==6.1.0
+mypy==1.8.0
+pylint==3.0.3
+bandit==1.7.6
+safety==2.3.5
+autopep8==2.0.4
+pytest-cov==4.1.0
