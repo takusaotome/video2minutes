@@ -11,6 +11,7 @@ from app.config import settings
 from app.services.task_queue import initialize_task_queue, shutdown_task_queue
 from app.store import tasks_store
 from app.store.session_store import session_task_store
+from app.store.persistent_store import persistent_store
 from app.utils.logger import setup_logging
 
 # ロギング初期化
@@ -121,6 +122,14 @@ def create_app() -> FastAPI:
         logger.info("アプリケーション起動: タスクキュー初期化開始")
         await initialize_task_queue()
         logger.info("タスクキュー初期化完了")
+        
+        # 古いタスクのクリーンアップ
+        try:
+            cleaned_count = persistent_store.cleanup_old_tasks(settings.cleanup_old_tasks_hours)
+            if cleaned_count > 0:
+                logger.info(f"起動時クリーンアップ: {cleaned_count}件の古いタスクを削除")
+        except Exception as e:
+            logger.warning(f"起動時クリーンアップに失敗: {e}")
 
     @app.on_event("shutdown")
     async def shutdown_event():

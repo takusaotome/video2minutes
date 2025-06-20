@@ -120,6 +120,11 @@ class Settings(BaseSettings):
     # タイムゾーン設定
     timezone: str = "Asia/Tokyo"  # 日本時間をデフォルトに
 
+    # ストレージ設定
+    storage_dir: str = "storage"
+    enable_persistence: bool = True
+    cleanup_old_tasks_hours: int = 72  # 72時間後に古いタスクをクリーンアップ
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

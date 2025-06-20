@@ -5,6 +5,10 @@ services:
     rootDir: src/backend
     buildCommand: pip install -r ../../requirements.txt
     startCommand: gunicorn -w 2 -k uvicorn.workers.UvicornWorker --timeout 600 --bind 0.0.0.0:$PORT app.main:app
+    disk:
+      name: video2minutes-storage
+      mountPath: /opt/render/project/src/backend/storage
+      sizeGB: 1
     envVars:
       - key: OPENAI_API_KEY
         sync: false

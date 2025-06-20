@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from app.models import MinutesTask
 from app.utils.logger import get_logger
+from app.config import settings
 
 logger = get_logger(__name__)
 
@@ -270,4 +271,4 @@ class SessionTaskStore:
 
 
 # グローバルなセッションタスクストアインスタンス
-session_task_store = SessionTaskStore()
+session_task_store = SessionTaskStore(enable_persistence=settings.enable_persistence)

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from app.models import MinutesTask, TaskStatus, ProcessingStepName, ProcessingStepStatus, ProcessingStep
 from app.utils.logger import get_logger
+from app.config import settings
 
 logger = get_logger(__name__)
 
@@ -228,4 +229,4 @@ class PersistentTaskStore:
 
 
 # グローバルな永続化ストアインスタンス
-persistent_store = PersistentTaskStore()
+persistent_store = PersistentTaskStore(storage_dir=settings.storage_dir)
