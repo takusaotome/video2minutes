@@ -34,8 +34,8 @@ def create_app() -> FastAPI:
         SessionMiddleware,
         secret_key=settings.session_secret_key,  # 本番環境では環境変数から設定
         max_age=settings.session_max_age,
-        same_site="lax",
-        https_only=not settings.debug,  # 本番環境ではHTTPS必須
+        same_site="none",  # クロスサイトリクエストのためにNoneに設定
+        https_only=True,  # same_site="none" の場合は必須
     )
 
     # CORS設定
