@@ -12,8 +12,11 @@ class TranscriptionService(LoggerMixin):
 
     def __init__(self):
         """OpenAI クライアントを初期化"""
-        self.client = openai.AsyncOpenAI(api_key=settings.openai_api_key)
-        self.logger.info("TranscriptionService初期化完了")
+        self.client = openai.AsyncOpenAI(
+            api_key=settings.openai_api_key,
+            timeout=1800.0,  # タイムアウトを30分に設定
+        )
+        self.logger.info("TranscriptionService初期化完了 (タイムアウト30分)")
 
     async def transcribe_audio(self, audio_file_path: str) -> str:
         """音声ファイルを文字起こし（分割ファイル対応）"""
