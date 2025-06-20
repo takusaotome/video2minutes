@@ -20,7 +20,7 @@ typing-extensions>=4.0.0
 
 # Development and analysis tools
 black==25.1.0
-isort==6.0.1
+isort==5.13.2
 flake8==6.1.0
 mypy==1.8.0
 pylint==3.2.2
