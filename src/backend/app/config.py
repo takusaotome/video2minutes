@@ -89,6 +89,14 @@ class Settings(BaseSettings):
     audio_bitrate_max: int = 96  # 最大ビットレート (kbps)
     audio_chunk_duration_max: int = 900  # 最大チャンク時間 (秒) - 15分
     upload_chunk_size: int = 16384  # アップロード時のチャンクサイズ (16KB)
+    
+    # M4A処理専用設定
+    m4a_target_file_size_mb: int = 15  # M4A変換後の目標ファイルサイズ (MB) - Whisper API安全制限
+    m4a_max_bitrate: int = 128  # M4A変換時の最大ビットレート (kbps)
+    m4a_min_bitrate: int = 8   # M4A変換時の最小ビットレート (kbps) - 長時間音声対応
+    m4a_sample_rate: int = 16000  # M4A変換時のサンプリングレート (Hz) - Whisper推奨
+    m4a_max_input_size_mb: int = 500  # M4A入力ファイルの最大サイズ (MB)
+    m4a_compression_enabled: bool = True  # M4A自動圧縮の有効/無効
 
     # Whisper設定
     whisper_model: str = "whisper-1"

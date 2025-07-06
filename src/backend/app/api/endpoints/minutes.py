@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 from typing import Dict, List
 
@@ -670,20 +671,47 @@ async def process_audio_task(task_id: str) -> None:
         update_session_task()
         await broadcast_progress_update(task_id, task)
 
-        # 音声ファイルの場合は音声抽出をスキップ
+        # 音声ファイル処理開始
         logger.info(f"音声ファイル処理開始: {task_id}")
 
         # 音声ファイルのパスを取得
-        audio_path = FileHandler.get_file_path(task_id)
-        if not audio_path:
+        input_audio_path = FileHandler.get_file_path(task_id)
+        if not input_audio_path:
             raise Exception("音声ファイルが見つかりません")
 
-        # 音声抽出ステップをスキップしてCOMPLETEDに設定
-        task.update_step_status(
-            ProcessingStepName.AUDIO_EXTRACTION, ProcessingStepStatus.COMPLETED, 100
-        )
-        update_session_task()
-        await broadcast_progress_update(task_id, task)
+        # ファイル拡張子を確認
+        file_ext = os.path.splitext(input_audio_path)[1].lower()
+        
+        # M4Aファイルの場合は専用処理、その他は既存の処理
+        if file_ext == ".m4a":
+            # M4A処理ステップ
+            logger.info(f"M4Aファイル専用処理開始: {task_id}")
+            task.update_step_status(
+                ProcessingStepName.AUDIO_EXTRACTION, ProcessingStepStatus.PROCESSING, 50
+            )
+            update_session_task()
+            await broadcast_progress_update(task_id, task)
+
+            # VideoProcessorを使用してM4A処理
+            video_processor = VideoProcessor()
+            audio_path = await video_processor.process_audio_file(task_id)
+            
+            task.update_step_status(
+                ProcessingStepName.AUDIO_EXTRACTION, ProcessingStepStatus.COMPLETED, 100
+            )
+            update_session_task()
+            await broadcast_progress_update(task_id, task)
+        else:
+            # その他の音声ファイルは音声抽出をスキップ
+            logger.info(f"通常音声ファイル処理: {task_id} (拡張子: {file_ext})")
+            audio_path = input_audio_path
+            
+            # 音声抽出ステップをスキップしてCOMPLETEDに設定
+            task.update_step_status(
+                ProcessingStepName.AUDIO_EXTRACTION, ProcessingStepStatus.COMPLETED, 100
+            )
+            update_session_task()
+            await broadcast_progress_update(task_id, task)
 
         # 文字起こし
         task.update_step_status(
