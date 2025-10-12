@@ -1,4 +1,5 @@
 from typing import Optional
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -103,7 +104,7 @@ class Settings(BaseSettings):
     whisper_language: str = "ja"
 
     # GPT設定
-    gpt_model: str = "o3"
+    gpt_model: str = "gpt-4o"  # gpt-4o, gpt-4-turbo, gpt-4o-mini
     gpt_max_tokens: int = 4000
 
     # チャット機能設定
@@ -114,8 +115,8 @@ class Settings(BaseSettings):
     chat_max_tokens_per_request: int = 8000
     chat_rate_limit_per_minute: int = 10
     
-    # OpenAI Chat設定  
-    openai_chat_model: str = "gpt-4.1"  # gpt-4.1, o3-mini, gpt-4o (課金後利用可能)
+    # OpenAI Chat設定
+    openai_chat_model: str = "gpt-4o"  # gpt-4o, gpt-4-turbo, gpt-4o-mini
     openai_chat_max_tokens: int = 4000
     openai_chat_temperature: float = 0.3
     openai_timeout_seconds: int = 60
@@ -134,7 +135,8 @@ class Settings(BaseSettings):
     cleanup_old_tasks_hours: int = 72  # 72時間後に古いタスクをクリーンアップ
 
     class Config:
-        env_file = ".env"
+        # プロジェクトルートの.envを読み込む
+        env_file = str(Path(__file__).parent.parent.parent.parent / ".env")
         env_file_encoding = "utf-8"
 
 
