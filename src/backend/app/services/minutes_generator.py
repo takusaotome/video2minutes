@@ -105,7 +105,7 @@ class MinutesGeneratorService(LoggerMixin):
 
     async def _call_chat_completion(self, prompt: str, prefer_model: str) -> str:
         """OpenAI Chat APIを呼び出し（フォールバック機能付き）"""
-        for model in (prefer_model, "gpt-4o", "gpt-4o-mini"):
+        for model in (prefer_model, "gpt-4.1", "gpt-4o"):
             try:
                 self.logger.debug(f"APIリクエスト: モデル={model}")
 
