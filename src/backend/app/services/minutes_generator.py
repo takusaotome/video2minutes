@@ -99,17 +99,28 @@ class MinutesGeneratorService(LoggerMixin):
 {transcript}
 <<Transcript>>"""
 
+    def _is_reasoning_model(self, model: str) -> bool:
+        """推論モデル（o1/o3/o4系）かどうかを判定"""
+        return model.startswith('o1') or model.startswith('o3') or model.startswith('o4')
+
     async def _call_chat_completion(self, prompt: str, prefer_model: str) -> str:
         """OpenAI Chat APIを呼び出し（フォールバック機能付き）"""
-        for model in (prefer_model, "gpt-4.1", "gpt-4.1-mini"):
+        for model in (prefer_model, "gpt-4.1", "gpt-4o"):
             try:
                 self.logger.debug(f"APIリクエスト: モデル={model}")
 
-                response = await self.client.chat.completions.create(
-                    model=model,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.2,
-                )
+                # o1/o3系の推論モデルはtemperatureをサポートしていない
+                if self._is_reasoning_model(model):
+                    response = await self.client.chat.completions.create(
+                        model=model,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                else:
+                    response = await self.client.chat.completions.create(
+                        model=model,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.2,
+                    )
 
                 self.logger.info(f"API呼び出し成功: モデル={model}")
                 return response.choices[0].message.content

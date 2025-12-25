@@ -222,9 +222,9 @@ class OpenAIService:
                 from openai import AsyncOpenAI
                 client = AsyncOpenAI(api_key=settings.openai_api_key)
                 
-                # o3系モデルは特殊なパラメーター構成
-                if self.model.startswith('o3'):
-                    # o3系モデルは基本パラメーターのみ対応
+                # o1/o3/o4系の推論モデルはtemperature/max_tokensをサポートしていない
+                if self.model.startswith('o1') or self.model.startswith('o3') or self.model.startswith('o4'):
+                    # 推論モデルは基本パラメーターのみ対応
                     response = await client.chat.completions.create(
                         model=self.model,
                         messages=messages
