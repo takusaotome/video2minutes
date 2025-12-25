@@ -177,15 +177,27 @@ def strip_code_fence(md: str) -> str:
     return md.lstrip("\n")
 
 
+def is_reasoning_model(model: str) -> bool:
+    """Check if model is a reasoning model (o1/o3/o4 series)."""
+    return model.startswith('o1') or model.startswith('o3') or model.startswith('o4')
+
+
 def call_chat_completion(prompt: str, prefer_model: str) -> str:
     """Call OpenAI Chat API with fallback."""
     for mdl in (prefer_model, "gpt-4.1", "gpt-4.1-mini"):
         try:
-            resp = openai.chat.completions.create(
-                model=mdl,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.2,
-            )
+            # Reasoning models don't support temperature parameter
+            if is_reasoning_model(mdl):
+                resp = openai.chat.completions.create(
+                    model=mdl,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+            else:
+                resp = openai.chat.completions.create(
+                    model=mdl,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.2,
+                )
             print(f"[info] Minutes generated with model: {mdl}")
             return resp.choices[0].message.content
         except openai.NotFoundError as exc:
@@ -243,7 +255,7 @@ def parse_args() -> argparse.Namespace:
     # オプション設定
     p.add_argument("--language", default="ja", help="ISO 639-1 language code (default: ja)")
     p.add_argument("--bitrate", type=int, default=30, help="MP3 bitrate kbps (default: 30)")
-    p.add_argument("--model", default="o3", help="Preferred OpenAI model for minutes (default: o3)")
+    p.add_argument("--model", default="gpt-4.1", help="Preferred OpenAI model for minutes (default: gpt-4.1)")
     p.add_argument("--api-key", help="OpenAI API key (overrides ENV/.env)")
     p.add_argument("--keep-audio", action="store_true", help="Keep intermediate audio file")
     
