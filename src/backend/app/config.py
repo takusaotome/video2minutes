@@ -104,7 +104,7 @@ class Settings(BaseSettings):
     whisper_language: str = "ja"
 
     # GPT設定
-    gpt_model: str = "gpt-5-mini"  # gpt-5-mini, gpt-4.1, gpt-4o (議事録生成用)
+    gpt_model: str = "gpt-4o"  # gpt-4o, gpt-4.1, gpt-5-mini (議事録生成用)
     gpt_max_tokens: int = 4000
 
     # チャット機能設定
@@ -116,7 +116,7 @@ class Settings(BaseSettings):
     chat_rate_limit_per_minute: int = 10
 
     # OpenAI Chat設定
-    openai_chat_model: str = "gpt-5-mini"  # gpt-5-mini, gpt-4.1, gpt-4o (チャット用)
+    openai_chat_model: str = "gpt-4o"  # gpt-4o, gpt-4.1, gpt-5-mini (チャット用)
     openai_chat_max_tokens: int = 4000
     openai_chat_temperature: float = 0.3
     openai_timeout_seconds: int = 60
