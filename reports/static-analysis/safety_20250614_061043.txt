@@ -12,7 +12,7 @@ We highly encourage switching to the new `scan` command which is easier to use, 
 +===========================================================================================================================================================================================+
 
 
-/Users/takueisaotome/Library/Python/3.9/lib/python/site-packages/safety/safety.py:1853: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+~/Library/Python/3.9/lib/python/site-packages/safety/safety.py:1853: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
   import pkg_resources
 +==============================================================================+
 
@@ -38,10 +38,10 @@ We highly encourage switching to the new `scan` command which is easier to use, 
   -> /Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/lib-dynload
   -> /Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-
   packages
-  -> /Users/takueisaotome/Library/Python/3.9/lib/python/site-packages
-  -> /Users/takueisaotome/Library/Python/3.9/lib/python/site-
+  -> ~/Library/Python/3.9/lib/python/site-packages
+  -> ~/Library/Python/3.9/lib/python/site-
   packages/setuptools/_vendor
-  -> /Users/takueisaotome/PycharmProjects/video2minutes
+  -> ~/PycharmProjects/video2minutes
   -> /Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9
   -> /Library/Frameworks/Python.framework/Versions/3.9/lib/python39.zip
 
